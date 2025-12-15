@@ -1,19 +1,39 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
-import { api } from './api';
+import Login from './components/Login';
+import { api, hasCredentials, clearCredentials } from './api';
 import './App.css';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [conversations, setConversations] = useState([]);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load conversations on mount
+  // Check for existing credentials on mount
   useEffect(() => {
-    loadConversations();
+    const checkAuth = async () => {
+      if (hasCredentials()) {
+        // Verify credentials are still valid
+        const isValid = await api.testCredentials();
+        if (isValid) {
+          setIsAuthenticated(true);
+        }
+      }
+      setIsCheckingAuth(false);
+    };
+    checkAuth();
   }, []);
+
+  // Load conversations when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadConversations();
+    }
+  }, [isAuthenticated]);
 
   // Load conversation details when selected
   useEffect(() => {
@@ -28,6 +48,9 @@ function App() {
       setConversations(convs);
     } catch (error) {
       console.error('Failed to load conversations:', error);
+      if (error.message === 'Authentication failed') {
+        setIsAuthenticated(false);
+      }
     }
   };
 
@@ -37,19 +60,37 @@ function App() {
       setCurrentConversation(conv);
     } catch (error) {
       console.error('Failed to load conversation:', error);
+      if (error.message === 'Authentication failed') {
+        setIsAuthenticated(false);
+      }
     }
+  };
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    clearCredentials();
+    setIsAuthenticated(false);
+    setConversations([]);
+    setCurrentConversationId(null);
+    setCurrentConversation(null);
   };
 
   const handleNewConversation = async () => {
     try {
       const newConv = await api.createConversation();
       setConversations([
-        { id: newConv.id, created_at: newConv.created_at, message_count: 0 },
+        { id: newConv.id, created_at: newConv.created_at, title: newConv.title, message_count: 0 },
         ...conversations,
       ]);
       setCurrentConversationId(newConv.id);
     } catch (error) {
       console.error('Failed to create conversation:', error);
+      if (error.message === 'Authentication failed') {
+        setIsAuthenticated(false);
+      }
     }
   };
 
@@ -172,14 +213,32 @@ function App() {
       });
     } catch (error) {
       console.error('Failed to send message:', error);
-      // Remove optimistic messages on error
-      setCurrentConversation((prev) => ({
-        ...prev,
-        messages: prev.messages.slice(0, -2),
-      }));
+      if (error.message === 'Authentication failed') {
+        setIsAuthenticated(false);
+      } else {
+        // Remove optimistic messages on error
+        setCurrentConversation((prev) => ({
+          ...prev,
+          messages: prev.messages.slice(0, -2),
+        }));
+      }
       setIsLoading(false);
     }
   };
+
+  // Show loading while checking authentication
+  if (isCheckingAuth) {
+    return (
+      <div className="app-loading">
+        <div className="loading-spinner"></div>
+      </div>
+    );
+  }
+
+  // Show login if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="app">
@@ -188,6 +247,7 @@ function App() {
         currentConversationId={currentConversationId}
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
+        onLogout={handleLogout}
       />
       <ChatInterface
         conversation={currentConversation}

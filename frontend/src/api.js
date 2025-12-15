@@ -2,14 +2,74 @@
  * API client for the LLM Council backend.
  */
 
-const API_BASE = 'http://localhost:8001';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+
+/**
+ * Store credentials in localStorage.
+ */
+export function setCredentials(username, password) {
+  const encoded = btoa(`${username}:${password}`);
+  localStorage.setItem('ai_council_credentials', encoded);
+}
+
+/**
+ * Clear stored credentials.
+ */
+export function clearCredentials() {
+  localStorage.removeItem('ai_council_credentials');
+}
+
+/**
+ * Check if credentials are stored.
+ */
+export function hasCredentials() {
+  return !!localStorage.getItem('ai_council_credentials');
+}
+
+/**
+ * Get the Authorization header value.
+ */
+function getAuthHeader() {
+  const credentials = localStorage.getItem('ai_council_credentials');
+  if (credentials) {
+    return `Basic ${credentials}`;
+  }
+  return null;
+}
+
+/**
+ * Fetch wrapper that includes auth header.
+ */
+async function fetchWithAuth(url, options = {}) {
+  const authHeader = getAuthHeader();
+
+  const headers = {
+    ...options.headers,
+  };
+
+  if (authHeader) {
+    headers['Authorization'] = authHeader;
+  }
+
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  if (response.status === 401) {
+    clearCredentials();
+    throw new Error('Authentication failed');
+  }
+
+  return response;
+}
 
 export const api = {
   /**
    * List all conversations.
    */
   async listConversations() {
-    const response = await fetch(`${API_BASE}/api/conversations`);
+    const response = await fetchWithAuth(`${API_BASE}/api/conversations`);
     if (!response.ok) {
       throw new Error('Failed to list conversations');
     }
@@ -20,7 +80,7 @@ export const api = {
    * Create a new conversation.
    */
   async createConversation() {
-    const response = await fetch(`${API_BASE}/api/conversations`, {
+    const response = await fetchWithAuth(`${API_BASE}/api/conversations`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -37,7 +97,7 @@ export const api = {
    * Get a specific conversation.
    */
   async getConversation(conversationId) {
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `${API_BASE}/api/conversations/${conversationId}`
     );
     if (!response.ok) {
@@ -50,7 +110,7 @@ export const api = {
    * Send a message in a conversation.
    */
   async sendMessage(conversationId, content) {
-    const response = await fetch(
+    const response = await fetchWithAuth(
       `${API_BASE}/api/conversations/${conversationId}/message`,
       {
         method: 'POST',
@@ -74,16 +134,28 @@ export const api = {
    * @returns {Promise<void>}
    */
   async sendMessageStream(conversationId, content, onEvent) {
+    const authHeader = getAuthHeader();
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    if (authHeader) {
+      headers['Authorization'] = authHeader;
+    }
+
     const response = await fetch(
       `${API_BASE}/api/conversations/${conversationId}/message/stream`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({ content }),
       }
     );
+
+    if (response.status === 401) {
+      clearCredentials();
+      throw new Error('Authentication failed');
+    }
 
     if (!response.ok) {
       throw new Error('Failed to send message');
@@ -110,6 +182,18 @@ export const api = {
           }
         }
       }
+    }
+  },
+
+  /**
+   * Test if credentials are valid by making a test API call.
+   */
+  async testCredentials() {
+    try {
+      const response = await fetchWithAuth(`${API_BASE}/api/conversations`);
+      return response.ok;
+    } catch {
+      return false;
     }
   },
 };
