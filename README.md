@@ -32,15 +32,19 @@ npm install
 cd ..
 ```
 
-### 2. Configure API Key
+### 2. Configure Environment
 
 Create a `.env` file in the project root:
 
 ```bash
 OPENROUTER_API_KEY=sk-or-v1-...
+AUTH_USERNAME=admin
+AUTH_PASSWORD=your-password
 ```
 
 Get your API key at [openrouter.ai](https://openrouter.ai/). Make sure to purchase the credits you need, or sign up for automatic top up.
+
+For production deployment, also set `DATABASE_URL` for PostgreSQL storage. Without it, the app uses local JSON file storage.
 
 ### 3. Configure Models (Optional)
 

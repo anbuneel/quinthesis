@@ -10,9 +10,7 @@ import uuid
 import json
 import asyncio
 
-from . import storage
-from .config import CORS_ORIGINS
-from .database import get_pool, close_pool
+from .config import CORS_ORIGINS, DATABASE_URL
 from .auth import verify_credentials
 from .council import (
     run_full_council,
@@ -23,15 +21,27 @@ from .council import (
     calculate_aggregate_rankings
 )
 
+# Use local JSON storage if DATABASE_URL is not set
+if DATABASE_URL:
+    from . import storage
+    from .database import get_pool, close_pool
+    USE_LOCAL_STORAGE = False
+else:
+    from . import storage_local as storage
+    USE_LOCAL_STORAGE = True
+    print("⚠️  DATABASE_URL not set - using local JSON storage")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle - startup and shutdown events."""
-    # Startup: initialize database pool
-    await get_pool()
+    if not USE_LOCAL_STORAGE:
+        # Startup: initialize database pool
+        await get_pool()
     yield
-    # Shutdown: close database pool
-    await close_pool()
+    if not USE_LOCAL_STORAGE:
+        # Shutdown: close database pool
+        await close_pool()
 
 
 app = FastAPI(title="LLM Council API", lifespan=lifespan)

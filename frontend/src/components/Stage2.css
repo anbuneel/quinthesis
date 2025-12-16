@@ -1,153 +1,240 @@
 .stage2 {
-  background: #fafafa;
+  margin: 16px 0;
+  padding: 20px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-dim);
+  animation: fade-in-up var(--transition-slow) ease-out;
 }
 
-.stage2 h4 {
-  margin: 20px 0 8px 0;
-  color: #333;
-  font-size: 14px;
-  font-weight: 600;
+.stage2 .stage-title {
+  margin: 0 0 4px 0;
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  font-weight: 400;
+  color: #9C7ACE;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-.stage2 h4:first-of-type {
-  margin-top: 0;
+.stage2 .stage-desc {
+  margin: 0 0 20px 0;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
 }
 
-.stage-description {
-  margin: 0 0 12px 0;
-  color: #666;
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.aggregate-rankings {
-  background: #f0f7ff;
-  padding: 16px;
-  border-radius: 8px;
+/* Council Standing */
+.council-standing {
+  background: rgba(124, 94, 153, 0.1);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
   margin-bottom: 20px;
-  border: 2px solid #d0e7ff;
+  border: 1px solid rgba(124, 94, 153, 0.3);
 }
 
-.aggregate-rankings h4 {
+.standing-title {
+  margin: 0 0 4px 0;
+  font-family: var(--font-serif);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  color: #B89AD4;
+}
+
+.standing-desc {
   margin: 0 0 12px 0;
-  color: #2a7ae2;
-  font-size: 15px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.aggregate-list {
+.standing-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.aggregate-item {
+.standing-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 10px;
-  background: #ffffff;
-  border-radius: 6px;
-  border: 1px solid #d0e7ff;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-dim);
+  transition: all var(--transition-normal);
 }
 
-.rank-position {
-  color: #2a7ae2;
-  font-weight: 700;
-  font-size: 16px;
-  min-width: 35px;
+.standing-item.top-ranked {
+  border-color: var(--accent-gold);
+  background: linear-gradient(90deg, var(--accent-gold-dim) 0%, transparent 100%);
 }
 
-.rank-model {
-  flex: 1;
-  color: #333;
-  font-family: monospace;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.rank-score {
-  color: #666;
-  font-size: 13px;
-  font-family: monospace;
-}
-
-.stage2 .tabs {
+.position-badge {
+  width: 24px;
+  height: 24px;
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: var(--border-dim);
+  color: var(--text-secondary);
 }
 
-.stage2 .tab {
-  padding: 8px 16px;
-  background: #ffffff;
-  border: 1px solid #d0d0d0;
-  border-radius: 6px 6px 0 0;
-  color: #666;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
+.position-badge.gold {
+  background: var(--accent-gold);
+  color: var(--bg-chamber);
 }
 
-.stage2 .tab:hover {
-  background: #f0f0f0;
-  color: #333;
-  border-color: #4a90e2;
+.position-badge.silver {
+  background: #A0AEC0;
+  color: var(--bg-chamber);
 }
 
-.stage2 .tab.active {
-  background: #ffffff;
-  color: #4a90e2;
-  border-color: #4a90e2;
-  border-bottom-color: #ffffff;
+.position-badge.bronze {
+  background: #CD7F32;
+  color: var(--bg-chamber);
+}
+
+.standing-model {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-primary);
+}
+
+.standing-score {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--accent-info-bright);
+}
+
+.standing-votes {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Evaluations Section */
+.evaluations-section {
+  margin-top: 20px;
+}
+
+.evaluations-title {
+  margin: 0 0 4px 0;
+  font-size: 0.8125rem;
   font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.stage2 .tab-content {
-  background: #ffffff;
-  padding: 16px;
-  border-radius: 6px;
-  border: 1px solid #e0e0e0;
-  margin-bottom: 20px;
+.evaluations-desc {
+  margin: 0 0 12px 0;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.ranking-model {
-  color: #888;
-  font-size: 12px;
-  font-family: monospace;
+.evaluations-desc strong {
+  color: var(--text-secondary);
+}
+
+.reviewer-tabs {
+  display: flex;
+  gap: 6px;
   margin-bottom: 12px;
 }
 
-.ranking-content {
-  color: #333;
-  line-height: 1.6;
-  font-size: 14px;
+.reviewer-tab {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border: 1px solid var(--border-dim);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  transition: all var(--transition-normal);
 }
 
-.parsed-ranking {
+.reviewer-tab:hover {
+  background: var(--border-dim);
+  color: var(--text-primary);
+  border-color: #9C7ACE;
+}
+
+.reviewer-tab.active {
+  background: #7C5E99;
+  color: var(--text-primary);
+  border-color: #7C5E99;
+}
+
+.reviewer-letter {
+  font-size: 0.8125rem;
+}
+
+.evaluation-content {
+  background: var(--bg-input);
+  padding: 16px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-dim);
+}
+
+.evaluation-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+.reviewer-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #B89AD4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reviewer-model {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+.evaluation-text {
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-size: 0.9375rem;
+}
+
+.extracted-ranking {
   margin-top: 16px;
   padding-top: 16px;
-  border-top: 2px solid #e0e0e0;
+  border-top: 1px solid var(--border-dim);
 }
 
-.parsed-ranking strong {
-  color: #2a7ae2;
-  font-size: 13px;
+.extracted-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #B89AD4;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
-.parsed-ranking ol {
+.extracted-list {
   margin: 8px 0 0 0;
   padding-left: 24px;
-  color: #333;
+  color: var(--text-primary);
 }
 
-.parsed-ranking li {
+.extracted-list li {
   margin: 4px 0;
-  font-family: monospace;
-  font-size: 13px;
-}
-
-.rank-count {
-  color: #999;
-  font-size: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
 }

@@ -34,49 +34,91 @@ LLM Council is a 3-stage deliberation system where multiple LLMs collaboratively
 - `parse_ranking_from_text()`: Extracts "FINAL RANKING:" section, handles both numbered lists and plain format
 - `calculate_aggregate_rankings()`: Computes average rank position across all peer evaluations
 
-**`storage.py`**
-- JSON-based conversation storage in `data/conversations/`
+**`storage.py`** (PostgreSQL - production)
+- PostgreSQL-based conversation storage for production deployment
 - Each conversation: `{id, created_at, messages[]}`
 - Assistant messages contain: `{role, stage1, stage2, stage3}`
 - Note: metadata (label_to_model, aggregate_rankings) is NOT persisted to storage, only returned via API
 
+**`storage_local.py`** (JSON - local development)
+- JSON-based conversation storage in `data/conversations/`
+- Same async interface as `storage.py`
+- Used automatically when `DATABASE_URL` is not set
+- Each conversation stored as individual `.json` file
+
 **`main.py`**
 - FastAPI app with CORS enabled for localhost:5173 and localhost:3000
+- Conditional storage import: uses `storage_local.py` when `DATABASE_URL` not set
 - POST `/api/conversations/{id}/message` returns metadata in addition to stages
 - Metadata includes: label_to_model mapping and aggregate_rankings
 
 ### Frontend Structure (`frontend/src/`)
 
+**Design: "The Modern Chamber"**
+- Dark deliberative theme evoking a high-stakes council chamber
+- Three-panel layout: Sidebar (The Docket), Main Chamber, Right Panel (Council Composition)
+- Typography: DM Serif Display (headlines), Inter (body), JetBrains Mono (code)
+- See `DESIGN_PROPOSAL.md` for complete design documentation
+
 **`App.jsx`**
 - Main orchestration: manages conversations list and current conversation
+- Three-panel layout with collapsible RightPanel
 - Handles message sending and metadata storage
 - Important: metadata is stored in the UI state for display but not persisted to backend JSON
+
+**`components/RightPanel.jsx`** (NEW)
+- Council composition panel showing active models
+- Displays models as "Councilor A/B/C" with real names
+- Chairman display with golden styling
+- "Blind Mode" toggle (UI placeholder for future)
+- Collapsible via toggle button
+
+**`components/ProgressOrbit.jsx`** (NEW)
+- Stage stepper: `[ I ] Opinions — [ II ] Review — [ III ] Ruling`
+- Active stage: pulsing glow
+- Completed stages: solid gold
+- Pending stages: muted steel blue
 
 **`components/ChatInterface.jsx`**
 - Multiline textarea (3 rows, resizable)
 - Enter to send, Shift+Enter for new line
-- User messages wrapped in markdown-content class for padding
+- "Petitioner" (user) / "The Council" (assistant) terminology
+- "Deliberate" button with thematic loading messages
+- Integrates ProgressOrbit component
+
+**`components/Sidebar.jsx`** (The Docket)
+- "AI Council - Where AI Minds Convene" branding
+- Cases with status indicators (pulsing blue = in deliberation, gold = resolved)
+- "New Case" / "Leave Chamber" buttons
+
+**`components/Login.jsx`**
+- Dark chamber styling with golden emblem
+- "Enter the Chamber" button
 
 **`components/Stage1.jsx`**
-- Tab view of individual model responses
+- "STAGE I: FIRST OPINIONS" with steel blue theme
+- Pill-style tabs: "Councilor A/B/C" labels
+- Native tooltip shows real model name on hover
 - ReactMarkdown rendering with markdown-content wrapper
 
 **`components/Stage2.jsx`**
+- "STAGE II: THE REVIEW" with purple theme (#7C5E99)
 - **Critical Feature**: Tab view showing RAW evaluation text from each model
 - De-anonymization happens CLIENT-SIDE for display (models receive anonymous labels)
+- "Council Standing" leaderboard with position badges (gold/silver/bronze)
 - Shows "Extracted Ranking" below each evaluation so users can validate parsing
-- Aggregate rankings shown with average position and vote count
-- Explanatory text clarifies that boldface model names are for readability only
 
 **`components/Stage3.jsx`**
-- Final synthesized answer from chairman
-- Green-tinted background (#f0fff0) to highlight conclusion
+- "Final Resolution" with golden glow hero card
+- Golden left border, gradient background
+- Chairman badge with 👑 icon
+- Entrance animation (verdict-appear)
 
 **Styling (`*.css`)**
-- Light mode theme (not dark mode)
-- Primary color: #4a90e2 (blue)
+- Dark mode theme ("The Modern Chamber")
+- Color palette: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
 - Global markdown styling in `index.css` with `.markdown-content` class
-- 12px padding on all markdown content to prevent cluttered appearance
+- Animations: pulse-blue, pulse-gold, fade-in-up, verdict-appear
 
 ## Key Design Decisions
 

@@ -1,25 +1,115 @@
 .stage3 {
-  background: #f0fff0;
-  border-color: #c8e6c8;
+  margin: 16px 0;
+  padding: 0;
+  background: linear-gradient(135deg, var(--accent-gold-dim) 0%, var(--bg-card) 30%);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--accent-gold);
+  border-left: 4px solid var(--accent-gold);
+  box-shadow: var(--shadow-gold);
+  overflow: hidden;
+  animation: verdict-appear 0.5s ease-out;
 }
 
-.final-response {
-  background: #ffffff;
-  padding: 20px;
-  border-radius: 6px;
-  border: 1px solid #c8e6c8;
+@keyframes verdict-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.chairman-label {
-  color: #2d8a2d;
-  font-size: 12px;
-  font-family: monospace;
-  margin-bottom: 12px;
-  font-weight: 600;
+.verdict-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-dim);
+  background: rgba(212, 175, 55, 0.05);
 }
 
-.final-text {
-  color: #333;
-  line-height: 1.7;
-  font-size: 15px;
+.verdict-icon {
+  font-size: 2rem;
+  opacity: 0.8;
+}
+
+.verdict-titles {
+  flex: 1;
+}
+
+.stage3 .stage-title {
+  margin: 0 0 4px 0;
+  font-family: var(--font-serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  color: var(--accent-gold);
+  letter-spacing: 0.02em;
+}
+
+.verdict-subtitle {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+}
+
+.verdict-content {
+  padding: 24px;
+}
+
+.verdict-text {
+  color: var(--text-primary);
+  line-height: 1.8;
+  font-size: 1rem;
+}
+
+.verdict-text h1,
+.verdict-text h2,
+.verdict-text h3,
+.verdict-text h4 {
+  color: var(--accent-gold);
+}
+
+.verdict-footer {
+  padding: 12px 24px;
+  background: var(--bg-input);
+  border-top: 1px solid var(--border-dim);
+}
+
+.chairman-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+}
+
+.badge-icon {
+  font-size: 0.875rem;
+}
+
+.badge-model {
+  font-size: 0.75rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+/* Provenance styling (placeholder for future) */
+.provenance {
+  display: inline;
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-left: 4px;
+}
+
+.provenance::before {
+  content: '[';
+}
+
+.provenance::after {
+  content: ']';
 }

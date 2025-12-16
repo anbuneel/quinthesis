@@ -23,10 +23,10 @@ function Login({ onLogin }) {
       if (isValid) {
         onLogin();
       } else {
-        setError('Invalid username or password');
+        setError('Invalid credentials. Access denied.');
       }
     } catch (err) {
-      setError('Login failed. Please try again.');
+      setError('Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -35,17 +35,23 @@ function Login({ onLogin }) {
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1 className="login-title">LLM Council</h1>
-        <p className="login-subtitle">Sign in to continue</p>
+        <div className="login-header">
+          <div className="council-emblem">
+            <span className="emblem-icon">⚖</span>
+          </div>
+          <h1 className="login-title">AI Council</h1>
+          <p className="login-tagline">Where AI Minds Convene</p>
+        </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">Identifier</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your identifier"
               required
               autoComplete="username"
               disabled={isLoading}
@@ -53,12 +59,13 @@ function Login({ onLogin }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Passphrase</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your passphrase"
               required
               autoComplete="current-password"
               disabled={isLoading}
@@ -68,9 +75,20 @@ function Login({ onLogin }) {
           {error && <div className="login-error">{error}</div>}
 
           <button type="submit" className="login-button" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? (
+              <>
+                <span className="button-spinner"></span>
+                <span>Authenticating...</span>
+              </>
+            ) : (
+              'Enter the Chamber'
+            )}
           </button>
         </form>
+
+        <p className="login-footer">
+          A council of AI models deliberating together
+        </p>
       </div>
     </div>
   );
