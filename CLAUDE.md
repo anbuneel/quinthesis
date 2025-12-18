@@ -1,10 +1,14 @@
-# CLAUDE.md - Technical Notes for LLM Council
+# CLAUDE.md - Technical Notes for AI Council
 
-This file contains technical details, architectural decisions, and important implementation notes for future development sessions.
+Technical details, architectural decisions, and implementation notes for development.
 
 ## Project Overview
 
-LLM Council is a 3-stage deliberation system where multiple LLMs collaboratively answer user questions. The key innovation is anonymized peer review in Stage 2, preventing models from playing favorites.
+AI Council is a 3-stage deliberation system where multiple LLMs collaboratively answer user questions. The key innovation is anonymized peer review in Stage 2, preventing models from playing favorites.
+
+**Status**: Production application deployed on Vercel (frontend), Fly.io (backend), and Supabase (database). Started as a vibe-coded exploration, now a fully-featured application.
+
+See `AGENTS.md` for quick reference commands and deployment checklist.
 
 ## Architecture
 
@@ -13,8 +17,8 @@ LLM Council is a 3-stage deliberation system where multiple LLMs collaboratively
 **`config.py`**
 - Contains `COUNCIL_MODELS` (list of OpenRouter model identifiers)
 - Contains `CHAIRMAN_MODEL` (model that synthesizes final answer)
-- Uses environment variable `OPENROUTER_API_KEY` from `.env`
-- Backend runs on **port 8001** (NOT 8000 - user had another app on 8000)
+- Uses environment variables: `OPENROUTER_API_KEY`, `DATABASE_URL`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `CORS_ORIGINS`
+- Backend runs on **port 8080** (Fly.io standard; changed from original 8001)
 
 **`openrouter.py`**
 - `query_model()`: Single async model query
@@ -47,10 +51,12 @@ LLM Council is a 3-stage deliberation system where multiple LLMs collaboratively
 - Each conversation stored as individual `.json` file
 
 **`main.py`**
-- FastAPI app with CORS enabled for localhost:5173 and localhost:3000
-- Conditional storage import: uses `storage_local.py` when `DATABASE_URL` not set
-- POST `/api/conversations/{id}/message` returns metadata in addition to stages
-- Metadata includes: label_to_model mapping and aggregate_rankings
+- FastAPI app with CORS configured via `CORS_ORIGINS` environment variable
+- Conditional storage import: uses `storage_local.py` when `DATABASE_URL` not set, else `storage.py`
+- Lifespan context manager: initializes database connection pool on startup, closes on shutdown
+- Supports both non-streaming (`/api/conversations/{id}/message`) and streaming (`/api/conversations/{id}/message/stream`) endpoints
+- Returns metadata in addition to stages: label_to_model mapping and aggregate_rankings
+- Basic Auth via `verify_credentials()` dependency on all protected endpoints
 
 ### Frontend Structure (`frontend/src/`)
 
@@ -85,6 +91,7 @@ LLM Council is a 3-stage deliberation system where multiple LLMs collaboratively
 - "Petitioner" (user) / "The Council" (assistant) terminology
 - "Deliberate" button with thematic loading messages
 - Integrates ProgressOrbit component
+- Uses SSE streaming via `api.sendMessageStream()` for real-time stage updates
 
 **`components/Sidebar.jsx`** (The Docket)
 - "AI Council - Where AI Minds Convene" branding
@@ -157,9 +164,12 @@ This strict format allows reliable parsing while still getting thoughtful evalua
 All backend modules use relative imports (e.g., `from .config import ...`) not absolute imports. This is critical for Python's module system to work correctly when running as `python -m backend.main`.
 
 ### Port Configuration
-- Backend: 8001 (changed from 8000 to avoid conflict)
-- Frontend: 5173 (Vite default)
-- Update both `backend/main.py` and `frontend/src/api.js` if changing
+- Backend (Local): 8080 (changed from original 8001 for Fly.io compatibility)
+- Backend (Fly.io): 8080 (HTTPS via force_https, health checks via GET /)
+- Frontend (Local): 5173 (Vite default)
+- Frontend (Vercel): HTTPS (auto-assigned, rewrite rules for SPA)
+- Update both `backend/main.py` and `frontend/src/api.js` if changing local ports
+- Production: Set `VITE_API_BASE` env var on Vercel to point to Fly.io backend URL
 
 ### Markdown Rendering
 All ReactMarkdown components must be wrapped in `<div className="markdown-content">` for proper spacing. This class is defined globally in `index.css`.
@@ -170,9 +180,11 @@ Models are hardcoded in `backend/config.py`. Chairman can be same or different f
 ## Common Gotchas
 
 1. **Module Import Errors**: Always run backend as `python -m backend.main` from project root, not from backend directory
-2. **CORS Issues**: Frontend must match allowed origins in `main.py` CORS middleware
-3. **Ranking Parse Failures**: If models don't follow format, fallback regex extracts any "Response X" patterns in order
-4. **Missing Metadata**: Metadata is ephemeral (not persisted), only available in API responses
+2. **CORS Issues**: Update `CORS_ORIGINS` environment variable to match frontend URL (localhost:5173 for dev, Vercel URL for production)
+3. **Port Conflicts**: Backend uses 8080 (changed from 8001). Update if this port is taken on your machine
+4. **Ranking Parse Failures**: If models don't follow format, fallback regex extracts any "Response X" patterns in order
+5. **Missing Metadata**: Metadata is ephemeral (not persisted to database), only available in API responses
+6. **Database Connection Errors**: Verify `DATABASE_URL` format: `postgresql://user:pass@host/db`. Without it, app uses JSON storage fallback
 
 ## Future Enhancement Ideas
 

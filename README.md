@@ -1,18 +1,22 @@
-# LLM Council
+# AI Council
 
 ![llmcouncil](header.jpg)
 
-The idea of this repo is that instead of asking a question to your favorite LLM provider (e.g. OpenAI GPT 5.1, Google Gemini 3.0 Pro, Anthropic Claude Sonnet 4.5, xAI Grok 4, eg.c), you can group them into your "LLM Council". This repo is a simple, local web app that essentially looks like ChatGPT except it uses OpenRouter to send your query to multiple LLMs, it then asks them to review and rank each other's work, and finally a Chairman LLM produces the final response.
+A collaborative deliberation system where multiple LLMs answer your questions, then review and rank each other's work anonymously. A Chairman LLM synthesizes the insights into a final response.
+
+Instead of asking a single LLM provider, submit your question to the "AI Council"—a group of leading models (OpenAI GPT-5.1, Google Gemini 3.0 Pro, Anthropic Claude Sonnet 4.5, xAI Grok 4, etc.). The Council deliberates in three stages: individual responses, peer review, and final synthesis.
+
+**Production Application**: Deployed on Vercel (frontend), Fly.io (backend), and Supabase (database).
 
 In a bit more detail, here is what happens when you submit a query:
 
 1. **Stage 1: First opinions**. The user query is given to all LLMs individually, and the responses are collected. The individual responses are shown in a "tab view", so that the user can inspect them all one by one.
 2. **Stage 2: Review**. Each individual LLM is given the responses of the other LLMs. Under the hood, the LLM identities are anonymized so that the LLM can't play favorites when judging their outputs. The LLM is asked to rank them in accuracy and insight.
-3. **Stage 3: Final response**. The designated Chairman of the LLM Council takes all of the model's responses and compiles them into a single final answer that is presented to the user.
+3. **Stage 3: Final response**. The designated Chairman of the AI Council takes all of the model's responses and compiles them into a single final answer that is presented to the user.
 
-## Vibe Code Alert
+## Status
 
-This project was 99% vibe coded as a fun Saturday hack because I wanted to explore and evaluate a number of LLMs side by side in the process of [reading books together with LLMs](https://x.com/karpathy/status/1990577951671509438). It's nice and useful to see multiple responses side by side, and also the cross-opinions of all LLMs on each other's outputs. I'm not going to support it in any way, it's provided here as is for other people's inspiration and I don't intend to improve it. Code is ephemeral now and libraries are over, ask your LLM to change it in whatever way you like.
+Originally a vibe-coded exploration, AI Council is now a fully-featured production application deployed to Vercel, Fly.io, and Supabase. See `AGENTS.md` for deployment and development reference, and `CLAUDE.md` for detailed technical implementation notes.
 
 ## Setup
 
@@ -40,11 +44,13 @@ Create a `.env` file in the project root:
 OPENROUTER_API_KEY=sk-or-v1-...
 AUTH_USERNAME=admin
 AUTH_PASSWORD=your-password
+DATABASE_URL=postgresql://user:pass@host/db       # Optional: for production (uses JSON if not set)
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 ```
 
-Get your API key at [openrouter.ai](https://openrouter.ai/). Make sure to purchase the credits you need, or sign up for automatic top up.
+Get your OpenRouter API key at [openrouter.ai](https://openrouter.ai/). Purchase credits or enable automatic top-up.
 
-For production deployment, also set `DATABASE_URL` for PostgreSQL storage. Without it, the app uses local JSON file storage.
+For production deployment, set `DATABASE_URL` to a Supabase PostgreSQL connection string. Without it, the app falls back to local JSON file storage in `data/conversations/`.
 
 ### 3. Configure Models (Optional)
 
@@ -85,7 +91,8 @@ Then open http://localhost:5173 in your browser.
 
 ## Tech Stack
 
-- **Backend:** FastAPI (Python 3.10+), async httpx, OpenRouter API
-- **Frontend:** React + Vite, react-markdown for rendering
-- **Storage:** JSON files in `data/conversations/`
+- **Backend:** FastAPI (Python 3.10+), Uvicorn, asyncpg, OpenRouter API
+- **Frontend:** React + Vite, react-markdown rendering
+- **Storage:** PostgreSQL (production via Supabase), JSON fallback (local development)
+- **Deployment:** Vercel (frontend), Fly.io (backend), Supabase (database)
 - **Package Management:** uv for Python, npm for JavaScript
