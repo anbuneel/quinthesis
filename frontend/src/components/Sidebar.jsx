@@ -19,14 +19,14 @@ export default function Sidebar({
         <p className="sidebar-tagline">Where AI Minds Convene</p>
         <button className="new-case-btn" onClick={onNewConversation}>
           <span className="btn-icon">+</span>
-          <span>New Case</span>
+          <span>New Chat</span>
         </button>
       </div>
 
       <div className="case-list">
-        <div className="section-label">The Docket</div>
-        {conversations.length === 0 ? (
-          <div className="no-cases">No cases filed yet</div>
+         <div className="section-label">History</div>
+         {conversations.length === 0 ? (
+           <div className="no-cases">No conversations yet</div>
         ) : (
           conversations.map((conv) => {
             const status = getCaseStatus(conv);
@@ -38,10 +38,10 @@ export default function Sidebar({
                 }`}
                 onClick={() => onSelectConversation(conv.id)}
               >
-                <span className={`case-status ${status}`} title={status === 'resolved' ? 'Resolved' : 'Pending'}></span>
+                <span className={`case-status ${status}`} title={status === 'resolved' ? 'Completed' : 'In Progress'}></span>
                 <div className="case-content">
                   <div className="case-title">
-                    {conv.title || 'New Case'}
+                    {conv.title || 'New Chat'}
                   </div>
                   <div className="case-meta">
                     {conv.message_count} {conv.message_count === 1 ? 'exchange' : 'exchanges'}
@@ -56,7 +56,7 @@ export default function Sidebar({
       {onLogout && (
         <div className="sidebar-footer">
           <button className="logout-btn" onClick={onLogout}>
-            Leave Chamber
+            Logout
           </button>
         </div>
       )}

@@ -60,7 +60,7 @@ function RightPanel({ isCollapsed, onToggle }) {
           <section className="panel-section">
             <h3 className="section-title">Settings</h3>
             <label className="toggle-setting">
-              <span className="setting-label">Blind Mode</span>
+              <span className="setting-label">Anonymous Review</span>
               <span className="setting-desc">Hide model names during review</span>
               <div className="toggle-switch">
                 <input

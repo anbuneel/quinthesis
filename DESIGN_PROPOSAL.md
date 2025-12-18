@@ -38,21 +38,21 @@ The application feels like entering a high-stakes deliberation room:
 ## Component Architecture
 
 ### Three-Panel Layout
-- **Left**: Sidebar ("The Docket") - Case list with status indicators
+- **Left**: Sidebar (History) - Conversation list with status indicators
 - **Center**: Main chamber - Deliberation feed (max-width 900px)
 - **Right**: Collapsible panel - Council composition & settings
 
 ### New Components Created
-- `RightPanel.jsx/css` - Council member list, blind mode toggle
-- `ProgressOrbit.jsx/css` - Stage stepper: `[ I ] Opinions — [ II ] Review — [ III ] Ruling`
+- `RightPanel.jsx/css` - Council member list, anonymous review toggle
+- `ProgressOrbit.jsx/css` - Stage stepper: `[ I ] Opinions — [ II ] Review — [ III ] Answer`
 
 ### Redesigned Components
 - `Login` - Dark chamber with golden emblem
-- `Sidebar` - "The Docket" with pulsing status dots
+- `Sidebar` - History with pulsing status dots
 - `ChatInterface` - Dark theme with ProgressOrbit integration
 - `Stage1` - "First Opinions" with Councilor A/B/C tabs
-- `Stage2` - "The Review" with Council Standing leaderboard
-- `Stage3` - "Final Resolution" with golden glow hero card
+- `Stage2` - Peer Review with Rankings leaderboard
+- `Stage3` - Final answer with golden glow hero card
 
 ---
 
@@ -68,7 +68,7 @@ Shows deliberation progress:
 - Pulsing blue dot = In Deliberation
 - Solid gold dot = Resolved
 
-### The Chairman's Decree
+### The Chairman's Final Answer
 Stage 3 features:
 - Golden glow (box-shadow)
 - Left border accent
@@ -89,7 +89,7 @@ Stage 3 features:
 | `frontend/src/components/RightPanel.css` | **NEW** - Right panel styling |
 | `frontend/src/components/ProgressOrbit.jsx` | **NEW** - Stage stepper |
 | `frontend/src/components/ProgressOrbit.css` | **NEW** - Stepper styling |
-| `frontend/src/components/Sidebar.jsx` | "The Docket" terminology |
+| `frontend/src/components/Sidebar.jsx` | History and navigation |
 | `frontend/src/components/Sidebar.css` | Dark navy theme |
 | `frontend/src/components/Login.jsx` | Council branding |
 | `frontend/src/components/Login.css` | Dark chamber styling |
@@ -97,9 +97,9 @@ Stage 3 features:
 | `frontend/src/components/ChatInterface.css` | Dark theme |
 | `frontend/src/components/Stage1.jsx` | Councilor labels |
 | `frontend/src/components/Stage1.css` | Steel blue theme |
-| `frontend/src/components/Stage2.jsx` | Council Standing |
+| `frontend/src/components/Stage2.jsx` | Rankings and peer review |
 | `frontend/src/components/Stage2.css` | Purple theme |
-| `frontend/src/components/Stage3.jsx` | Golden verdict |
+| `frontend/src/components/Stage3.jsx` | Golden final answer |
 | `frontend/src/components/Stage3.css` | Hero card with glow |
 
 ---

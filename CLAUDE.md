@@ -62,7 +62,7 @@ See `AGENTS.md` for quick reference commands and deployment checklist.
 
 **Design: "The Modern Chamber"**
 - Dark deliberative theme evoking a high-stakes council chamber
-- Three-panel layout: Sidebar (The Docket), Main Chamber, Right Panel (Council Composition)
+- Three-panel layout: Sidebar (History), Main center area, Right Panel (Council)
 - Typography: DM Serif Display (headlines), Inter (body), JetBrains Mono (code)
 - See `DESIGN_PROPOSAL.md` for complete design documentation
 
@@ -76,11 +76,11 @@ See `AGENTS.md` for quick reference commands and deployment checklist.
 - Council composition panel showing active models
 - Displays models as "Councilor A/B/C" with real names
 - Chairman display with golden styling
-- "Blind Mode" toggle (UI placeholder for future)
+- "Anonymous Review" toggle (UI placeholder for future)
 - Collapsible via toggle button
 
 **`components/ProgressOrbit.jsx`** (NEW)
-- Stage stepper: `[ I ] Opinions — [ II ] Review — [ III ] Ruling`
+- Stage stepper: `[ I ] Opinions — [ II ] Review — [ III ] Answer`
 - Active stage: pulsing glow
 - Completed stages: solid gold
 - Pending stages: muted steel blue
@@ -88,12 +88,12 @@ See `AGENTS.md` for quick reference commands and deployment checklist.
 **`components/ChatInterface.jsx`**
 - Multiline textarea (3 rows, resizable)
 - Enter to send, Shift+Enter for new line
-- "Petitioner" (user) / "The Council" (assistant) terminology
+- "You" (user) / "The Council" (assistant) terminology
 - "Deliberate" button with thematic loading messages
 - Integrates ProgressOrbit component
 - Uses SSE streaming via `api.sendMessageStream()` for real-time stage updates
 
-**`components/Sidebar.jsx`** (The Docket)
+**`components/Sidebar.jsx`** (History/Navigation)
 - "AI Council - Where AI Minds Convene" branding
 - Cases with status indicators (pulsing blue = in deliberation, gold = resolved)
 - "New Case" / "Leave Chamber" buttons
@@ -112,20 +112,20 @@ See `AGENTS.md` for quick reference commands and deployment checklist.
 - "STAGE II: THE REVIEW" with purple theme (#7C5E99)
 - **Critical Feature**: Tab view showing RAW evaluation text from each model
 - De-anonymization happens CLIENT-SIDE for display (models receive anonymous labels)
-- "Council Standing" leaderboard with position badges (gold/silver/bronze)
+- "Rankings" leaderboard with position badges (gold/silver/bronze)
 - Shows "Extracted Ranking" below each evaluation so users can validate parsing
 
 **`components/Stage3.jsx`**
 - "Final Resolution" with golden glow hero card
 - Golden left border, gradient background
 - Chairman badge with 👑 icon
-- Entrance animation (verdict-appear)
+- Entrance animation (answer-appear)
 
 **Styling (`*.css`)**
 - Dark mode theme ("The Modern Chamber")
 - Color palette: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
 - Global markdown styling in `index.css` with `.markdown-content` class
-- Animations: pulse-blue, pulse-gold, fade-in-up, verdict-appear
+- Animations: pulse-blue, pulse-gold, fade-in-up, answer-appear
 
 ## Key Design Decisions
 
@@ -146,6 +146,11 @@ This strict format allows reliable parsing while still getting thoughtful evalua
 - Frontend displays model names in **bold** for readability
 - Users see explanation that original evaluation used anonymous labels
 - This prevents bias while maintaining transparency
+
+### Citation/Provenance Feature (Placeholder)
+- Currently a CSS stub in Stage3.css for future implementation
+- When implemented, will track which councilor contributed to the final answer
+- Adds transparency to the synthesis process
 
 ### Error Handling Philosophy
 - Continue with successful responses if some models fail (graceful degradation)
@@ -177,6 +182,41 @@ All ReactMarkdown components must be wrapped in `<div className="markdown-conten
 ### Model Configuration
 Models are hardcoded in `backend/config.py`. Chairman can be same or different from council members. The current default is Gemini as chairman per user preference.
 
+## UX Improvements (Sticky Header, Collapsible Stages, Typography)
+
+### Feature: Sticky Header with Question & Progress
+- Question stays pinned at top while scrolling
+- Uses sans-serif font (1.1rem, weight 500) for consistency with body text
+- ProgressOrbit integrated showing real-time stage progress
+- Semi-transparent backdrop blur effect
+
+### Feature: Collapsible Stages 1 & 2
+- Stages collapse by default, headers show response/expert count
+- Toggle buttons (▶/▼) to expand/collapse individual stages
+- Stage 3 always expanded (primary focus)
+- Reduces scroll distance to final answer
+
+### Feature: Visual Grouping & Dividers
+- Gradient dividers fade between sections
+- Color-coded background glows (blue/purple/gold)
+- Tighter spacing (12px margins) for better density
+- Subtle semi-transparent backgrounds behind stage sections
+
+### Feature: Typography Hierarchy
+- **Serif (DM Serif Display)**: Structural headers (stage titles, section headings)
+- **Sans-serif (Inter)**: Body content (questions, responses, labels, descriptions)
+- **Monospace (JetBrains Mono)**: Technical data (code, model IDs)
+- Stage 3 title: 1.5rem (largest, golden, dominant)
+- Stage 1/2 titles: 1rem
+- Sticky question: 1.1rem sans-serif, weight 500
+
+### Implementation Notes
+- All state in `ChatInterface.jsx`: `expandedStages` object tracks collapsed/expanded
+- New sticky header component pinned to top with backdrop blur
+- Collapsible stages use CSS `overflow: hidden` for smooth transitions
+- Typography consistency: All body uses sans-serif, all headers use serif
+- File changes: `ChatInterface.jsx`, `ChatInterface.css`, `Stage1.css`, `Stage2.css`, `Stage3.css`
+
 ## Common Gotchas
 
 1. **Module Import Errors**: Always run backend as `python -m backend.main` from project root, not from backend directory
@@ -185,6 +225,7 @@ Models are hardcoded in `backend/config.py`. Chairman can be same or different f
 4. **Ranking Parse Failures**: If models don't follow format, fallback regex extracts any "Response X" patterns in order
 5. **Missing Metadata**: Metadata is ephemeral (not persisted to database), only available in API responses
 6. **Database Connection Errors**: Verify `DATABASE_URL` format: `postgresql://user:pass@host/db`. Without it, app uses JSON storage fallback
+7. **Typography Consistency**: Question uses sans-serif font (Inter) to match body content, not serif
 
 ## Future Enhancement Ideas
 

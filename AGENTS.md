@@ -88,7 +88,7 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-fro
 - `components/ChatInterface.jsx` - Message input + "Deliberate" button, SSE streaming
 - `components/Stage1.jsx` - Individual responses in tabs
 - `components/Stage2.jsx` - Rankings + leaderboard
-- `components/Stage3.jsx` - Final verdict
+- `components/Stage3.jsx` - Final answer
 - `components/RightPanel.jsx` - Active models + chairman
 - `components/ProgressOrbit.jsx` - Stage stepper (I → II → III)
 - `api.js` - Backend communication with SSE streaming support
@@ -285,8 +285,38 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 
 - Dark deliberative aesthetic (Gotham/political vibe)
 - Colors: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
-- Typography: DM Serif Display (headlines), Inter (body), JetBrains Mono (code)
-- Terminology: "Petitioner" (user), "The Council" (assistant), "Councilor A/B/C" (models), "Chairman" (final synthesizer)
+- **Typography**: DM Serif Display (headers), Inter (body), JetBrains Mono (code)
+  - Serif fonts → Structural headers (stage titles)
+  - Sans-serif fonts → Body content (questions, responses, labels)
+  - Monospace fonts → Technical data (code, model IDs)
+- Terminology: "You" (user), "The Council" (assistant), "Expert A/B/C" (models), "Chairman" (final synthesizer)
+
+## UX Features (Latest Implementation)
+
+### Sticky Header
+- Question stays pinned at top while scrolling
+- Sans-serif font (1.1rem, weight 500) - consistent with body text
+- Shows ProgressOrbit for real-time stage tracking
+- Semi-transparent backdrop blur for visual hierarchy
+
+### Collapsible Stages 1 & 2
+- Stages collapse by default (shows count in header)
+- Toggle with ▶/▼ icons to expand/collapse
+- Stage 3 always expanded (primary focus)
+- Reduces scroll to final answer
+
+### Visual Grouping
+- Gradient dividers between sections (fade effect)
+- Color-coded background glows (blue/purple/gold by stage)
+- Tighter 12px margins (improved content density)
+- Subtle semi-transparent backgrounds
+
+### Typography Hierarchy
+- Sticky Question: 1.1rem sans-serif, weight 500
+- Stage 1/2 Headers: 1rem serif (secondary)
+- **Stage 3 Header: 1.5rem serif (primary emphasis)**
+- All body: sans-serif (Inter)
+- All headers: serif (DM Serif Display)
 
 ---
 

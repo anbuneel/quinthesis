@@ -7,10 +7,10 @@
   border-left: 4px solid var(--accent-gold);
   box-shadow: var(--shadow-gold);
   overflow: hidden;
-  animation: verdict-appear 0.5s ease-out;
+  animation: answer-appear 0.5s ease-out;
 }
 
-@keyframes verdict-appear {
+@keyframes answer-appear {
   from {
     opacity: 0;
     transform: translateY(10px) scale(0.98);
@@ -40,13 +40,13 @@
 }
 
 .stage3 .stage-title {
-  margin: 0 0 4px 0;
-  font-family: var(--font-serif);
-  font-size: 1.25rem;
-  font-weight: 400;
-  color: var(--accent-gold);
-  letter-spacing: 0.02em;
-}
+   margin: 0 0 4px 0;
+   font-family: var(--font-serif);
+   font-size: 1.5rem;
+   font-weight: 400;
+   color: var(--accent-gold);
+   letter-spacing: 0.02em;
+ }
 
 .verdict-subtitle {
   margin: 0;
@@ -97,8 +97,8 @@
   color: var(--text-muted);
 }
 
-/* Provenance styling (placeholder for future) */
-.provenance {
+/* Citation styling (placeholder for future) */
+.citation {
   display: inline;
   font-size: 0.6875rem;
   color: var(--text-muted);
@@ -106,10 +106,10 @@
   margin-left: 4px;
 }
 
-.provenance::before {
-  content: '[';
+.citation::before {
+   content: '[';
 }
 
-.provenance::after {
-  content: ']';
+.citation::after {
+   content: ']';
 }

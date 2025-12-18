@@ -28,14 +28,14 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
 
   return (
     <div className="stage stage2">
-      <h3 className="stage-title">Stage II: The Review</h3>
-      <p className="stage-desc">
-        Each councilor evaluated all responses anonymously and provided rankings
-      </p>
+      <h3 className="stage-title">Stage II: Peer Review</h3>
+       <p className="stage-desc">
+         Each expert evaluated all responses anonymously and provided rankings
+       </p>
 
       {aggregateRankings && aggregateRankings.length > 0 && (
         <div className="council-standing">
-          <h4 className="standing-title">Council Standing</h4>
+          <h4 className="standing-title">Rankings</h4>
           <p className="standing-desc">
             Combined results across all peer evaluations (lower score is better)
           </p>

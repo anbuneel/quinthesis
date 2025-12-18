@@ -1,11 +1,25 @@
 .stage2 {
-  margin: 16px 0;
-  padding: 20px;
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border-dim);
-  animation: fade-in-up var(--transition-slow) ease-out;
-}
+   margin: 12px 0;
+   padding: 20px;
+   background: var(--bg-card);
+   border-radius: var(--radius-lg);
+   border: 1px solid var(--border-dim);
+   animation: fade-in-up var(--transition-slow) ease-out;
+   position: relative;
+ }
+
+ .stage2::before {
+   content: '';
+   position: absolute;
+   left: -20px;
+   right: -20px;
+   top: -6px;
+   bottom: -6px;
+   background: rgba(124, 94, 153, 0.02);
+   border-radius: var(--radius-lg);
+   z-index: -1;
+   pointer-events: none;
+ }
 
 .stage2 .stage-title {
   margin: 0 0 4px 0;
