@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
-import RightPanel from './components/RightPanel';
 import Login from './components/Login';
 import { api, hasCredentials, clearCredentials } from './api';
 import './App.css';
@@ -13,7 +12,6 @@ function App() {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRightPanelCollapsed, setIsRightPanelCollapsed] = useState(false);
 
   // Check for existing credentials on mount
   useEffect(() => {
@@ -270,7 +268,7 @@ function App() {
   }
 
   return (
-    <div className={`app ${isRightPanelCollapsed ? 'right-collapsed' : ''}`}>
+    <div className="app">
       <Sidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
@@ -283,10 +281,6 @@ function App() {
         conversation={currentConversation}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
-      />
-      <RightPanel
-        isCollapsed={isRightPanelCollapsed}
-        onToggle={() => setIsRightPanelCollapsed(!isRightPanelCollapsed)}
       />
     </div>
   );
