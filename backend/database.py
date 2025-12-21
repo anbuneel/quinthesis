@@ -30,10 +30,10 @@ async def close_pool():
         _pool = None
 
 
-async def execute(query: str, *args):
-    """Execute a query without returning results."""
+async def execute(query: str, *args) -> str:
+    """Execute a query without returning results. Returns status string."""
     pool = await get_pool()
-    await pool.execute(query, *args)
+    return await pool.execute(query, *args)
 
 
 async def fetch(query: str, *args) -> list:

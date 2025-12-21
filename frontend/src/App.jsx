@@ -100,6 +100,33 @@ function App() {
     setCurrentConversationId(id);
   };
 
+  const handleDeleteConversation = async (id) => {
+    // Confirm before deleting
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) {
+      return;
+    }
+
+    try {
+      await api.deleteConversation(id);
+
+      // Refresh conversation list
+      await loadConversations();
+
+      // If the deleted conversation was selected, clear selection
+      if (id === currentConversationId) {
+        setCurrentConversationId(null);
+        setCurrentConversation(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete conversation:', err);
+      if (err.message === 'Authentication failed') {
+        setIsAuthenticated(false);
+      } else {
+        alert('Failed to delete conversation');
+      }
+    }
+  };
+
   const handleSendMessage = async (content) => {
     if (!currentConversationId) return;
 
@@ -249,6 +276,7 @@ function App() {
         currentConversationId={currentConversationId}
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleNewConversation}
+        onDeleteConversation={handleDeleteConversation}
         onLogout={handleLogout}
       />
       <ChatInterface

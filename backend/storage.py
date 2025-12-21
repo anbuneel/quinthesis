@@ -289,3 +289,28 @@ async def update_conversation_title(conversation_id: str, title: str):
         conversation_id,
         title
     )
+
+
+async def delete_conversation(conversation_id: str) -> bool:
+    """
+    Delete a conversation and all its messages.
+
+    Args:
+        conversation_id: Conversation identifier
+
+    Returns:
+        True if deleted, False if not found
+    """
+    # Delete cascade: stage1_responses, stage2_rankings, stage3_synthesis
+    # are deleted via foreign key cascades when messages are deleted.
+    # Messages cascade when conversation is deleted.
+
+    result = await db.execute(
+        """
+        DELETE FROM conversations
+        WHERE id = $1
+        """,
+        conversation_id
+    )
+
+    return result == "DELETE 1"

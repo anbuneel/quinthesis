@@ -145,6 +145,27 @@
   font-size: 0.75rem;
 }
 
+.delete-btn {
+  opacity: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  transition: opacity 0.2s, color 0.2s;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.case-item:hover .delete-btn {
+  opacity: 1;
+}
+
+.delete-btn:hover {
+  color: #e74c3c;
+}
+
 .sidebar-footer {
   padding: 16px;
   border-top: 1px solid var(--border-dim);

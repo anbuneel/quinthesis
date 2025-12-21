@@ -117,7 +117,20 @@ async def get_conversation(
     return conversation
 
 
+@app.delete("/api/conversations/{conversation_id}")
+async def delete_conversation(
+    conversation_id: str,
+    username: str = Depends(verify_credentials)
+):
+    """Delete a conversation."""
+    success = await storage.delete_conversation(conversation_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    return {"success": True}
+
+
 @app.post("/api/conversations/{conversation_id}/message")
+
 async def send_message(
     conversation_id: str,
     request: SendMessageRequest,

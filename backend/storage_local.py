@@ -119,3 +119,22 @@ async def update_conversation_title(conversation_id: str, title: str):
 
     with open(_get_conversation_path(conversation_id), 'w') as f:
         json.dump(conv, f, indent=2)
+
+
+async def delete_conversation(conversation_id: str) -> bool:
+    """
+    Delete a conversation from local storage.
+
+    Args:
+        conversation_id: Conversation identifier
+
+    Returns:
+        True if deleted, False if not found
+    """
+    path = _get_conversation_path(conversation_id)
+
+    if not path.exists():
+        return False
+
+    path.unlink()
+    return True
