@@ -36,7 +36,7 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar" aria-label="Docket list">
       <div className="sidebar-header">
         <h1 className="sidebar-title">AI Council</h1>
         <p className="sidebar-tagline">Where AI Minds Convene</p>

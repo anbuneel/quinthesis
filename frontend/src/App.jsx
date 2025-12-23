@@ -43,6 +43,21 @@ function App() {
     }
   }, [currentConversationId]);
 
+  useEffect(() => {
+    if (!isSidebarOpen) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSidebarOpen]);
+
   const loadConversations = async () => {
     try {
       const convs = await api.listConversations();
@@ -307,11 +322,14 @@ function App() {
           onSendMessage={handleSendMessage}
           isLoading={isLoading}
           onToggleSidebar={handleToggleSidebar}
+          isSidebarOpen={isSidebarOpen}
         />
       </main>
       <div
         className={`sidebar-overlay ${isSidebarOpen ? 'visible' : ''}`}
         onClick={handleCloseSidebar}
+        role="presentation"
+        aria-hidden={!isSidebarOpen}
       />
     </div>
   );

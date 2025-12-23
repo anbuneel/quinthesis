@@ -11,6 +11,7 @@ export default function ChatInterface({
     onSendMessage,
     isLoading,
     onToggleSidebar,
+    isSidebarOpen,
 }) {
     const [input, setInput] = useState('');
     const [expandedStages, setExpandedStages] = useState({});
@@ -99,6 +100,8 @@ export default function ChatInterface({
                             className="sidebar-toggle"
                             onClick={onToggleSidebar}
                             aria-label="Toggle conversations list"
+                            aria-expanded={isSidebarOpen}
+                            aria-controls="sidebar"
                         >
                             Menu
                         </button>
@@ -136,6 +139,8 @@ export default function ChatInterface({
                         className="sidebar-toggle"
                         onClick={onToggleSidebar}
                         aria-label="Toggle conversations list"
+                        aria-expanded={isSidebarOpen}
+                        aria-controls="sidebar"
                     >
                         Menu
                     </button>
@@ -171,6 +176,7 @@ export default function ChatInterface({
                         const status = getStatusDetails(msg);
                         const lastUpdated = formatUpdatedAt(msg.updated_at || conversation.created_at);
                         const isDeliberationActive = msg.loading?.stage1 || msg.loading?.stage2;
+                        const detailsId = `docket-details-${index}`;
 
                         return (
                             <article key={index} className="docket-entry">
@@ -204,6 +210,9 @@ export default function ChatInterface({
                                     <button
                                         className="docket-toggle"
                                         onClick={() => toggleStageExpansion(stageKey)}
+                                        aria-expanded={isExpanded}
+                                        aria-controls={detailsId}
+                                        type="button"
                                     >
                                         <div className="toggle-left">
                                             <span className="toggle-title">Deliberation Records</span>
@@ -225,7 +234,7 @@ export default function ChatInterface({
                                     </button>
 
                                     {isExpanded && (
-                                        <div className="docket-details">
+                                        <div className="docket-details" id={detailsId} role="region" aria-label="Deliberation records">
                                             <div className="docket-stage">
                                                 {msg.loading?.stage1 && !msg.stage1 && (
                                                     <div className="stage-loading">

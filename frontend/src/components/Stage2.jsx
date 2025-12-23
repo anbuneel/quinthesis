@@ -31,6 +31,7 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
     ? (showAllRankings ? aggregateRankings : aggregateRankings.slice(0, 3))
     : [];
   const canToggleRankings = hasAggregate && aggregateRankings.length > 3;
+  const standingsId = 'stage2-standings';
 
   const toggleReview = (index) => {
     setExpandedReviews((prev) => ({
@@ -62,13 +63,15 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
                 type="button"
                 className="standing-toggle"
                 onClick={() => setShowAllRankings((prev) => !prev)}
+                aria-expanded={showAllRankings}
+                aria-controls={standingsId}
               >
                 {showAllRankings ? 'Show top 3' : 'Show all'}
               </button>
             )}
           </div>
 
-          <div className="standing-list">
+          <div className="standing-list" id={standingsId}>
             {visibleRankings.map((agg, index) => (
               <div
                 key={agg.model}
@@ -102,15 +105,20 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
           </p>
         </div>
 
-        <div className="review-list">
+        <div className="review-list" aria-label="Peer evaluations">
           {rankings.map((rank, index) => {
             const isExpanded = expandedReviews[index] || false;
+            const reviewId = `stage2-review-${index}`;
+            const reviewButtonId = `stage2-review-toggle-${index}`;
             return (
               <div key={rank.model} className={`review-card ${isExpanded ? 'expanded' : ''}`}>
                 <button
                   type="button"
                   className="review-header"
                   onClick={() => toggleReview(index)}
+                  aria-expanded={isExpanded}
+                  aria-controls={reviewId}
+                  id={reviewButtonId}
                 >
                   <div className="reviewer-left">
                     <span className="reviewer-letter">{getCouncilorLetter(index)}</span>
@@ -123,7 +131,7 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
                 </button>
 
                 {isExpanded && (
-                  <div className="review-body">
+                  <div className="review-body" id={reviewId} role="region" aria-labelledby={reviewButtonId}>
                     <div className="evaluation-text markdown-content">
                       <ReactMarkdown>
                         {deAnonymizeText(rank.ranking, labelToModel)}
