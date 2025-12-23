@@ -18,34 +18,65 @@ function deAnonymizeText(text, labelToModel) {
 }
 
 export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
-  const [activeTab, setActiveTab] = useState(0);
+  const [showAllRankings, setShowAllRankings] = useState(false);
+  const [expandedReviews, setExpandedReviews] = useState({});
 
   if (!rankings || rankings.length === 0) {
     return null;
   }
 
   const getModelShortName = (model) => model.split('/')[1] || model;
+  const hasAggregate = aggregateRankings && aggregateRankings.length > 0;
+  const visibleRankings = hasAggregate
+    ? (showAllRankings ? aggregateRankings : aggregateRankings.slice(0, 3))
+    : [];
+  const canToggleRankings = hasAggregate && aggregateRankings.length > 3;
+
+  const toggleReview = (index) => {
+    setExpandedReviews((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
 
   return (
     <div className="stage stage2">
-      <h3 className="stage-title">Stage II: Peer Review</h3>
-       <p className="stage-desc">
-         Each expert evaluated all responses anonymously and provided rankings
-       </p>
+      <div className="stage-heading">
+        <h3 className="stage-title">Stage II: Peer Review</h3>
+        <p className="stage-desc">
+          Each expert evaluated all responses anonymously and provided rankings.
+        </p>
+      </div>
 
-      {aggregateRankings && aggregateRankings.length > 0 && (
+      {hasAggregate && (
         <div className="council-standing">
-          <h4 className="standing-title">Rankings</h4>
-          <p className="standing-desc">
-            Combined results across all peer evaluations (lower score is better)
-          </p>
+          <div className="standing-header">
+            <div>
+              <h4 className="standing-title">Rankings</h4>
+              <p className="standing-desc">
+                Combined results across peer evaluations (lower score is better).
+              </p>
+            </div>
+            {canToggleRankings && (
+              <button
+                type="button"
+                className="standing-toggle"
+                onClick={() => setShowAllRankings((prev) => !prev)}
+              >
+                {showAllRankings ? 'Show top 3' : 'Show all'}
+              </button>
+            )}
+          </div>
+
           <div className="standing-list">
-            {aggregateRankings.map((agg, index) => (
+            {visibleRankings.map((agg, index) => (
               <div
-                key={index}
+                key={agg.model}
                 className={`standing-item ${index === 0 ? 'top-ranked' : ''}`}
               >
-                <span className={`position-badge ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}`}>
+                <span
+                  className={`position-badge ${index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : ''}`}
+                >
                   {index + 1}
                 </span>
                 <span className="standing-model">
@@ -64,51 +95,60 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
       )}
 
       <div className="evaluations-section">
-        <h4 className="evaluations-title">Individual Evaluations</h4>
-        <p className="evaluations-desc">
-          Model names shown in <strong>bold</strong> for readability; original evaluations used anonymous labels
-        </p>
-
-        <div className="reviewer-tabs">
-          {rankings.map((rank, index) => (
-            <button
-              key={index}
-              className={`reviewer-tab ${activeTab === index ? 'active' : ''}`}
-              onClick={() => setActiveTab(index)}
-              title={getModelShortName(rank.model)}
-            >
-              <span className="reviewer-letter">{getCouncilorLetter(index)}</span>
-            </button>
-          ))}
+        <div className="evaluations-header">
+          <h4 className="evaluations-title">Individual Evaluations</h4>
+          <p className="evaluations-desc">
+            Model names shown in <strong>bold</strong> for readability.
+          </p>
         </div>
 
-        <div className="evaluation-content">
-          <div className="evaluation-header">
-            <span className="reviewer-badge">Reviewer {getCouncilorLetter(activeTab)}</span>
-            <span className="reviewer-model">{rankings[activeTab].model}</span>
-          </div>
+        <div className="review-list">
+          {rankings.map((rank, index) => {
+            const isExpanded = expandedReviews[index] || false;
+            return (
+              <div key={rank.model} className={`review-card ${isExpanded ? 'expanded' : ''}`}>
+                <button
+                  type="button"
+                  className="review-header"
+                  onClick={() => toggleReview(index)}
+                >
+                  <div className="reviewer-left">
+                    <span className="reviewer-letter">{getCouncilorLetter(index)}</span>
+                    <div className="reviewer-meta">
+                      <span className="reviewer-name">Expert {getCouncilorLetter(index)}</span>
+                      <span className="reviewer-model">{rank.model}</span>
+                    </div>
+                  </div>
+                  <span className="review-toggle">{isExpanded ? 'Hide' : 'Show'}</span>
+                </button>
 
-          <div className="evaluation-text markdown-content">
-            <ReactMarkdown>
-              {deAnonymizeText(rankings[activeTab].ranking, labelToModel)}
-            </ReactMarkdown>
-          </div>
+                {isExpanded && (
+                  <div className="review-body">
+                    <div className="evaluation-text markdown-content">
+                      <ReactMarkdown>
+                        {deAnonymizeText(rank.ranking, labelToModel)}
+                      </ReactMarkdown>
+                    </div>
 
-          {rankings[activeTab].parsed_ranking &&
-           rankings[activeTab].parsed_ranking.length > 0 && (
-            <div className="extracted-ranking">
-              <span className="extracted-label">Extracted Ranking:</span>
-              <ol className="extracted-list">
-                {rankings[activeTab].parsed_ranking.map((label, i) => (
-                  <li key={i}>
-                    {labelToModel && labelToModel[label]
-                      ? getModelShortName(labelToModel[label])
-                      : label}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
+                    {rank.parsed_ranking && rank.parsed_ranking.length > 0 && (
+                      <div className="extracted-ranking">
+                        <span className="extracted-label">Extracted Ranking:</span>
+                        <ol className="extracted-list">
+                          {rank.parsed_ranking.map((label, i) => (
+                            <li key={i}>
+                              {labelToModel && labelToModel[label]
+                                ? getModelShortName(labelToModel[label])
+                                : label}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

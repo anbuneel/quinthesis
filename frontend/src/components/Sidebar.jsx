@@ -7,6 +7,8 @@ export default function Sidebar({
   onNewConversation,
   onDeleteConversation,
   onLogout,
+  isOpen = false,
+  onClose,
 }) {
   // Determine if a case is "resolved" (has messages) or "in deliberation"
   const getCaseStatus = (conv) => {
@@ -18,21 +20,36 @@ export default function Sidebar({
     onDeleteConversation(convId);
   };
 
+  const handleNewConversation = () => {
+    onNewConversation();
+    onClose?.();
+  };
+
+  const handleSelectConversation = (convId) => {
+    onSelectConversation(convId);
+    onClose?.();
+  };
+
+  const handleLogout = () => {
+    onLogout();
+    onClose?.();
+  };
+
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
       <div className="sidebar-header">
         <h1 className="sidebar-title">AI Council</h1>
         <p className="sidebar-tagline">Where AI Minds Convene</p>
-        <button className="new-case-btn" onClick={onNewConversation}>
+        <button className="new-case-btn" onClick={handleNewConversation}>
           <span className="btn-icon">+</span>
-          <span>New Chat</span>
+          <span>New Docket</span>
         </button>
       </div>
 
       <div className="case-list">
-        <div className="section-label">History</div>
+        <div className="section-label">Dockets</div>
         {conversations.length === 0 ? (
-          <div className="no-cases">No conversations yet</div>
+          <div className="no-cases">No dockets yet</div>
         ) : (
           conversations.map((conv) => {
             const status = getCaseStatus(conv);
@@ -41,15 +58,15 @@ export default function Sidebar({
                 key={conv.id}
                 className={`case-item ${conv.id === currentConversationId ? 'active' : ''
                   }`}
-                onClick={() => onSelectConversation(conv.id)}
+                onClick={() => handleSelectConversation(conv.id)}
               >
                 <span className={`case-status ${status}`} title={status === 'resolved' ? 'Completed' : 'In Progress'}></span>
                 <div className="case-content">
                   <div className="case-title">
-                    {conv.title || 'New Chat'}
+                    {conv.title || 'Untitled Docket'}
                   </div>
                   <div className="case-meta">
-                    {conv.message_count} {conv.message_count === 1 ? 'exchange' : 'exchanges'}
+                    {conv.message_count} {conv.message_count === 1 ? 'entry' : 'entries'}
                   </div>
                 </div>
                 <button
@@ -70,7 +87,7 @@ export default function Sidebar({
 
       {onLogout && (
         <div className="sidebar-footer">
-          <button className="logout-btn" onClick={onLogout}>
+          <button className="logout-btn" onClick={handleLogout}>
             Logout
           </button>
         </div>

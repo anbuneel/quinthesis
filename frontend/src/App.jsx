@@ -12,6 +12,7 @@ function App() {
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Check for existing credentials on mount
   useEffect(() => {
@@ -76,6 +77,7 @@ function App() {
     setConversations([]);
     setCurrentConversationId(null);
     setCurrentConversation(null);
+    setIsSidebarOpen(false);
   };
 
   const handleNewConversation = async () => {
@@ -86,6 +88,7 @@ function App() {
         ...conversations,
       ]);
       setCurrentConversationId(newConv.id);
+      setIsSidebarOpen(false);
     } catch (error) {
       console.error('Failed to create conversation:', error);
       if (error.message === 'Authentication failed') {
@@ -96,6 +99,7 @@ function App() {
 
   const handleSelectConversation = (id) => {
     setCurrentConversationId(id);
+    setIsSidebarOpen(false);
   };
 
   const handleDeleteConversation = async (id) => {
@@ -115,6 +119,7 @@ function App() {
         setCurrentConversationId(null);
         setCurrentConversation(null);
       }
+      setIsSidebarOpen(false);
     } catch (err) {
       console.error('Failed to delete conversation:', err);
       if (err.message === 'Authentication failed') {
@@ -125,13 +130,22 @@ function App() {
     }
   };
 
+  const handleToggleSidebar = () => {
+    setIsSidebarOpen((prev) => !prev);
+  };
+
+  const handleCloseSidebar = () => {
+    setIsSidebarOpen(false);
+  };
+
   const handleSendMessage = async (content) => {
     if (!currentConversationId) return;
 
     setIsLoading(true);
     try {
+      const now = new Date().toISOString();
       // Optimistically add user message to UI
-      const userMessage = { role: 'user', content };
+      const userMessage = { role: 'user', content, created_at: now };
       setCurrentConversation((prev) => ({
         ...prev,
         messages: [...prev.messages, userMessage],
@@ -144,6 +158,8 @@ function App() {
         stage2: null,
         stage3: null,
         metadata: null,
+        created_at: now,
+        updated_at: now,
         loading: {
           stage1: false,
           stage2: false,
@@ -165,6 +181,7 @@ function App() {
               const messages = [...prev.messages];
               const lastMsg = messages[messages.length - 1];
               lastMsg.loading.stage1 = true;
+              lastMsg.updated_at = new Date().toISOString();
               return { ...prev, messages };
             });
             break;
@@ -175,6 +192,7 @@ function App() {
               const lastMsg = messages[messages.length - 1];
               lastMsg.stage1 = event.data;
               lastMsg.loading.stage1 = false;
+              lastMsg.updated_at = new Date().toISOString();
               return { ...prev, messages };
             });
             break;
@@ -184,6 +202,7 @@ function App() {
               const messages = [...prev.messages];
               const lastMsg = messages[messages.length - 1];
               lastMsg.loading.stage2 = true;
+              lastMsg.updated_at = new Date().toISOString();
               return { ...prev, messages };
             });
             break;
@@ -195,6 +214,7 @@ function App() {
               lastMsg.stage2 = event.data;
               lastMsg.metadata = event.metadata;
               lastMsg.loading.stage2 = false;
+              lastMsg.updated_at = new Date().toISOString();
               return { ...prev, messages };
             });
             break;
@@ -204,6 +224,7 @@ function App() {
               const messages = [...prev.messages];
               const lastMsg = messages[messages.length - 1];
               lastMsg.loading.stage3 = true;
+              lastMsg.updated_at = new Date().toISOString();
               return { ...prev, messages };
             });
             break;
@@ -214,6 +235,7 @@ function App() {
               const lastMsg = messages[messages.length - 1];
               lastMsg.stage3 = event.data;
               lastMsg.loading.stage3 = false;
+              lastMsg.updated_at = new Date().toISOString();
               return { ...prev, messages };
             });
             break;
@@ -268,7 +290,7 @@ function App() {
   }
 
   return (
-    <div className="app">
+    <div className="app-layout">
       <Sidebar
         conversations={conversations}
         currentConversationId={currentConversationId}
@@ -276,11 +298,20 @@ function App() {
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={handleCloseSidebar}
       />
-      <ChatInterface
-        conversation={currentConversation}
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
+      <main className="main-pane">
+        <ChatInterface
+          conversation={currentConversation}
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading}
+          onToggleSidebar={handleToggleSidebar}
+        />
+      </main>
+      <div
+        className={`sidebar-overlay ${isSidebarOpen ? 'visible' : ''}`}
+        onClick={handleCloseSidebar}
       />
     </div>
   );

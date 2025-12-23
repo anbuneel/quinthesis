@@ -2,7 +2,7 @@
   box-sizing: border-box;
 }
 
-.app {
+.app-layout {
   display: flex;
   height: 100vh;
   width: 100vw;
@@ -10,6 +10,34 @@
   background: var(--bg-chamber);
   color: var(--text-primary);
   font-family: var(--font-sans);
+}
+
+.main-pane {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  position: relative;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 19, 0.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+  z-index: 30;
+}
+
+.sidebar-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (min-width: 768px) {
+  .sidebar-overlay {
+    display: none;
+  }
 }
 
 .app-loading {
