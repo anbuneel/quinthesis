@@ -18,15 +18,15 @@ export default function CouncilInfoModal({ isOpen, onClose }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="council-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>Council Chamber</h2>
-                    <button className="close-btn" onClick={onClose}>×</button>
+                    <h2>Council Roster</h2>
+                    <button className="close-btn" onClick={onClose}>Close</button>
                 </div>
 
                 <div className="modal-content">
                     <section className="council-section">
                         <h3>The Chairman</h3>
                         <div className="chairman-card">
-                            <div className="chairman-icon">⚖</div>
+                            <div className="chairman-icon">C</div>
                             <div className="member-info">
                                 <span className="member-name">{CHAIRMAN_MODEL.name}</span>
                                 <span className="member-provider">{CHAIRMAN_MODEL.provider}</span>

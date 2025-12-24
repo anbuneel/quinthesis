@@ -1,5 +1,5 @@
 .stage3 {
-  margin: 16px 0;
+  margin: 0;
   padding: 0;
   background: linear-gradient(135deg, var(--accent-gold-dim) 0%, var(--bg-card) 30%);
   border-radius: var(--radius-lg);
@@ -25,14 +25,16 @@
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px 24px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--border-dim);
   background: rgba(212, 175, 55, 0.05);
 }
 
 .verdict-icon {
-  font-size: 2rem;
-  opacity: 0.8;
+  font-size: 1rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.2em;
+  color: var(--accent-gold);
 }
 
 .verdict-titles {
@@ -55,13 +57,17 @@
 }
 
 .verdict-content {
-  padding: 24px;
+  padding: 20px;
 }
 
 .verdict-text {
   color: var(--text-primary);
   line-height: 1.8;
   font-size: 1rem;
+}
+
+.verdict-text.markdown-content {
+  padding: 0;
 }
 
 .verdict-text h1,
@@ -72,7 +78,7 @@
 }
 
 .verdict-footer {
-  padding: 12px 24px;
+  padding: 12px 20px;
   background: var(--bg-input);
   border-top: 1px solid var(--border-dim);
 }
@@ -112,4 +118,22 @@
 
 .citation::after {
    content: ']';
+}
+
+@media (max-width: 767px) {
+  .verdict-header {
+    padding: 16px;
+  }
+
+  .verdict-content {
+    padding: 16px;
+  }
+
+  .verdict-footer {
+    padding: 12px 16px;
+  }
+
+  .stage3 .stage-title {
+    font-size: 1.25rem;
+  }
 }

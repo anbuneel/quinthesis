@@ -11,9 +11,9 @@ export default function Stage3({ finalResponse }) {
   return (
     <div className="stage stage3">
       <div className="verdict-header">
-        <span className="verdict-icon">⚖</span>
+        <span className="verdict-icon">III</span>
         <div className="verdict-titles">
-          <h3 className="stage-title">Final Resolution</h3>
+          <h3 className="stage-title">Final Opinion</h3>
           <p className="verdict-subtitle">
             Synthesized by Chairman {getModelShortName(finalResponse.model)}
           </p>
@@ -28,7 +28,7 @@ export default function Stage3({ finalResponse }) {
 
       <div className="verdict-footer">
         <span className="chairman-badge">
-          <span className="badge-icon">👑</span>
+          <span className="badge-icon">C</span>
           <span className="badge-model">{finalResponse.model}</span>
         </span>
       </div>

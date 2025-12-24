@@ -1,261 +1,353 @@
 # CLAUDE.md - Technical Notes for AI Council
 
-Technical details, architectural decisions, and implementation notes for development.
+## Project: AI Council
+A 3-stage deliberation system where multiple LLMs collaboratively answer questions with anonymized peer review.
 
-## Project Overview
+Status: Production application deployed on Vercel (frontend), Fly.io (backend), and Supabase (database).
 
-AI Council is a 3-stage deliberation system where multiple LLMs collaboratively answer user questions. The key innovation is anonymized peer review in Stage 2, preventing models from playing favorites.
+This file and CLAUDE.md should stay in sync.
 
-**Status**: Production application deployed on Vercel (frontend), Fly.io (backend), and Supabase (database). Started as a vibe-coded exploration, now a fully-featured application.
+---
 
-See `AGENTS.md` for quick reference commands and deployment checklist.
+## Quick Start Commands
 
-## Architecture
-
-### Backend Structure (`backend/`)
-
-**`config.py`**
-- Contains `COUNCIL_MODELS` (list of OpenRouter model identifiers)
-- Contains `CHAIRMAN_MODEL` (model that synthesizes final answer)
-- Uses environment variables: `OPENROUTER_API_KEY`, `DATABASE_URL`, `AUTH_USERNAME`, `AUTH_PASSWORD`, `CORS_ORIGINS`
-- Backend runs on **port 8080** (Fly.io standard; changed from original 8001)
-
-**`openrouter.py`**
-- `query_model()`: Single async model query
-- `query_models_parallel()`: Parallel queries using `asyncio.gather()`
-- Returns dict with 'content' and optional 'reasoning_details'
-- Graceful degradation: returns None on failure, continues with successful responses
-
-**`council.py`** - The Core Logic
-- `stage1_collect_responses()`: Parallel queries to all council models
-- `stage2_collect_rankings()`:
-  - Anonymizes responses as "Response A, B, C, etc."
-  - Creates `label_to_model` mapping for de-anonymization
-  - Prompts models to evaluate and rank (with strict format requirements)
-  - Returns tuple: (rankings_list, label_to_model_dict)
-  - Each ranking includes both raw text and `parsed_ranking` list
-- `stage3_synthesize_final()`: Chairman synthesizes from all responses + rankings
-- `parse_ranking_from_text()`: Extracts "FINAL RANKING:" section, handles both numbered lists and plain format
-- `calculate_aggregate_rankings()`: Computes average rank position across all peer evaluations
-
-**`storage.py`** (PostgreSQL - production)
-- PostgreSQL-based conversation storage for production deployment
-- Each conversation: `{id, created_at, messages[]}`
-- Assistant messages contain: `{role, stage1, stage2, stage3}`
-- Note: metadata (label_to_model, aggregate_rankings) is NOT persisted to storage, only returned via API
-
-**`storage_local.py`** (JSON - local development)
-- JSON-based conversation storage in `data/conversations/`
-- Same async interface as `storage.py`
-- Used automatically when `DATABASE_URL` is not set
-- Each conversation stored as individual `.json` file
-
-**`main.py`**
-- FastAPI app with CORS configured via `CORS_ORIGINS` environment variable
-- Conditional storage import: uses `storage_local.py` when `DATABASE_URL` not set, else `storage.py`
-- Lifespan context manager: initializes database connection pool on startup, closes on shutdown
-- Supports both non-streaming (`/api/conversations/{id}/message`) and streaming (`/api/conversations/{id}/message/stream`) endpoints
-- Returns metadata in addition to stages: label_to_model mapping and aggregate_rankings
-- Basic Auth via `verify_credentials()` dependency on all protected endpoints
-
-### Frontend Structure (`frontend/src/`)
-
-**Design: "The Modern Chamber"**
-- Dark deliberative theme evoking a high-stakes council chamber
-- Three-panel layout: Sidebar (History), Main center area, Right Panel (Council)
-- Typography: DM Serif Display (headlines), Inter (body), JetBrains Mono (code)
-- See `DESIGN_PROPOSAL.md` for complete design documentation
-
-**`App.jsx`**
-- Main orchestration: manages conversations list and current conversation
-- Three-panel layout with collapsible RightPanel
-- Handles message sending and metadata storage
-- Important: metadata is stored in the UI state for display but not persisted to backend JSON
-
-**`components/RightPanel.jsx`** (NEW)
-- Council composition panel showing active models
-- Displays models as "Councilor A/B/C" with real names
-- Chairman display with golden styling
-- "Anonymous Review" toggle (UI placeholder for future)
-- Collapsible via toggle button
-
-**`components/ProgressOrbit.jsx`** (NEW)
-- Stage stepper: `[ I ] Opinions — [ II ] Review — [ III ] Answer`
-- Active stage: pulsing glow
-- Completed stages: solid gold
-- Pending stages: muted steel blue
-
-**`components/ChatInterface.jsx`**
-- Multiline textarea (3 rows, resizable)
-- Enter to send, Shift+Enter for new line
-- "You" (user) / "The Council" (assistant) terminology
-- "Deliberate" button with thematic loading messages
-- Integrates ProgressOrbit component
-- Uses SSE streaming via `api.sendMessageStream()` for real-time stage updates
-
-**`components/Sidebar.jsx`** (History/Navigation)
-- "AI Council - Where AI Minds Convene" branding
-- Cases with status indicators (pulsing blue = in deliberation, gold = resolved)
-- "New Case" / "Leave Chamber" buttons
-
-**`components/Login.jsx`**
-- Dark chamber styling with golden emblem
-- "Enter the Chamber" button
-
-**`components/Stage1.jsx`**
-- "STAGE I: FIRST OPINIONS" with steel blue theme
-- Pill-style tabs: "Councilor A/B/C" labels
-- Native tooltip shows real model name on hover
-- ReactMarkdown rendering with markdown-content wrapper
-
-**`components/Stage2.jsx`**
-- "STAGE II: THE REVIEW" with purple theme (#7C5E99)
-- **Critical Feature**: Tab view showing RAW evaluation text from each model
-- De-anonymization happens CLIENT-SIDE for display (models receive anonymous labels)
-- "Rankings" leaderboard with position badges (gold/silver/bronze)
-- Shows "Extracted Ranking" below each evaluation so users can validate parsing
-
-**`components/Stage3.jsx`**
-- "Final Resolution" with golden glow hero card
-- Golden left border, gradient background
-- Chairman badge with 👑 icon
-- Entrance animation (answer-appear)
-
-**Styling (`*.css`)**
-- Dark mode theme ("The Modern Chamber")
-- Color palette: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
-- Global markdown styling in `index.css` with `.markdown-content` class
-- Animations: pulse-blue, pulse-gold, fade-in-up, answer-appear
-
-## Key Design Decisions
-
-### Stage 2 Prompt Format
-The Stage 2 prompt is very specific to ensure parseable output:
-```
-1. Evaluate each response individually first
-2. Provide "FINAL RANKING:" header
-3. Numbered list format: "1. Response C", "2. Response A", etc.
-4. No additional text after ranking section
+### Backend
+```bash
+uv sync                          # Install dependencies
+uv run python -m backend.main    # Run backend on port 8080 (local dev)
 ```
 
-This strict format allows reliable parsing while still getting thoughtful evaluations.
+### Frontend
+```bash
+cd frontend
+npm install                      # Install dependencies
+npm run dev                      # Run on http://localhost:5173
+```
 
-### De-anonymization Strategy
-- Models receive: "Response A", "Response B", etc.
-- Backend creates mapping: `{"Response A": "openai/gpt-5.1", ...}`
-- Frontend displays model names in **bold** for readability
-- Users see explanation that original evaluation used anonymous labels
-- This prevents bias while maintaining transparency
+### Both (One Command)
+```bash
+./start.sh                       # Runs both backend and frontend in parallel
+```
 
-### Citation/Provenance Feature (Placeholder)
-- Currently a CSS stub in Stage3.css for future implementation
-- When implemented, will track which councilor contributed to the final answer
-- Adds transparency to the synthesis process
+---
 
-### Error Handling Philosophy
-- Continue with successful responses if some models fail (graceful degradation)
-- Never fail the entire request due to single model failure
-- Log errors but don't expose to user unless all models fail
+## Environment Setup
 
-### UI/UX Transparency
-- All raw outputs are inspectable via tabs
-- Parsed rankings shown below raw text for validation
-- Users can verify system's interpretation of model outputs
-- This builds trust and allows debugging of edge cases
+Create `.env` in project root:
+```
+OPENROUTER_API_KEY=sk-or-v1-...
+AUTH_USERNAME=admin
+AUTH_PASSWORD=your-password
+DATABASE_URL=postgresql://user:pass@host/dbname    # Supabase PostgreSQL (required for production)
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-frontend.vercel.app
+```
 
-## Important Implementation Details
+Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in `data/conversations/`.
+
+---
+
+## Deployment Architecture
+
+### Frontend (Vercel)
+- Build Command: `npm run build` (via `vercel.json`)
+- Output: `dist/` directory (Vite bundle)
+- Environment Variables: `VITE_API_BASE=https://your-fly-backend.fly.dev`
+- Framework: Vite + React
+- Rewrite Rules: SPA routing (`/(.*) -> /index.html`)
+
+### Backend (Fly.io)
+- App Name: `ai-council-api`
+- Region: `sjc` (San Jose)
+- Port: 8080 (exposed; local dev also uses 8080)
+- Server: Uvicorn with FastAPI
+- Memory: 1GB shared CPU
+- Health Check: `GET /` every 30s
+- Auto-scaling: Min 0 machines (stops when idle)
+- HTTPS: Force HTTPS enabled
+
+### Database (Supabase)
+- Type: PostgreSQL
+- Connection: Via `DATABASE_URL` environment variable
+- Schema: Tables auto-created via `storage.py` migrations
+- Credentials: Stored in `.env` and Fly.io/Vercel secret management
+
+---
+
+## Key File Locations
+
+### Backend (`backend/`)
+- `main.py` - FastAPI server, runs on port 8080 (Fly.io) or 8080 (local)
+- `config.py` - `COUNCIL_MODELS`, `CHAIRMAN_MODEL`, `CORS_ORIGINS`, `DATABASE_URL`
+- `council.py` - Core logic: stage1/2/3, parsing, aggregation
+- `openrouter.py` - OpenRouter API wrapper, parallel queries
+- `storage.py` - PostgreSQL storage (production)
+- `storage_local.py` - JSON file storage (fallback when `DATABASE_URL` not set)
+- `database.py` - Async PostgreSQL connection pool (asyncpg)
+- `auth.py` - Basic Auth credential verification
+
+### Frontend (`frontend/src/`)
+- `App.jsx` - Main orchestration, two-pane layout (sidebar + docket main)
+- `components/ChatInterface.jsx` - Docket view, sticky question header, SSE streaming, input
+- `components/Stage1.jsx` - Expert opinions tabs with preview/expand and keyboard navigation
+- `components/Stage2.jsx` - Peer review summary, leaderboard, expandable reviews
+- `components/Stage3.jsx` - Final opinion (chairman synthesis)
+- `components/Sidebar.jsx` - Docket list (conversation history) and mobile drawer
+- `components/CouncilInfoModal.jsx` - Council roster modal
+- `components/RightPanel.jsx` - Legacy council panel (currently unused)
+- `components/ProgressOrbit.jsx` - Legacy stage stepper (currently unused)
+- `api.js` - Backend communication with SSE streaming support
+- `components/Login.jsx` - Authentication UI
+
+---
+
+## Port Configuration
+
+- Backend (Local): 8080
+- Backend (Fly.io): 8080 (exposed via HTTPS)
+- Frontend (Local): 5173 (Vite default)
+- Frontend (Vercel): HTTPS (auto-assigned)
+
+Important: Changed from original 8001 to 8080 for Fly.io compatibility.
+
+---
+
+## Critical Implementation Notes
 
 ### Relative Imports
-All backend modules use relative imports (e.g., `from .config import ...`) not absolute imports. This is critical for Python's module system to work correctly when running as `python -m backend.main`.
+Always use relative imports in backend (e.g., `from .config import ...`). Run as `python -m backend.main` from project root, not from backend directory.
 
-### Port Configuration
-- Backend (Local): 8080 (changed from original 8001 for Fly.io compatibility)
-- Backend (Fly.io): 8080 (HTTPS via force_https, health checks via GET /)
-- Frontend (Local): 5173 (Vite default)
-- Frontend (Vercel): HTTPS (auto-assigned, rewrite rules for SPA)
-- Update both `backend/main.py` and `frontend/src/api.js` if changing local ports
-- Production: Set `VITE_API_BASE` env var on Vercel to point to Fly.io backend URL
+### Database Connection Pool
+Backend uses `asyncpg` for async PostgreSQL:
+- Pool created on app startup (in lifespan)
+- Closed on app shutdown
+- Only initialized if `DATABASE_URL` is set
+- Falls back to local JSON storage if not configured
+
+### Stage 2 Anonymization
+- Models receive: `Response A`, `Response B`, etc. (not real model names)
+- Backend creates mapping: `{"Response A": "openai/gpt-5.1", ...}`
+- Frontend de-anonymizes for display (client-side)
+- Prevents bias in peer review
+
+### Stage 2 Prompt Format (Must Be Exact)
+Models must follow this format to parse correctly:
+```
+1. Evaluate each response individually
+2. Provide "FINAL RANKING:" header
+3. Numbered list: "1. Response C", "2. Response A", etc.
+4. No additional text after ranking
+```
+
+### Streaming Responses
+- Backend has `/api/conversations/{id}/message/stream` endpoint (Server-Sent Events)
+- Frontend `api.js` has `sendMessageStream()` with event callback
+- Events: `stage1_start`, `stage1_complete`, `stage2_start`, `stage2_complete`, `stage3_start`, `stage3_complete`, `title_complete`, `complete`, `error`
+- Title generation happens in parallel with stages
+
+### Metadata Handling
+- Metadata (label_to_model, aggregate_rankings) is not persisted to the database
+- Only available in API responses (non-streaming and streaming)
+- Frontend stores in UI state for display only
+- UI uses client-side `updated_at` timestamps during streaming (not persisted)
 
 ### Markdown Rendering
-All ReactMarkdown components must be wrapped in `<div className="markdown-content">` for proper spacing. This class is defined globally in `index.css`.
+All ReactMarkdown must be wrapped: `<div className="markdown-content">`
 
-### Model Configuration
-Models are hardcoded in `backend/config.py`. Chairman can be same or different from council members. The current default is Gemini as chairman per user preference.
-
-## UX Improvements (Sticky Header, Collapsible Stages, Typography)
-
-### Feature: Sticky Header with Question & Progress
-- Question stays pinned at top while scrolling
-- Uses sans-serif font (1.1rem, weight 500) for consistency with body text
-- ProgressOrbit integrated showing real-time stage progress
-- Semi-transparent backdrop blur effect
-
-### Feature: Collapsible Stages 1 & 2
-- Stages collapse by default, headers show response/expert count
-- Toggle buttons (▶/▼) to expand/collapse individual stages
-- Stage 3 always expanded (primary focus)
-- Reduces scroll distance to final answer
-
-### Feature: Visual Grouping & Dividers
-- Gradient dividers fade between sections
-- Color-coded background glows (blue/purple/gold)
-- Tighter spacing (12px margins) for better density
-- Subtle semi-transparent backgrounds behind stage sections
-
-### Feature: Typography Hierarchy
-- **Serif (DM Serif Display)**: Structural headers (stage titles, section headings)
-- **Sans-serif (Inter)**: Body content (questions, responses, labels, descriptions)
-- **Monospace (JetBrains Mono)**: Technical data (code, model IDs)
-- Stage 3 title: 1.5rem (largest, golden, dominant)
-- Stage 1/2 titles: 1rem
-- Sticky question: 1.1rem sans-serif, weight 500
-
-### Implementation Notes
-- All state in `ChatInterface.jsx`: `expandedStages` object tracks collapsed/expanded
-- New sticky header component pinned to top with backdrop blur
-- Collapsible stages use CSS `overflow: hidden` for smooth transitions
-- Typography consistency: All body uses sans-serif, all headers use serif
-- File changes: `ChatInterface.jsx`, `ChatInterface.css`, `Stage1.css`, `Stage2.css`, `Stage3.css`
+---
 
 ## Common Gotchas
 
-1. **Module Import Errors**: Always run backend as `python -m backend.main` from project root, not from backend directory
-2. **CORS Issues**: Update `CORS_ORIGINS` environment variable to match frontend URL (localhost:5173 for dev, Vercel URL for production)
-3. **Port Conflicts**: Backend uses 8080 (changed from 8001). Update if this port is taken on your machine
-4. **Ranking Parse Failures**: If models don't follow format, fallback regex extracts any "Response X" patterns in order
-5. **Missing Metadata**: Metadata is ephemeral (not persisted to database), only available in API responses
-6. **Database Connection Errors**: Verify `DATABASE_URL` format: `postgresql://user:pass@host/db`. Without it, app uses JSON storage fallback
-7. **Typography Consistency**: Question uses sans-serif font (Inter) to match body content, not serif
+1. Module errors -> Run backend as `python -m backend.main` from project root
+2. CORS errors -> Update `CORS_ORIGINS` environment variable to include frontend URL
+3. Database connection errors -> Verify `DATABASE_URL` format: `postgresql://user:pass@host/db`
+4. API_BASE issues -> Frontend uses `VITE_API_BASE` env var; set to Fly.io backend URL in production
+5. Ranking parse failures -> Fallback regex extracts any "Response X" patterns in order
+6. Missing metadata -> Only available in API response, check response structure
 
-## Future Enhancement Ideas
+---
 
-- Configurable council/chairman via UI instead of config file
-- Streaming responses instead of batch loading
-- Export conversations to markdown/PDF
-- Model performance analytics over time
-- Custom ranking criteria (not just accuracy/insight)
-- Support for reasoning models (o1, etc.) with special handling
+## API Endpoints
 
-## Testing Notes
+### POST `/api/conversations/{id}/message`
+Non-streaming request:
+```json
+{
+  "content": "Your question here"
+}
+```
 
-Use `test_openrouter.py` to verify API connectivity and test different model identifiers before adding to council. The script tests both streaming and non-streaming modes.
+Response:
+```json
+{
+  "stage1": [
+    {"role": "councilor", "content": "Response 1", "model": "openai/gpt-5.1"}
+  ],
+  "stage2": [
+    {
+      "model": "google/gemini-3-pro-preview",
+      "evaluation": "Raw evaluation text...",
+      "parsed_ranking": ["C", "A", "B"]
+    }
+  ],
+  "stage3": {"role": "chairman", "content": "Final answer..."},
+  "metadata": {
+    "label_to_model": {"Response A": "openai/gpt-5.1", ...},
+    "aggregate_rankings": [{"model": "...", "avg_position": 1.5}, ...]
+  }
+}
+```
 
-## Data Flow Summary
+### POST `/api/conversations/{id}/message/stream`
+Server-Sent Events (SSE) streaming:
+```
+data: {"type":"stage1_start"}
+
+data: {"type":"stage1_complete","data":[...]}
+
+data: {"type":"stage2_start"}
+
+data: {"type":"stage2_complete","data":[...],"metadata":{...}}
+
+data: {"type":"stage3_start"}
+
+data: {"type":"stage3_complete","data":{...}}
+
+data: {"type":"title_complete","data":{"title":"..."}}
+
+data: {"type":"complete"}
+```
+
+---
+
+## Data Flow
 
 ```
 User Query
-    ↓
-Stage 1: Parallel queries → [individual responses]
-    ↓
-Stage 2: Anonymize → Parallel ranking queries → [evaluations + parsed rankings]
-    ↓
-Aggregate Rankings Calculation → [sorted by avg position]
-    ↓
-Stage 3: Chairman synthesis with full context
-    ↓
-Return: {stage1, stage2, stage3, metadata}
-    ↓
-Frontend: Display with tabs + validation UI
+  -> Stage 1: Parallel queries to all models -> individual responses
+  -> Stage 2: Anonymize -> parallel ranking queries -> evaluations + parsed rankings
+  -> Calculate aggregate rankings (avg position)
+  -> Stage 3: Chairman synthesizes with full context
+  -> Return all stages + metadata to frontend (streaming or non-streaming)
+  -> Frontend displays docket entries, leaderboard, final opinion
+  -> Save to Supabase database (via storage.py)
 ```
 
-The entire flow is async/parallel where possible to minimize latency.
+All stages are async/parallel where possible to minimize latency.
+
+---
+
+## Model Configuration
+
+Edit `backend/config.py`:
+```python
+COUNCIL_MODELS = [
+    "openai/gpt-5.1",
+    "google/gemini-3-pro-preview",
+    "anthropic/claude-sonnet-4.5",
+    "x-ai/grok-4",
+]
+
+CHAIRMAN_MODEL = "google/gemini-3-pro-preview"
+```
+
+Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding.
+
+---
+
+## Storage
+
+### Production (Supabase PostgreSQL)
+- Enabled when `DATABASE_URL` is set
+- Uses `storage.py` with asyncpg connection pool
+- Conversation schema: `{id, created_at, title, messages[]}`
+- Message schema:
+  - User: `{role, content}`
+  - Assistant: `{role, stage1, stage2, stage3}`
+
+### Development (Local JSON)
+- Default fallback if `DATABASE_URL` not set
+- JSON files in `data/conversations/{id}.json`
+- Uses `storage_local.py`
+- Same async interface as PostgreSQL version
+
+---
+
+## Error Handling
+
+- Graceful degradation: If one model fails, continue with others
+- Never fail entire request due to single model failure
+- Log errors but do not expose to user unless all models fail
+- Streaming errors sent as `{"type":"error","message":"..."}`
+
+---
+
+## Design Theme: The Modern Chamber
+
+- Dark deliberative aesthetic (Gotham/political vibe)
+- Colors: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
+- Typography: DM Serif Display (headers), Inter (body), JetBrains Mono (code)
+- Terminology: "Docket" (conversation), "Filed Question" (user prompt),
+  "Deliberation Records" (Stage 1/2), "Final Opinion" (Stage 3),
+  "Expert A/B/C" (models), "Chairman" (final synthesizer)
+- Design docs: `docs/DESIGN_PROPOSAL.md` and `docs/ui-redesign-plan.md`
+
+## UX Features (Latest Implementation)
+
+### Docket Layout (Two Pane)
+- Left pane shows prior conversations (dockets)
+- Right pane shows a docket entry with the question, final opinion, and deliberation records
+- Stage 1/2 are collapsed by default; Stage 3 is always prominent
+
+### Sticky Docket Header + Input
+- Question header stays pinned within each docket entry
+- Status pill and last-updated line shown under the question
+- Input stays sticky at the bottom of the main pane
+
+### Mobile Drawer + Accessibility
+- Sidebar becomes a drawer on mobile with overlay
+- Escape key closes the drawer
+- Stage 1 tabs support Arrow/Home/End keys
+- Toggle buttons use `aria-expanded` and `aria-controls`
+
+---
+
+## Quick Links
+
+- GitHub: https://github.com/anbuneel/ai-council
+- Frontend (Vercel): https://ai-council.vercel.app
+- Backend (Fly.io): https://ai-council-api.fly.dev (health check at `GET /`)
+
+---
+
+## Testing & Verification
+
+Run `test_openrouter.py` to verify API connectivity and test model identifiers.
+
+---
+
+## Deployment Checklist
+
+### Vercel (Frontend)
+- [ ] Set `VITE_API_BASE` environment variable to Fly.io backend URL
+- [ ] Verify `vercel.json` has correct build command and output directory
+- [ ] Test SPA routing (all paths redirect to `/index.html`)
+
+### Fly.io (Backend)
+- [ ] Set `OPENROUTER_API_KEY` in Fly.io secrets
+- [ ] Set `AUTH_USERNAME` and `AUTH_PASSWORD` in Fly.io secrets
+- [ ] Set `DATABASE_URL` pointing to Supabase PostgreSQL
+- [ ] Set `CORS_ORIGINS` to include Vercel frontend URL
+- [ ] Verify `fly.toml` configuration (port 8080, region, memory)
+- [ ] Test health check endpoint: `GET /`
+
+### Supabase
+- [ ] Create PostgreSQL database
+- [ ] Generate connection string and set as `DATABASE_URL`
+- [ ] Enable required extensions if needed
+- [ ] Verify schema creation via `storage.py` migrations
+
+---
+
+## Browser Support
+
+Tested on latest Chrome/Firefox. Frontend uses modern React patterns (hooks, streaming SSE via EventSource API).

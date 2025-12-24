@@ -3,7 +3,9 @@
 ## Project: AI Council
 A 3-stage deliberation system where multiple LLMs collaboratively answer questions with anonymized peer review.
 
-**Status**: Production application deployed on Vercel (frontend), Fly.io (backend), and Supabase (database).
+Status: Production application deployed on Vercel (frontend), Fly.io (backend), and Supabase (database).
+
+This file and CLAUDE.md should stay in sync.
 
 ---
 
@@ -40,34 +42,34 @@ DATABASE_URL=postgresql://user:pass@host/dbname    # Supabase PostgreSQL (requir
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-frontend.vercel.app
 ```
 
-**Note**: If `DATABASE_URL` is not set, backend falls back to local JSON storage in `data/conversations/`.
+Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in `data/conversations/`.
 
 ---
 
 ## Deployment Architecture
 
 ### Frontend (Vercel)
-- **Build Command**: `npm run build` (via `vercel.json`)
-- **Output**: `dist/` directory (Vite bundle)
-- **Environment Variables**: `VITE_API_BASE=https://your-fly-backend.fly.dev`
-- **Framework**: Vite + React
-- **Rewrite Rules**: SPA routing (`/(.*) → /index.html`)
+- Build Command: `npm run build` (via `vercel.json`)
+- Output: `dist/` directory (Vite bundle)
+- Environment Variables: `VITE_API_BASE=https://your-fly-backend.fly.dev`
+- Framework: Vite + React
+- Rewrite Rules: SPA routing (`/(.*) -> /index.html`)
 
 ### Backend (Fly.io)
-- **App Name**: `ai-council-api`
-- **Region**: `sjc` (San Jose)
-- **Port**: 8080 (exposed; local dev also uses 8080)
-- **Server**: Uvicorn with FastAPI
-- **Memory**: 1GB shared CPU
-- **Health Check**: `GET /` every 30s
-- **Auto-scaling**: Min 0 machines (stops when idle)
-- **HTTPS**: Force HTTPS enabled
+- App Name: `ai-council-api`
+- Region: `sjc` (San Jose)
+- Port: 8080 (exposed; local dev also uses 8080)
+- Server: Uvicorn with FastAPI
+- Memory: 1GB shared CPU
+- Health Check: `GET /` every 30s
+- Auto-scaling: Min 0 machines (stops when idle)
+- HTTPS: Force HTTPS enabled
 
 ### Database (Supabase)
-- **Type**: PostgreSQL
-- **Connection**: Via `DATABASE_URL` environment variable
-- **Schema**: Tables auto-created via `storage.py` migrations
-- **Credentials**: Stored in `.env` and Fly.io/Vercel secret management
+- Type: PostgreSQL
+- Connection: Via `DATABASE_URL` environment variable
+- Schema: Tables auto-created via `storage.py` migrations
+- Credentials: Stored in `.env` and Fly.io/Vercel secret management
 
 ---
 
@@ -84,13 +86,15 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-fro
 - `auth.py` - Basic Auth credential verification
 
 ### Frontend (`frontend/src/`)
-- `App.jsx` - Main orchestration, 3-panel layout
-- `components/ChatInterface.jsx` - Message input + "Deliberate" button, SSE streaming
-- `components/Stage1.jsx` - Individual responses in tabs
-- `components/Stage2.jsx` - Rankings + leaderboard
-- `components/Stage3.jsx` - Final answer
-- `components/RightPanel.jsx` - Active models + chairman
-- `components/ProgressOrbit.jsx` - Stage stepper (I → II → III)
+- `App.jsx` - Main orchestration, two-pane layout (sidebar + docket main)
+- `components/ChatInterface.jsx` - Docket view, sticky question header, SSE streaming, input
+- `components/Stage1.jsx` - Expert opinions tabs with preview/expand and keyboard navigation
+- `components/Stage2.jsx` - Peer review summary, leaderboard, expandable reviews
+- `components/Stage3.jsx` - Final opinion (chairman synthesis)
+- `components/Sidebar.jsx` - Docket list (conversation history) and mobile drawer
+- `components/CouncilInfoModal.jsx` - Council roster modal
+- `components/RightPanel.jsx` - Legacy council panel (currently unused)
+- `components/ProgressOrbit.jsx` - Legacy stage stepper (currently unused)
 - `api.js` - Backend communication with SSE streaming support
 - `components/Login.jsx` - Authentication UI
 
@@ -98,19 +102,19 @@ CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-fro
 
 ## Port Configuration
 
-- **Backend (Local)**: 8080
-- **Backend (Fly.io)**: 8080 (exposed via HTTPS)
-- **Frontend (Local)**: 5173 (Vite default)
-- **Frontend (Vercel)**: HTTPS (auto-assigned)
+- Backend (Local): 8080
+- Backend (Fly.io): 8080 (exposed via HTTPS)
+- Frontend (Local): 5173 (Vite default)
+- Frontend (Vercel): HTTPS (auto-assigned)
 
-**Important**: Changed from original 8001 to 8080 for Fly.io compatibility.
+Important: Changed from original 8001 to 8080 for Fly.io compatibility.
 
 ---
 
 ## Critical Implementation Notes
 
 ### Relative Imports
-Always use relative imports in backend (e.g., `from .config import ...`). Run as `python -m backend.main` from project root, NOT from backend directory.
+Always use relative imports in backend (e.g., `from .config import ...`). Run as `python -m backend.main` from project root, not from backend directory.
 
 ### Database Connection Pool
 Backend uses `asyncpg` for async PostgreSQL:
@@ -120,7 +124,7 @@ Backend uses `asyncpg` for async PostgreSQL:
 - Falls back to local JSON storage if not configured
 
 ### Stage 2 Anonymization
-- Models receive: `Response A`, `Response B`, etc. (NOT real model names)
+- Models receive: `Response A`, `Response B`, etc. (not real model names)
 - Backend creates mapping: `{"Response A": "openai/gpt-5.1", ...}`
 - Frontend de-anonymizes for display (client-side)
 - Prevents bias in peer review
@@ -141,9 +145,10 @@ Models must follow this format to parse correctly:
 - Title generation happens in parallel with stages
 
 ### Metadata Handling
-- Metadata (label_to_model, aggregate_rankings) is **NOT persisted** to database
+- Metadata (label_to_model, aggregate_rankings) is not persisted to the database
 - Only available in API responses (non-streaming and streaming)
 - Frontend stores in UI state for display only
+- UI uses client-side `updated_at` timestamps during streaming (not persisted)
 
 ### Markdown Rendering
 All ReactMarkdown must be wrapped: `<div className="markdown-content">`
@@ -152,26 +157,26 @@ All ReactMarkdown must be wrapped: `<div className="markdown-content">`
 
 ## Common Gotchas
 
-1. **Module errors** → Run backend as `python -m backend.main` from project root
-2. **CORS errors** → Update `CORS_ORIGINS` environment variable to include frontend URL
-3. **Database connection errors** → Verify `DATABASE_URL` format: `postgresql://user:pass@host/db`
-4. **API_BASE issues** → Frontend uses `VITE_API_BASE` env var; set to Fly.io backend URL in production
-5. **Ranking parse failures** → Fallback regex extracts any "Response X" patterns in order
-6. **Missing metadata** → Only available in API response, check response structure
+1. Module errors -> Run backend as `python -m backend.main` from project root
+2. CORS errors -> Update `CORS_ORIGINS` environment variable to include frontend URL
+3. Database connection errors -> Verify `DATABASE_URL` format: `postgresql://user:pass@host/db`
+4. API_BASE issues -> Frontend uses `VITE_API_BASE` env var; set to Fly.io backend URL in production
+5. Ranking parse failures -> Fallback regex extracts any "Response X" patterns in order
+6. Missing metadata -> Only available in API response, check response structure
 
 ---
 
 ## API Endpoints
 
 ### POST `/api/conversations/{id}/message`
-**Non-streaming request:**
+Non-streaming request:
 ```json
 {
   "content": "Your question here"
 }
 ```
 
-**Response:**
+Response:
 ```json
 {
   "stage1": [
@@ -193,7 +198,7 @@ All ReactMarkdown must be wrapped: `<div className="markdown-content">`
 ```
 
 ### POST `/api/conversations/{id}/message/stream`
-**Server-Sent Events (SSE) streaming:**
+Server-Sent Events (SSE) streaming:
 ```
 data: {"type":"stage1_start"}
 
@@ -218,20 +223,13 @@ data: {"type":"complete"}
 
 ```
 User Query
-  ↓ (Stage 1)
-Parallel queries to all models → individual responses
-  ↓ (Stage 2)
-Anonymize → Parallel ranking queries → evaluations + parsed rankings
-  ↓
-Calculate aggregate rankings (avg position)
-  ↓ (Stage 3)
-Chairman synthesizes with full context
-  ↓
-Return all stages + metadata to frontend (streaming or non-streaming)
-  ↓
-Frontend displays with tabs, leaderboard, validation UI
-  ↓
-Save to Supabase database (via storage.py)
+  -> Stage 1: Parallel queries to all models -> individual responses
+  -> Stage 2: Anonymize -> parallel ranking queries -> evaluations + parsed rankings
+  -> Calculate aggregate rankings (avg position)
+  -> Stage 3: Chairman synthesizes with full context
+  -> Return all stages + metadata to frontend (streaming or non-streaming)
+  -> Frontend displays docket entries, leaderboard, final opinion
+  -> Save to Supabase database (via storage.py)
 ```
 
 All stages are async/parallel where possible to minimize latency.
@@ -262,7 +260,9 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 - Enabled when `DATABASE_URL` is set
 - Uses `storage.py` with asyncpg connection pool
 - Conversation schema: `{id, created_at, title, messages[]}`
-- Message schema: `{role, stage1, stage2, stage3, timestamp}`
+- Message schema:
+  - User: `{role, content}`
+  - Assistant: `{role, stage1, stage2, stage3}`
 
 ### Development (Local JSON)
 - Default fallback if `DATABASE_URL` not set
@@ -274,57 +274,48 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 
 ## Error Handling
 
-- **Graceful degradation**: If one model fails, continue with others
-- **Never fail entire request** due to single model failure
-- **Log errors** but don't expose to user unless all models fail
-- **Streaming errors** sent as `{"type":"error","message":"..."}`
+- Graceful degradation: If one model fails, continue with others
+- Never fail entire request due to single model failure
+- Log errors but do not expose to user unless all models fail
+- Streaming errors sent as `{"type":"error","message":"..."}`
 
 ---
 
-## Design Theme: "The Modern Chamber"
+## Design Theme: The Modern Chamber
 
 - Dark deliberative aesthetic (Gotham/political vibe)
 - Colors: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
-- **Typography**: DM Serif Display (headers), Inter (body), JetBrains Mono (code)
-  - Serif fonts → Structural headers (stage titles)
-  - Sans-serif fonts → Body content (questions, responses, labels)
-  - Monospace fonts → Technical data (code, model IDs)
-- Terminology: "You" (user), "The Council" (assistant), "Expert A/B/C" (models), "Chairman" (final synthesizer)
+- Typography: DM Serif Display (headers), Inter (body), JetBrains Mono (code)
+- Terminology: "Docket" (conversation), "Filed Question" (user prompt),
+  "Deliberation Records" (Stage 1/2), "Final Opinion" (Stage 3),
+  "Expert A/B/C" (models), "Chairman" (final synthesizer)
+- Design docs: `docs/DESIGN_PROPOSAL.md` and `docs/ui-redesign-plan.md`
 
 ## UX Features (Latest Implementation)
 
-### Sticky Header
-- Question stays pinned at top while scrolling
-- Sans-serif font (1.1rem, weight 500) - consistent with body text
-- Shows ProgressOrbit for real-time stage tracking
-- Semi-transparent backdrop blur for visual hierarchy
+### Docket Layout (Two Pane)
+- Left pane shows prior conversations (dockets)
+- Right pane shows a docket entry with the question, final opinion, and deliberation records
+- Stage 1/2 are collapsed by default; Stage 3 is always prominent
 
-### Collapsible Stages 1 & 2
-- Stages collapse by default (shows count in header)
-- Toggle with ▶/▼ icons to expand/collapse
-- Stage 3 always expanded (primary focus)
-- Reduces scroll to final answer
+### Sticky Docket Header + Input
+- Question header stays pinned within each docket entry
+- Status pill and last-updated line shown under the question
+- Input stays sticky at the bottom of the main pane
 
-### Visual Grouping
-- Gradient dividers between sections (fade effect)
-- Color-coded background glows (blue/purple/gold by stage)
-- Tighter 12px margins (improved content density)
-- Subtle semi-transparent backgrounds
-
-### Typography Hierarchy
-- Sticky Question: 1.1rem sans-serif, weight 500
-- Stage 1/2 Headers: 1rem serif (secondary)
-- **Stage 3 Header: 1.5rem serif (primary emphasis)**
-- All body: sans-serif (Inter)
-- All headers: serif (DM Serif Display)
+### Mobile Drawer + Accessibility
+- Sidebar becomes a drawer on mobile with overlay
+- Escape key closes the drawer
+- Stage 1 tabs support Arrow/Home/End keys
+- Toggle buttons use `aria-expanded` and `aria-controls`
 
 ---
 
 ## Quick Links
 
-- **GitHub**: https://github.com/anbuneel/ai-council
-- **Frontend (Vercel)**: https://ai-council.vercel.app
-- **Backend (Fly.io)**: https://ai-council-api.fly.dev (health check at `GET /`)
+- GitHub: https://github.com/anbuneel/ai-council
+- Frontend (Vercel): https://ai-council.vercel.app
+- Backend (Fly.io): https://ai-council-api.fly.dev (health check at `GET /`)
 
 ---
 
