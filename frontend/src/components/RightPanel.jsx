@@ -19,17 +19,17 @@ function RightPanel({ isCollapsed, onToggle }) {
       <button
         className={`panel-toggle ${isCollapsed ? 'collapsed' : ''}`}
         onClick={onToggle}
-        title={isCollapsed ? 'Show Council Members' : 'Hide Council Members'}
+        title={isCollapsed ? 'Show Models' : 'Hide Models'}
       >
         <span className="toggle-icon">{isCollapsed ? '‹' : '›'}</span>
       </button>
 
       <aside className={`right-panel ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="panel-content">
-          <h2 className="panel-title">The Council</h2>
+          <h2 className="panel-title">The Team</h2>
 
           <section className="panel-section">
-            <h3 className="section-title">Council Members</h3>
+            <h3 className="section-title">Models</h3>
             <div className="council-members">
               {COUNCIL_MODELS.map((model, index) => (
                 <div key={model.id} className="member-card">
@@ -47,9 +47,9 @@ function RightPanel({ isCollapsed, onToggle }) {
           </section>
 
           <section className="panel-section">
-            <h3 className="section-title">Chairman</h3>
+            <h3 className="section-title">Lead</h3>
             <div className="chairman-card">
-              <div className="chairman-icon">⚖</div>
+              <div className="chairman-icon">L</div>
               <div className="member-info">
                 <span className="member-name">{CHAIRMAN_MODEL.name}</span>
                 <span className="member-provider">{CHAIRMAN_MODEL.provider}</span>

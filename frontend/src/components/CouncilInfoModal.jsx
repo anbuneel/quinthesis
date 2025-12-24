@@ -18,15 +18,15 @@ export default function CouncilInfoModal({ isOpen, onClose }) {
         <div className="modal-overlay" onClick={onClose}>
             <div className="council-modal" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
-                    <h2>Council Roster</h2>
+                    <h2>Models</h2>
                     <button className="close-btn" onClick={onClose}>Close</button>
                 </div>
 
                 <div className="modal-content">
                     <section className="council-section">
-                        <h3>The Chairman</h3>
+                        <h3>Lead Model</h3>
                         <div className="chairman-card">
-                            <div className="chairman-icon">C</div>
+                            <div className="chairman-icon">L</div>
                             <div className="member-info">
                                 <span className="member-name">{CHAIRMAN_MODEL.name}</span>
                                 <span className="member-provider">{CHAIRMAN_MODEL.provider}</span>
@@ -35,7 +35,7 @@ export default function CouncilInfoModal({ isOpen, onClose }) {
                     </section>
 
                     <section className="council-section">
-                        <h3>Council Members</h3>
+                        <h3>Models</h3>
                         <div className="council-grid">
                             {COUNCIL_MODELS.map((model, index) => (
                                 <div key={model.id} className="member-card">
@@ -57,7 +57,7 @@ export default function CouncilInfoModal({ isOpen, onClose }) {
                         <div className="setting-item">
                             <div className="setting-info">
                                 <span className="setting-label">Anonymous Review</span>
-                                <span className="setting-desc">Hide model names during peer review stages</span>
+                                <span className="setting-desc">Hide model names during review stages</span>
                             </div>
                             <label className="toggle-switch">
                                 <input type="checkbox" />

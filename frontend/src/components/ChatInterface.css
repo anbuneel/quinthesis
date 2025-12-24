@@ -27,6 +27,7 @@
   min-width: 0;
 }
 
+
 .sidebar-toggle {
   display: none;
   align-items: center;
@@ -56,6 +57,7 @@
   font-size: 1.25rem;
   color: var(--accent-gold);
 }
+
 
 .council-info-btn {
   display: flex;

@@ -1,9 +1,9 @@
 import './ProgressOrbit.css';
 
 const stages = [
-   { number: 'I', label: 'Opinions', key: 'stage1' },
-   { number: 'II', label: 'Review', key: 'stage2' },
-   { number: 'III', label: 'Answer', key: 'stage3' },
+   { number: '1', label: 'Responses', key: 'stage1' },
+   { number: '2', label: 'Review', key: 'stage2' },
+   { number: '3', label: 'Answer', key: 'stage3' },
 ];
 
 export default function ProgressOrbit({ currentStage, completedStages = [] }) {

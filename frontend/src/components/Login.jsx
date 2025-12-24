@@ -37,21 +37,20 @@ function Login({ onLogin }) {
       <div className="login-box">
         <div className="login-header">
           <div className="council-emblem">
-            <span className="emblem-icon">⚖</span>
+            <span className="emblem-icon">AI</span>
           </div>
           <h1 className="login-title">AI Council</h1>
-          <p className="login-tagline">Where AI Minds Convene</p>
         </div>
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="username">Identifier</label>
+            <label htmlFor="username">Username</label>
             <input
               type="text"
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter your identifier"
+              placeholder="Enter your username"
               required
               autoComplete="username"
               disabled={isLoading}
@@ -59,13 +58,13 @@ function Login({ onLogin }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Passphrase</label>
+            <label htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your passphrase"
+              placeholder="Enter your password"
               required
               autoComplete="current-password"
               disabled={isLoading}
@@ -81,13 +80,13 @@ function Login({ onLogin }) {
                 <span>Authenticating...</span>
               </>
             ) : (
-              'Enter the Chamber'
+              'Sign in'
             )}
           </button>
         </form>
 
         <p className="login-footer">
-          A council of AI models deliberating together
+          A council of AI models working together
         </p>
       </div>
     </div>

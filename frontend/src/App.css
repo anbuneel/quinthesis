@@ -52,7 +52,7 @@
 }
 
 .app-loading::after {
-  content: 'Entering the Chamber...';
+  content: 'Loading...';
   font-family: var(--font-serif);
   color: var(--text-secondary);
   font-size: 0.875rem;
