@@ -127,19 +127,19 @@
 @media (min-width: 768px) {
   :root {
     --container-padding: 2rem;
-    --content-max-width: 680px;
+    --content-max-width: 720px;
   }
 }
 
 @media (min-width: 1024px) {
   :root {
-    --content-max-width: 720px;
+    --content-max-width: 900px;
   }
 }
 
 @media (min-width: 1280px) {
   :root {
-    --content-max-width: 800px;
+    --content-max-width: 1100px;
   }
 }
 
