@@ -154,12 +154,6 @@ export default function ChatInterface({
         }
     }, [latestAssistant]);
 
-    useEffect(() => {
-        if (conversation && latestAssistant?.stage3 && hasQuestion) {
-            setIsQuestionCollapsed(true);
-        }
-    }, [conversation, latestAssistant?.stage3, hasQuestion]);
-
     if (!conversation) {
         return (
             <div className="chat-interface">
