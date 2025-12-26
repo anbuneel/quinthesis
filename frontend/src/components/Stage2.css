@@ -1,70 +1,86 @@
+/* ==========================================================================
+   Stage 2: Peer Review - "The Paper of Record" Theme
+   Rankings and individual evaluations
+   ========================================================================== */
+
 .stage2 {
   margin: 0;
-  padding: 16px;
-  background: var(--bg-card);
+  padding: 1.5rem;
+  background: var(--paper-cream);
   border-radius: var(--radius-lg);
-  border: 1px solid var(--border-dim);
-  animation: fade-in-up var(--transition-slow) ease-out;
+  border: 1px solid var(--paper-border);
+  animation: fadeInUp 400ms ease-out;
 }
 
 .stage2 .stage-heading {
-  margin-bottom: 12px;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--paper-border);
 }
 
 .stage2 .stage-title {
-  margin: 0 0 4px 0;
-  font-family: var(--font-serif);
-  font-size: 1rem;
-  font-weight: 400;
-  color: var(--accent-info);
+  margin: 0 0 0.25rem 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-dark);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-wider);
 }
 
 .stage2 .stage-desc {
   margin: 0;
-  font-size: 0.8125rem;
-  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  font-style: italic;
 }
 
+/* ==========================================================================
+   Rankings Summary - Leaderboard style
+   ========================================================================== */
 .council-standing {
-  margin-top: 16px;
-  background: rgba(108, 122, 156, 0.12);
-  padding: 14px 16px;
+  margin-top: 1rem;
+  background: var(--paper-aged);
+  padding: 1.25rem;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(108, 122, 156, 0.3);
+  border: 1px solid var(--paper-border);
 }
 
 .standing-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .standing-title {
-  margin: 0 0 4px 0;
-  font-family: var(--font-serif);
-  font-size: 0.9375rem;
-  font-weight: 400;
-  color: var(--accent-info-bright);
+  margin: 0 0 0.25rem 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--ink-black);
 }
 
 .standing-desc {
   margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  font-style: italic;
 }
 
 .standing-toggle {
   background: transparent;
-  border: 1px solid var(--border-dim);
-  color: var(--text-secondary);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.7rem;
-  letter-spacing: 0.08em;
+  border: 1px solid var(--paper-border);
+  color: var(--ink-medium);
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.75rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -72,111 +88,137 @@
 }
 
 .standing-toggle:hover {
-  border-color: var(--border-bright);
-  color: var(--text-primary);
+  border-color: var(--ink-faint);
+  color: var(--ink-dark);
+  background: var(--paper-shadow);
 }
 
+/* Standing list items */
 .standing-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
 .standing-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  background: var(--bg-input);
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--paper-cream);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-dim);
+  border: 1px solid var(--paper-border);
+  transition: all var(--transition-fast);
+}
+
+.standing-item:hover {
+  background: var(--paper-shadow);
 }
 
 .standing-item.top-ranked {
-  border-color: var(--accent-gold);
-  background: linear-gradient(90deg, var(--accent-gold-dim) 0%, transparent 100%);
+  border-color: var(--accent-ochre);
+  background: var(--accent-ochre-bg);
 }
 
+/* Position badges with medals */
 .position-badge {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.75rem;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
   font-weight: 700;
-  background: var(--border-dim);
-  color: var(--text-secondary);
+  background: var(--paper-shadow);
+  color: var(--ink-medium);
 }
 
 .position-badge.gold {
-  background: var(--accent-gold);
-  color: var(--bg-chamber);
+  background: #F5D061;
+  color: var(--ink-black);
 }
 
 .position-badge.silver {
-  background: #a0aec0;
-  color: var(--bg-chamber);
+  background: #C0C0C0;
+  color: var(--ink-black);
 }
 
 .position-badge.bronze {
-  background: #cd7f32;
-  color: var(--bg-chamber);
+  background: #CD7F32;
+  color: white;
 }
 
 .standing-model {
   flex: 1;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--text-primary);
+  font-size: var(--text-sm);
+  color: var(--ink-dark);
 }
 
 .standing-score {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  color: var(--accent-info-bright);
+  font-size: var(--text-sm);
+  color: var(--accent-forest);
+  font-weight: 500;
 }
 
 .standing-votes {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
 }
 
+/* ==========================================================================
+   Individual Evaluations - Accordion cards
+   ========================================================================== */
 .evaluations-section {
-  margin-top: 20px;
+  margin-top: 1.5rem;
 }
 
 .evaluations-header {
-  margin-bottom: 12px;
+  margin-bottom: 1rem;
 }
 
 .evaluations-title {
-  margin: 0 0 4px 0;
-  font-size: 0.8125rem;
+  margin: 0 0 0.25rem 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--text-secondary);
+  color: var(--ink-dark);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-wide);
 }
 
 .evaluations-desc {
   margin: 0;
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
 }
 
 .review-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
+/* Review card accordion */
 .review-card {
-  border: 1px solid var(--border-dim);
+  border: 1px solid var(--paper-border);
   border-radius: var(--radius-md);
-  background: var(--bg-input);
+  background: var(--paper-cream);
   overflow: hidden;
+  transition: all var(--transition-fast);
+}
+
+.review-card:hover {
+  border-color: var(--ink-faint);
+}
+
+.review-card.expanded {
+  border-color: var(--accent-vermillion);
 }
 
 .review-header {
@@ -184,109 +226,120 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 12px 16px;
+  gap: 1rem;
+  padding: 0.875rem 1rem;
   background: none;
   border: none;
-  color: var(--text-secondary);
+  color: var(--ink-medium);
   cursor: pointer;
+  font-family: var(--font-ui);
   transition: background var(--transition-fast), color var(--transition-fast);
 }
 
 .review-header:hover {
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--text-primary);
+  background: var(--paper-aged);
+  color: var(--ink-dark);
 }
 
 .reviewer-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.75rem;
 }
 
 .reviewer-letter {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: rgba(108, 122, 156, 0.2);
-  color: var(--text-primary);
+  background: var(--paper-aged);
+  color: var(--ink-dark);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.75rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  border: 1px solid var(--paper-border);
 }
 
 .reviewer-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.125rem;
   text-align: left;
 }
 
 .reviewer-name {
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--ink-dark);
 }
 
 .reviewer-model {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-family: var(--font-mono);
-  color: var(--text-muted);
+  color: var(--ink-light);
 }
 
 .review-toggle {
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  letter-spacing: var(--tracking-wide);
+  color: var(--accent-vermillion);
+  font-weight: 500;
 }
 
+/* Expanded review body */
 .review-body {
-  padding: 12px 16px 16px;
-  border-top: 1px solid var(--border-dim);
+  padding: 1rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--paper-border);
+  background: var(--paper-aged);
+  animation: fadeIn 200ms ease-out;
 }
 
 .evaluation-text {
-  color: var(--text-primary);
-  line-height: 1.7;
-  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  color: var(--ink-dark);
+  line-height: var(--leading-relaxed);
+  font-size: var(--text-sm);
 }
 
 .evaluation-text.markdown-content {
   padding: 0;
 }
 
+/* Extracted ranking list */
 .extracted-ranking {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid var(--border-dim);
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--paper-border);
 }
 
 .extracted-label {
-  font-size: 0.75rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--accent-info-bright);
+  color: var(--ink-dark);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: var(--tracking-wide);
 }
 
 .extracted-list {
-  margin: 8px 0 0 0;
-  padding-left: 20px;
-  color: var(--text-primary);
+  margin: 0.5rem 0 0 0;
+  padding-left: 1.25rem;
+  color: var(--ink-dark);
 }
 
 .extracted-list li {
-  margin: 4px 0;
+  margin: 0.25rem 0;
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: var(--text-sm);
 }
 
+/* Mobile responsive */
 @media (max-width: 767px) {
   .stage2 {
-    padding: 14px;
+    padding: 1rem;
   }
 
   .standing-header {
@@ -296,17 +349,18 @@
 
   .standing-item {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   .standing-score,
   .standing-votes {
-    width: 100%;
+    font-size: var(--text-xs);
   }
 
   .review-header {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.5rem;
   }
 
   .reviewer-left {
@@ -315,5 +369,9 @@
 
   .review-toggle {
     align-self: flex-start;
+  }
+
+  .council-standing {
+    padding: 1rem;
   }
 }

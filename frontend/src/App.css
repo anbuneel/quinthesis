@@ -1,3 +1,7 @@
+/* ==========================================================================
+   App Layout - "The Paper of Record" Theme
+   ========================================================================== */
+
 * {
   box-sizing: border-box;
 }
@@ -7,9 +11,9 @@
   height: 100vh;
   width: 100vw;
   overflow: hidden;
-  background: var(--bg-chamber);
-  color: var(--text-primary);
-  font-family: var(--font-sans);
+  background: var(--paper-cream);
+  color: var(--ink-dark);
+  font-family: var(--font-body);
 }
 
 .main-pane {
@@ -19,14 +23,16 @@
   position: relative;
 }
 
+/* Archive drawer overlay - always available (drawer is never persistent) */
 .sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 19, 0.7);
+  background: rgba(26, 22, 20, 0.4);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--transition-normal);
-  z-index: 30;
+  transition: opacity var(--transition-slow);
+  z-index: 40;
+  backdrop-filter: blur(2px);
 }
 
 .sidebar-overlay.visible {
@@ -34,12 +40,7 @@
   pointer-events: auto;
 }
 
-@media (min-width: 768px) {
-  .sidebar-overlay {
-    display: none;
-  }
-}
-
+/* Loading state */
 .app-loading {
   display: flex;
   flex-direction: column;
@@ -47,23 +48,33 @@
   align-items: center;
   height: 100vh;
   width: 100vw;
-  background: var(--bg-chamber);
-  gap: 16px;
+  background: var(--paper-cream);
+  gap: 20px;
+}
+
+.app-loading::before {
+  content: 'THE AI COUNCIL';
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-black);
+  text-transform: uppercase;
 }
 
 .app-loading::after {
   content: 'Loading...';
-  font-family: var(--font-serif);
-  color: var(--text-secondary);
-  font-size: 0.875rem;
-  letter-spacing: 0.05em;
+  font-family: var(--font-ui);
+  color: var(--ink-light);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
 }
 
 .loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--border-dim);
-  border-top-color: var(--accent-gold);
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--paper-border);
+  border-top-color: var(--accent-vermillion);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }

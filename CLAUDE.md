@@ -302,15 +302,29 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 
 ---
 
-## Design Theme: The Modern Chamber
+## Design Theme: The Paper of Record
 
-- Dark deliberative aesthetic (Gotham/political vibe)
-- Colors: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
-- Typography: DM Serif Display (headers), Inter (body), JetBrains Mono (code)
-- Terminology: "Docket" (conversation), "Filed Question" (user prompt),
-  "Deliberation Records" (Stage 1/2), "Final Opinion" (Stage 3),
-  "Expert A/B/C" (models), "Chairman" (final synthesizer)
-- Design docs: `docs/DESIGN_PROPOSAL.md` and `docs/ui-redesign-plan.md`
+An editorial/newspaper-inspired light theme that treats AI Council as a prestigious publication.
+
+### Color Palette
+- Paper tones: `--paper-cream` (#FAF8F5), `--paper-aged` (#F5F0E8)
+- Ink tones: `--ink-black` (#1A1614), `--ink-dark` (#2D2926)
+- Accents: `--accent-vermillion` (#C43D2E), `--accent-forest` (#2D5A3D), `--accent-ochre` (#C4943D)
+
+### Typography
+- Display: Playfair Display (headlines, Council's Position)
+- Body: Source Serif 4 (readable article text)
+- UI: IBM Plex Sans (labels, buttons)
+- Mono: IBM Plex Mono (code, model identifiers)
+
+### Design Philosophy
+- "Answer-First" hierarchy: Stage 3 (Council's Position) is the hero with editorial flourishes (drop cap, two-column layout)
+- Deliberation as footnotes: Stage 1 & 2 are secondary, accordion-style
+- Editorial conventions: Double-rule borders, pull-quote questions, masthead styling
+- Warm, authoritative feel inspired by The Economist and The New York Times
+
+### Design Docs
+- `docs/UI_REDESIGN_PROPOSAL_opus_claude.md` - Full design proposal
 
 ## UX Features (Latest Implementation)
 

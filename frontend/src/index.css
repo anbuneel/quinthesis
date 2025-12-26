@@ -1,51 +1,115 @@
+/* ==========================================================================
+   AI COUNCIL: "The Paper of Record" Design System
+   A warm, editorial-inspired theme for authoritative AI deliberation
+   ========================================================================== */
+
+/* Google Fonts import */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 :root {
-  /* Chamber Backgrounds */
-  --bg-chamber: #050713;
-  --bg-card: #141829;
-  --bg-input: #1F2436;
+  /* ==========================================================================
+     Paper Tones - Warm, textured base
+     ========================================================================== */
+  --paper-cream: #FAF8F5;
+  --paper-aged: #F5F0E8;
+  --paper-shadow: #EDE8DE;
+  --paper-dark: #E8E2D6;
+  --paper-border: #DDD6C8;
 
-  /* Borders */
-  --border-dim: #2A2E35;
-  --border-bright: #3F475E;
+  /* ==========================================================================
+     Ink Tones - Rich, readable blacks
+     ========================================================================== */
+  --ink-black: #1A1614;
+  --ink-dark: #2D2926;
+  --ink-medium: #5C5652;
+  --ink-light: #8A8580;
+  --ink-faint: #B8B4AF;
 
-  /* Accents */
-  --accent-gold: #D4AF37;
-  --accent-gold-dim: rgba(212, 175, 55, 0.125);
-  --accent-gold-hover: #E5C04A;
-  --accent-info: #6C7A9C;
-  --accent-info-bright: #8A9BC4;
+  /* ==========================================================================
+     Editorial Accents
+     ========================================================================== */
+  --accent-vermillion: #C43D2E;
+  --accent-vermillion-light: #E85A4A;
+  --accent-vermillion-dark: #9A2E22;
+  --accent-vermillion-bg: rgba(196, 61, 46, 0.08);
 
-  /* Text */
-  --text-primary: #EAEAEA;
-  --text-secondary: #9CA3AF;
-  --text-muted: #6B7280;
+  --accent-forest: #2D5A3D;
+  --accent-forest-light: #3D7A52;
+  --accent-forest-bg: rgba(45, 90, 61, 0.08);
 
-  /* Typography */
-  --font-serif: 'DM Serif Display', Georgia, serif;
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --accent-navy: #1E3A5F;
+  --accent-ochre: #C4943D;
+  --accent-ochre-bg: rgba(196, 148, 61, 0.1);
 
-  /* Spacing */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
+  /* ==========================================================================
+     Status Colors
+     ========================================================================== */
+  --status-complete: var(--accent-forest);
+  --status-pending: var(--accent-ochre);
+  --status-error: var(--accent-vermillion);
 
-  /* Shadows */
-  --shadow-chamber: 0 4px 20px rgba(0, 0, 0, 0.4);
-  --shadow-gold: 0 0 15px rgba(212, 175, 55, 0.15);
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.3);
+  /* ==========================================================================
+     Shadows - Subtle, print-inspired
+     ========================================================================== */
+  --shadow-sm: 0 1px 3px rgba(26, 22, 20, 0.06);
+  --shadow-md: 0 4px 12px rgba(26, 22, 20, 0.08);
+  --shadow-lg: 0 8px 24px rgba(26, 22, 20, 0.12);
+  --shadow-inset: inset 0 1px 2px rgba(26, 22, 20, 0.04);
+  --shadow-card: 0 2px 8px rgba(26, 22, 20, 0.06);
 
-  /* Transitions */
+  /* ==========================================================================
+     Typography
+     ========================================================================== */
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'Source Serif 4', Charter, Georgia, serif;
+  --font-ui: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+
+  /* Type Scale - Perfect fourth (1.333) */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.333rem;
+  --text-2xl: 1.777rem;
+  --text-3xl: 2.369rem;
+  --text-4xl: 3.157rem;
+
+  /* Line Heights */
+  --leading-tight: 1.2;
+  --leading-snug: 1.4;
+  --leading-normal: 1.6;
+  --leading-relaxed: 1.75;
+
+  /* Letter Spacing */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide: 0.02em;
+  --tracking-wider: 0.08em;
+
+  /* ==========================================================================
+     Spacing & Layout
+     ========================================================================== */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --container-padding: 1rem;
+  --content-max-width: 100%;
+
+  /* ==========================================================================
+     Transitions
+     ========================================================================== */
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
-  --transition-slow: 300ms ease;
+  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Base typography settings */
-  font-family: var(--font-sans);
-  line-height: 1.6;
+  font-family: var(--font-body);
+  line-height: var(--leading-normal);
   font-weight: 400;
-  color: var(--text-primary);
+  color: var(--ink-dark);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -53,6 +117,35 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Responsive container widths */
+@media (min-width: 640px) {
+  :root {
+    --container-padding: 1.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --container-padding: 2rem;
+    --content-max-width: 680px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --content-max-width: 720px;
+  }
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --content-max-width: 800px;
+  }
+}
+
+/* ==========================================================================
+   Reset & Base
+   ========================================================================== */
 * {
   margin: 0;
   padding: 0;
@@ -63,8 +156,8 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background: var(--bg-chamber);
-  color: var(--text-primary);
+  background: var(--paper-cream);
+  color: var(--ink-dark);
 }
 
 #root {
@@ -73,14 +166,18 @@ body {
   overflow: hidden;
 }
 
-/* Global markdown styling */
+/* ==========================================================================
+   Global Markdown Styling - Editorial Typography
+   ========================================================================== */
 .markdown-content {
-  padding: 12px;
-  color: var(--text-primary);
+  padding: 0;
+  color: var(--ink-dark);
 }
 
 .markdown-content p {
-  margin: 0 0 12px 0;
+  margin: 0 0 1em 0;
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
 }
 
 .markdown-content p:last-child {
@@ -93,9 +190,11 @@ body {
 .markdown-content h4,
 .markdown-content h5,
 .markdown-content h6 {
-  margin: 16px 0 8px 0;
-  font-family: var(--font-serif);
-  color: var(--text-primary);
+  margin: 1.5em 0 0.75em 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink-black);
+  line-height: var(--leading-tight);
 }
 
 .markdown-content h1:first-child,
@@ -107,93 +206,145 @@ body {
   margin-top: 0;
 }
 
+.markdown-content h1 { font-size: var(--text-2xl); }
+.markdown-content h2 { font-size: var(--text-xl); }
+.markdown-content h3 { font-size: var(--text-lg); }
+.markdown-content h4 { font-size: var(--text-base); font-weight: 700; }
+
 .markdown-content ul,
 .markdown-content ol {
-  margin: 0 0 12px 0;
-  padding-left: 24px;
+  margin: 0 0 1em 0;
+  padding-left: 1.5em;
 }
 
 .markdown-content li {
-  margin: 4px 0;
+  margin: 0.35em 0;
+  line-height: var(--leading-normal);
 }
 
 .markdown-content pre {
-  background: var(--bg-input);
-  padding: 12px;
+  background: var(--paper-aged);
+  padding: 1rem 1.25rem;
   border-radius: var(--radius-md);
   overflow-x: auto;
-  margin: 0 0 12px 0;
-  border: 1px solid var(--border-dim);
+  margin: 0 0 1em 0;
+  border: 1px solid var(--paper-border);
+  font-size: var(--text-sm);
 }
 
 .markdown-content code {
-  background: var(--bg-input);
-  padding: 2px 6px;
+  background: var(--paper-aged);
+  padding: 0.15em 0.4em;
   border-radius: 3px;
   font-family: var(--font-mono);
   font-size: 0.9em;
-  color: var(--accent-info-bright);
+  color: var(--accent-vermillion-dark);
 }
 
 .markdown-content pre code {
   background: none;
   padding: 0;
-  color: var(--text-primary);
+  color: var(--ink-dark);
 }
 
 .markdown-content blockquote {
-  margin: 0 0 12px 0;
-  padding-left: 16px;
-  border-left: 4px solid var(--accent-gold);
-  color: var(--text-secondary);
+  margin: 0 0 1em 0;
+  padding: 0.75em 1.25em;
+  border-left: 3px solid var(--accent-vermillion);
+  background: var(--paper-aged);
+  font-style: italic;
+  color: var(--ink-medium);
 }
 
 .markdown-content a {
-  color: var(--accent-gold);
+  color: var(--accent-vermillion);
   text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--transition-fast);
 }
 
 .markdown-content a:hover {
-  text-decoration: underline;
+  border-bottom-color: var(--accent-vermillion);
+}
+
+.markdown-content strong {
+  font-weight: 600;
+  color: var(--ink-black);
+}
+
+.markdown-content em {
+  font-style: italic;
 }
 
 .markdown-content table {
   border-collapse: collapse;
-  margin: 0 0 12px 0;
+  margin: 0 0 1em 0;
   width: 100%;
+  font-size: var(--text-sm);
 }
 
 .markdown-content th,
 .markdown-content td {
-  border: 1px solid var(--border-dim);
-  padding: 8px 12px;
+  border: 1px solid var(--paper-border);
+  padding: 0.6em 0.9em;
   text-align: left;
 }
 
 .markdown-content th {
-  background: var(--bg-input);
+  background: var(--paper-aged);
   font-weight: 600;
+  font-family: var(--font-ui);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
 }
 
-/* Global animations */
-@keyframes pulse-blue {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.markdown-content hr {
+  border: none;
+  height: 1px;
+  background: var(--paper-border);
+  margin: 2em 0;
 }
 
-@keyframes pulse-gold {
-  0%, 100% { box-shadow: 0 0 5px var(--accent-gold); }
-  50% { box-shadow: 0 0 15px var(--accent-gold); }
+/* ==========================================================================
+   Global Animations
+   ========================================================================== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-@keyframes fade-in-up {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
@@ -202,21 +353,120 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* Scrollbar styling for dark theme */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Staggered reveal for page load */
+.reveal-stagger > * {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: fadeInUp 400ms ease-out forwards;
+}
+
+.reveal-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.reveal-stagger > *:nth-child(2) { animation-delay: 80ms; }
+.reveal-stagger > *:nth-child(3) { animation-delay: 160ms; }
+.reveal-stagger > *:nth-child(4) { animation-delay: 240ms; }
+.reveal-stagger > *:nth-child(5) { animation-delay: 320ms; }
+
+/* ==========================================================================
+   Scrollbar Styling - Subtle, editorial
+   ========================================================================== */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-chamber);
+  background: var(--paper-aged);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--border-bright);
-  border-radius: 4px;
+  background: var(--ink-faint);
+  border-radius: 5px;
+  border: 2px solid var(--paper-aged);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-info);
+  background: var(--ink-light);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--ink-faint) var(--paper-aged);
+}
+
+/* ==========================================================================
+   Focus States - Accessible
+   ========================================================================== */
+:focus-visible {
+  outline: 2px solid var(--accent-vermillion);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent-vermillion);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Selection
+   ========================================================================== */
+::selection {
+  background: var(--accent-vermillion-bg);
+  color: var(--ink-black);
+}
+
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

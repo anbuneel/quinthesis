@@ -121,44 +121,50 @@ export default function ChatInterface({
     if (!conversation) {
         return (
             <div className="chat-interface">
-                <div className="empty-toolbar">
+                <header className="masthead">
                     <button
                         type="button"
                         className="sidebar-toggle"
                         onClick={onToggleSidebar}
-                        aria-label="Toggle conversations list"
+                        aria-label="Open archive"
                         aria-expanded={isSidebarOpen}
                         aria-controls="sidebar"
                     >
-                        Menu
+                        Archive
                     </button>
-                </div>
+                    <h1 className="masthead-title">The AI Council</h1>
+                    <div className="masthead-spacer" />
+                </header>
                 <div className="empty-state">
-                    <div className="empty-icon">START</div>
-                    <h2>Ask a focused question</h2>
-                    <p>Pick your models, choose a lead, and submit a prompt to get a synthesized answer.</p>
+                    <div className="empty-icon">NEW INQUIRY</div>
+                    <h2>Submit Your Question</h2>
+                    <p>Select your models and pose a question to receive synthesized insights from the Council.</p>
                 </div>
-
             </div>
         );
     }
 
     return (
         <div className="chat-interface">
+            <header className="masthead">
+                <button
+                    type="button"
+                    className="sidebar-toggle"
+                    onClick={onToggleSidebar}
+                    aria-label="Open archive"
+                    aria-expanded={isSidebarOpen}
+                    aria-controls="sidebar"
+                >
+                    Archive
+                </button>
+                <h1 className="masthead-title">The AI Council</h1>
+                <div className="masthead-spacer" />
+            </header>
+
             <div className="question-panel">
                 <div className="panel-inner">
                     <div className="question-panel-header">
-                        <button
-                            type="button"
-                            className="sidebar-toggle"
-                            onClick={onToggleSidebar}
-                            aria-label="Toggle conversations list"
-                            aria-expanded={isSidebarOpen}
-                            aria-controls="sidebar"
-                        >
-                            Menu
-                        </button>
-                        <div className="question-panel-title">Question</div>
+                        <div className="question-panel-title">Filed Inquiry</div>
                         {hasQuestion && (
                             <button
                                 type="button"
