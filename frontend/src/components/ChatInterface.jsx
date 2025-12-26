@@ -165,34 +165,43 @@ export default function ChatInterface({
 
             <div className="question-panel">
                 <div className="panel-inner">
-                    <div className="question-panel-header">
-                        <div className="question-panel-title">Filed Inquiry</div>
-                        {hasQuestion && (
-                            <button
-                                type="button"
-                                className="question-toggle"
-                                onClick={() => setIsQuestionCollapsed((prev) => !prev)}
-                                aria-expanded={!isQuestionCollapsed}
-                            >
-                                {isQuestionCollapsed ? 'Expand' : 'Collapse'}
-                            </button>
-                        )}
-                    </div>
                     {hasQuestion ? (
                         <>
-                            {!isQuestionCollapsed && (
-                                <div className="question-panel-text markdown-content">
-                                    <ReactMarkdown>{questionText}</ReactMarkdown>
-                                </div>
-                            )}
-                            <div className="question-panel-meta">
+                            <div className="question-panel-header">
                                 <span className={`question-status ${status.tone}`}>
                                     {status.label}
                                 </span>
                                 {lastUpdated && (
-                                    <span className="last-updated">Updated {lastUpdated}</span>
+                                    <span className="last-updated">{lastUpdated}</span>
                                 )}
                             </div>
+                            {isQuestionCollapsed ? (
+                                <button
+                                    type="button"
+                                    className="question-collapsed"
+                                    onClick={() => setIsQuestionCollapsed(false)}
+                                    aria-expanded="false"
+                                >
+                                    <span className="question-preview">
+                                        {questionText.length > 120 ? `${questionText.slice(0, 120)}...` : questionText}
+                                    </span>
+                                    <span className="question-expand-icon">▼</span>
+                                </button>
+                            ) : (
+                                <>
+                                    <div className="question-panel-text markdown-content">
+                                        <ReactMarkdown>{questionText}</ReactMarkdown>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="question-collapse-btn"
+                                        onClick={() => setIsQuestionCollapsed(true)}
+                                        aria-expanded="true"
+                                    >
+                                        Collapse ▲
+                                    </button>
+                                </>
+                            )}
                         </>
                     ) : (
                         <form className="question-form" onSubmit={handleSubmit}>
