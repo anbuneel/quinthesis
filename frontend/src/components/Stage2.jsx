@@ -2,8 +2,6 @@ import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './Stage2.css';
 
-const PREVIEW_LIMIT = 160;
-
 // Convert index to councilor letter (A, B, C, etc.)
 const getCouncilorLetter = (index) => String.fromCharCode(65 + index);
 
@@ -19,18 +17,8 @@ function deAnonymizeText(text, labelToModel) {
   return result;
 }
 
-const getPreviewText = (text) => {
-  if (!text) return '';
-  const collapsed = text.replace(/\s+/g, ' ').trim();
-  if (collapsed.length <= PREVIEW_LIMIT) {
-    return collapsed;
-  }
-  return `${collapsed.slice(0, PREVIEW_LIMIT).trim()}...`;
-};
-
 export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
   const [activeTab, setActiveTab] = useState(0);
-  const [expandedByIndex, setExpandedByIndex] = useState({});
   const [showAllRankings, setShowAllRankings] = useState(false);
   const tabsRef = useRef([]);
 
@@ -48,19 +36,7 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
 
   const activeRanking = rankings[activeTab];
   const evaluationText = deAnonymizeText(activeRanking.ranking, labelToModel);
-  const previewText = getPreviewText(evaluationText);
-  const isLong = evaluationText.replace(/\s+/g, ' ').trim().length > PREVIEW_LIMIT;
-  const isExpanded = expandedByIndex[activeTab] || false;
-  const showFull = isExpanded || !isLong;
   const panelId = `stage2-panel-${activeTab}`;
-  const evaluationId = `stage2-evaluation-${activeTab}`;
-
-  const toggleExpanded = () => {
-    setExpandedByIndex((prev) => ({
-      ...prev,
-      [activeTab]: !prev[activeTab],
-    }));
-  };
 
   const handleTabKeyDown = (event, index) => {
     const count = rankings.length;
@@ -184,26 +160,9 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
             <span className="model-identifier">{activeRanking.model}</span>
           </div>
 
-          <div id={evaluationId}>
-            {!showFull && <p className="evaluation-preview">{previewText}</p>}
-            {showFull && (
-              <div className="evaluation-text markdown-content">
-                <ReactMarkdown>{evaluationText}</ReactMarkdown>
-              </div>
-            )}
+          <div className="evaluation-text markdown-content">
+            <ReactMarkdown>{evaluationText}</ReactMarkdown>
           </div>
-
-          {isLong && (
-            <button
-              className="evaluation-toggle"
-              onClick={toggleExpanded}
-              type="button"
-              aria-expanded={showFull}
-              aria-controls={evaluationId}
-            >
-              {isExpanded ? 'Hide full evaluation' : 'Show full evaluation'}
-            </button>
-          )}
 
           {activeRanking.parsed_ranking && activeRanking.parsed_ranking.length > 0 && (
             <div className="extracted-ranking">

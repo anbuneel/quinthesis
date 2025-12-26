@@ -88,8 +88,8 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 ### Frontend (`frontend/src/`)
 - `App.jsx` - Main orchestration, two-pane layout (sidebar + docket main)
 - `components/ChatInterface.jsx` - Docket view, sticky question header, SSE streaming, input
-- `components/Stage1.jsx` - Expert opinions tabs with preview/expand and keyboard navigation
-- `components/Stage2.jsx` - Peer review summary, leaderboard, expandable reviews
+- `components/Stage1.jsx` - Expert opinions with tabbed navigation and keyboard support
+- `components/Stage2.jsx` - Peer review with rankings leaderboard and tabbed evaluations
 - `components/Stage3.jsx` - Final opinion (chairman synthesis)
 - `components/Sidebar.jsx` - Docket list (conversation history) and mobile drawer
 - `components/NewConversationModal.jsx` - Model selection modal for new conversations

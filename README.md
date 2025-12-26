@@ -14,7 +14,7 @@ Production Application: Deployed on Vercel (frontend), Fly.io (backend), and Sup
 
 In a bit more detail, here is what happens when you submit a query:
 
-1. Stage 1: First opinions. The user query is given to all LLMs individually, and the responses are collected. The individual responses are shown in expert tabs with preview and expand.
+1. Stage 1: First opinions. The user query is given to all LLMs individually, and the responses are collected. The individual responses are shown in expert tabs with full content displayed.
 2. Stage 2: Review. Each individual LLM is given the responses of the other LLMs. Under the hood, the LLM identities are anonymized so that the LLM cannot play favorites when judging their outputs. The LLM is asked to rank them in accuracy and insight.
 3. Stage 3: Final response. The designated Chairman of the AI Council takes all of the model responses and compiles them into a single final opinion.
 

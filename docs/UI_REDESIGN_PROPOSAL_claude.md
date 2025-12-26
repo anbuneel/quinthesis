@@ -323,20 +323,18 @@ Instead of a persistent sidebar, conversations are accessed via a slide-out draw
         <span className="expert-name">{response.model}</span>
         <span className="expert-rank">#{response.rank}</span>
       </div>
-      <div className="expert-preview">
-        {truncate(response.content, 200)}
+      <div className="expert-content">
+        <ReactMarkdown>{response.content}</ReactMarkdown>
       </div>
-      <button className="expert-expand">Read full response</button>
     </div>
   ))}
 </div>
 ```
 
 **Styling**:
-- 2-column grid on desktop, single column on mobile
-- Compact cards with 150-200 char preview
+- Tabbed navigation for switching between expert responses
+- Full content always displayed (no preview/expand toggle)
 - Rank badge shows final position (gold/silver/bronze for top 3)
-- "Read full response" opens modal or expands in-place
 
 ### 5. Rankings Summary (Inside Accordion)
 
