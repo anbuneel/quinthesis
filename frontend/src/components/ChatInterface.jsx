@@ -1,9 +1,56 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import Stage1 from './Stage1';
 import Stage2 from './Stage2';
 import Stage3 from './Stage3';
 import './ChatInterface.css';
+
+const MAX_COLLAPSED_HEIGHT = 60; // pixels
+
+function QuestionDisplay({ questionText, status, lastUpdated }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [needsExpansion, setNeedsExpansion] = useState(false);
+    const contentRef = useRef(null);
+
+    useLayoutEffect(() => {
+        if (contentRef.current) {
+            const scrollHeight = contentRef.current.scrollHeight;
+            setNeedsExpansion(scrollHeight > MAX_COLLAPSED_HEIGHT);
+        }
+    }, [questionText]);
+
+    return (
+        <div className="question-display">
+            <div
+                ref={contentRef}
+                className={`question-text ${!isExpanded && needsExpansion ? 'collapsed' : ''}`}
+                style={!isExpanded && needsExpansion ? { maxHeight: MAX_COLLAPSED_HEIGHT } : {}}
+            >
+                <div className="markdown-content">
+                    <ReactMarkdown>{questionText}</ReactMarkdown>
+                </div>
+            </div>
+            <div className="question-meta">
+                <span className={`question-status ${status.tone}`}>
+                    {status.label}
+                </span>
+                {lastUpdated && (
+                    <span className="question-timestamp">{lastUpdated}</span>
+                )}
+                {needsExpansion && (
+                    <button
+                        type="button"
+                        className="question-toggle-btn"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        aria-expanded={isExpanded}
+                    >
+                        {isExpanded ? 'Show less' : 'Show more'}
+                    </button>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function ChatInterface({
     conversation,
@@ -13,7 +60,6 @@ export default function ChatInterface({
     isSidebarOpen,
 }) {
     const [input, setInput] = useState('');
-    const [isQuestionCollapsed, setIsQuestionCollapsed] = useState(false);
     const [activeTab, setActiveTab] = useState('final');
     const messagesEndRef = useRef(null);
 
@@ -24,10 +70,6 @@ export default function ChatInterface({
     useEffect(() => {
         scrollToBottom();
     }, [conversation]);
-
-    useEffect(() => {
-        setIsQuestionCollapsed(false);
-    }, [conversation?.id]);
 
     useEffect(() => {
         setActiveTab('stage1');
@@ -166,43 +208,11 @@ export default function ChatInterface({
             <div className="question-panel">
                 <div className="panel-inner">
                     {hasQuestion ? (
-                        <>
-                            <div className="question-panel-header">
-                                <span className={`question-status ${status.tone}`}>
-                                    {status.label}
-                                </span>
-                                {lastUpdated && (
-                                    <span className="last-updated">{lastUpdated}</span>
-                                )}
-                            </div>
-                            {isQuestionCollapsed ? (
-                                <button
-                                    type="button"
-                                    className="question-collapsed"
-                                    onClick={() => setIsQuestionCollapsed(false)}
-                                    aria-expanded="false"
-                                >
-                                    <span className="question-preview">
-                                        {questionText.length > 120 ? `${questionText.slice(0, 120)}...` : questionText}
-                                    </span>
-                                    <span className="question-expand-icon">▼</span>
-                                </button>
-                            ) : (
-                                <>
-                                    <div className="question-panel-text markdown-content">
-                                        <ReactMarkdown>{questionText}</ReactMarkdown>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        className="question-collapse-btn"
-                                        onClick={() => setIsQuestionCollapsed(true)}
-                                        aria-expanded="true"
-                                    >
-                                        Collapse ▲
-                                    </button>
-                                </>
-                            )}
-                        </>
+                        <QuestionDisplay
+                            questionText={questionText}
+                            status={status}
+                            lastUpdated={lastUpdated}
+                        />
                     ) : (
                         <form className="question-form" onSubmit={handleSubmit}>
                             <textarea

@@ -53,7 +53,7 @@
 }
 
 /* ==========================================================================
-   Question/Inquiry Panel - Compact editorial styling
+   Question/Inquiry Panel - Dynamic height with overflow detection
    ========================================================================== */
 .question-panel {
   border-bottom: 1px solid var(--paper-border);
@@ -65,69 +65,81 @@
   width: 100%;
   max-width: var(--content-max-width);
   margin: 0 auto;
+}
+
+/* Question display component */
+.question-display {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.question-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 0;
-}
-
-/* Collapsed state - clickable preview */
-.question-collapsed {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  width: 100%;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-align: left;
-  transition: opacity var(--transition-fast);
-}
-
-.question-collapsed:hover {
-  opacity: 0.8;
-}
-
-.question-preview {
-  flex: 1;
+/* Question text - prominent, italic styling */
+.question-text {
   font-family: var(--font-display);
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
   font-style: italic;
-  color: var(--ink-dark);
   line-height: var(--leading-snug);
+  color: var(--ink-dark);
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  transition: max-height 0.2s ease-out;
 }
 
-.question-expand-icon {
-  flex-shrink: 0;
+.question-text.collapsed {
+  position: relative;
+}
+
+.question-text.collapsed::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 24px;
+  background: linear-gradient(transparent, var(--paper-cream));
+  pointer-events: none;
+}
+
+.question-text .markdown-content {
+  padding: 0;
+}
+
+.question-text .markdown-content p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-style: italic;
+  line-height: var(--leading-snug);
+}
+
+/* Question metadata - secondary, inline */
+.question-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.question-timestamp {
+  font-family: var(--font-ui);
   font-size: var(--text-xs);
   color: var(--ink-light);
 }
 
-/* Collapse button when expanded */
-.question-collapse-btn {
-  align-self: flex-start;
+.question-toggle-btn {
+  margin-left: auto;
   background: none;
   border: none;
   padding: 0;
   font-family: var(--font-ui);
   font-size: var(--text-xs);
-  color: var(--ink-light);
+  color: var(--accent-vermillion);
   cursor: pointer;
-  transition: color var(--transition-fast);
+  transition: opacity var(--transition-fast);
 }
 
-.question-collapse-btn:hover {
-  color: var(--ink-dark);
+.question-toggle-btn:hover {
+  opacity: 0.8;
 }
 
 /* Sidebar toggle - Archive button (always visible) */
@@ -156,26 +168,6 @@
   color: var(--ink-dark);
 }
 
-/* Question text - expanded italic pull quote styling */
-.question-panel-text {
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-style: italic;
-  line-height: var(--leading-snug);
-  color: var(--ink-dark);
-  padding: 0.5rem 0;
-}
-
-.question-panel-text.markdown-content {
-  padding: 0.5rem 0;
-}
-
-.question-panel-text.markdown-content p {
-  font-family: var(--font-display);
-  font-size: var(--text-base);
-  font-style: italic;
-  line-height: var(--leading-snug);
-}
 
 /* ==========================================================================
    Main Content Scroll Area
