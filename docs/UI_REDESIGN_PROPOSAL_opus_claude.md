@@ -1156,30 +1156,48 @@ Memorable: YES - "the app that looks like The Economist"
 
 ## Implementation Phases
 
-### Phase 1: Foundation
-- [ ] Set up new color palette and typography CSS variables
-- [ ] Replace dark theme with paper/ink theme
-- [ ] Import Google Fonts (Playfair Display, Source Serif 4, IBM Plex Sans/Mono)
+### Phase 1: Foundation ✅ COMPLETE
+- [x] Set up new color palette and typography CSS variables
+- [x] Replace dark theme with paper/ink theme
+- [x] Import Google Fonts (Playfair Display, Source Serif 4, IBM Plex Sans/Mono)
 
-### Phase 2: Layout Restructure
-- [ ] Remove persistent sidebar → implement Archive drawer
-- [ ] Create centered content column with proper max-width
-- [ ] Implement responsive container
+### Phase 2: Layout Restructure ✅ COMPLETE
+- [x] Remove persistent sidebar → implement Archive drawer
+- [x] Create centered content column with proper max-width
+- [x] Implement responsive container
 
-### Phase 3: Component Rebuild
-- [ ] Masthead (header) with editorial styling
-- [ ] Inquiry Card (question) with pull-quote styling
-- [ ] Position Card (Stage 3) with drop cap and columns
-- [ ] Deliberation section with accordion
-- [ ] Expert cards with ranking badges
-- [ ] Review table for Stage 2
+### Phase 3: Component Rebuild ✅ COMPLETE
+- [x] Masthead (header) with editorial styling
+- [x] Inquiry Card (question) with pull-quote styling
+- [x] Position Card (Stage 3) with drop cap and columns
+- [x] Expert cards with ranking badges (tab-based navigation)
+- [x] Review table for Stage 2 (leaderboard + accordion reviews)
+- [ ] ~~Deliberation section with accordion~~ *See Design Decision below*
 
-### Phase 4: Polish
-- [ ] Loading states with skeleton screens
-- [ ] Page load animations (staggered reveal)
-- [ ] Hover states and micro-interactions
-- [ ] Mobile touch gestures
-- [ ] Keyboard navigation
+### Phase 4: Polish ✅ COMPLETE
+- [x] Loading states with skeleton screens
+- [x] Page load animations (staggered reveal)
+- [x] Hover states and micro-interactions
+- [x] Keyboard navigation (Ctrl+K archive, Ctrl+N new, Escape close)
+- [ ] Mobile touch gestures (deferred - not critical)
+
+---
+
+## Design Decision: Tab-Based Navigation
+
+**Decision Date**: December 26, 2025
+
+The original proposal suggested an "answer-first" hierarchy where Stage 3 (Council's Position) would always be visible at the top, with Stage 1/2 in a collapsible "DELIBERATION RECORD" accordion below.
+
+**Chosen Approach**: Keep tab-based navigation between "Final Answer", "Stage 1", and "Stage 2".
+
+**Rationale**:
+- Simpler UX for switching between views
+- Cleaner mobile experience
+- Users can quickly compare stages without scrolling
+- Tab interface is more familiar and intuitive
+
+The editorial styling (typography, colors, drop caps, two-column layout) is still applied to all stages, maintaining the "Paper of Record" aesthetic while using a more practical navigation pattern
 
 ---
 
