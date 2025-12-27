@@ -47,11 +47,12 @@ function App() {
   }, [isAuthenticated]);
 
   // Load conversation details when selected
+  // Skip if we already have this conversation loaded (e.g., from optimistic update)
   useEffect(() => {
-    if (currentConversationId) {
+    if (currentConversationId && currentConversation?.id !== currentConversationId) {
       loadConversation(currentConversationId);
     }
-  }, [currentConversationId]);
+  }, [currentConversationId, currentConversation?.id]);
 
   // Keyboard shortcuts and escape handling
   useEffect(() => {

@@ -271,13 +271,18 @@ export default function ChatInterface({
             )}
 
             <div className="docket-scroll">
-                {!hasResponse ? (
+                {createError && (
+                    <div className="stream-error">
+                        <strong>Error:</strong> {createError}
+                    </div>
+                )}
+                {!hasResponse && !createError ? (
                     <div className="empty-state reveal-stagger">
                         <div className="empty-icon">RESPONSE</div>
                         <h2>Responses will appear here</h2>
                         <p>Submit a question to start the run.</p>
                     </div>
-                ) : (
+                ) : hasResponse && (
                     <div className="response-panel reveal-stagger">
                         <div className="panel-inner">
                             <div className="response-tab-panels">

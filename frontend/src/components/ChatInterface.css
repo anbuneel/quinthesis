@@ -448,6 +448,25 @@
   line-height: var(--leading-normal);
 }
 
+/* ==========================================================================
+   Stream Error Display
+   ========================================================================== */
+.stream-error {
+  margin: 1rem var(--container-padding);
+  padding: 1rem 1.25rem;
+  background: var(--accent-vermillion-bg);
+  border: 1px solid var(--accent-vermillion);
+  border-radius: var(--radius-md);
+  color: var(--accent-vermillion-dark);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.stream-error strong {
+  font-weight: 600;
+}
+
 .new-inquiry-btn {
   margin-top: 1.5rem;
   padding: 1rem 2rem;

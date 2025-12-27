@@ -186,14 +186,21 @@ export const api = {
       headers['Authorization'] = authHeader;
     }
 
-    const response = await fetch(
-      `${API_BASE}/api/conversations/${conversationId}/message/stream`,
-      {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ content }),
-      }
-    );
+    let response;
+    try {
+      response = await fetch(
+        `${API_BASE}/api/conversations/${conversationId}/message/stream`,
+        {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ content }),
+        }
+      );
+    } catch (fetchError) {
+      // Network error, CORS issue, or server unreachable
+      console.error('Stream fetch failed:', fetchError);
+      throw new Error(`Network error: ${fetchError.message}. Check if the backend is running at ${API_BASE}`);
+    }
 
     if (response.status === 401) {
       clearCredentials();
@@ -201,7 +208,16 @@ export const api = {
     }
 
     if (!response.ok) {
-      throw new Error('Failed to send message');
+      let errorDetail = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData?.detail) {
+          errorDetail = errorData.detail;
+        }
+      } catch {
+        // Ignore JSON parse errors
+      }
+      throw new Error(`Failed to send message: ${errorDetail}`);
     }
 
     const reader = response.body.getReader();
