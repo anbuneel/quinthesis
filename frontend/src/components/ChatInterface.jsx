@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import Stage1 from './Stage1';
 import Stage2 from './Stage2';
 import Stage3 from './Stage3';
+import InquiryComposer from './InquiryComposer';
 import './ChatInterface.css';
 
 const MAX_COLLAPSED_HEIGHT = 60; // pixels
@@ -58,18 +59,18 @@ export default function ChatInterface({
     isLoading,
     onToggleSidebar,
     isSidebarOpen,
+    // New inquiry composer props
+    availableModels,
+    defaultModels,
+    defaultLeadModel,
+    isLoadingModels,
+    modelsError,
+    onCreateAndSubmit,
+    isCreating,
+    createError,
 }) {
     const [input, setInput] = useState('');
     const [activeTab, setActiveTab] = useState('final');
-    const messagesEndRef = useRef(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [conversation]);
 
     useEffect(() => {
         setActiveTab('stage1');
@@ -172,11 +173,16 @@ export default function ChatInterface({
                     <h1 className="masthead-title">The AI Council</h1>
                     <div className="masthead-spacer" />
                 </header>
-                <div className="empty-state reveal-stagger">
-                    <div className="empty-icon">NEW INQUIRY</div>
-                    <h2>Submit Your Question</h2>
-                    <p>Select your models and pose a question to receive synthesized insights from the Council.</p>
-                </div>
+                <InquiryComposer
+                    availableModels={availableModels || []}
+                    defaultModels={defaultModels || []}
+                    defaultLeadModel={defaultLeadModel || ''}
+                    isLoadingModels={isLoadingModels}
+                    modelsError={modelsError}
+                    onSubmit={onCreateAndSubmit}
+                    isSubmitting={isCreating}
+                    submitError={createError}
+                />
             </div>
         );
     }
@@ -373,7 +379,6 @@ export default function ChatInterface({
                         </div>
                     </div>
                 )}
-                <div ref={messagesEndRef} />
             </div>
         </div>
     );

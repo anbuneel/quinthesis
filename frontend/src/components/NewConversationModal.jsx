@@ -72,7 +72,7 @@ export default function NewConversationModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="new-conversation-header">
-          <h2>New Conversation</h2>
+          <h2>New Inquiry</h2>
           <button type="button" className="modal-close" onClick={onClose}>
             Close
           </button>

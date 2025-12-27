@@ -36,19 +36,19 @@ export default function Sidebar({
   };
 
   return (
-    <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar" aria-label="Conversation list">
+    <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar" aria-label="Inquiry list">
       <div className="sidebar-header">
         <h1 className="sidebar-title">AI Council</h1>
-        <button className="new-case-btn" onClick={handleNewConversation} title="New conversation (Ctrl+N)">
+        <button className="new-case-btn" onClick={handleNewConversation} title="New inquiry (Ctrl+N)">
           <span className="btn-icon">+</span>
-          <span>New Conversation</span>
+          <span>New Inquiry</span>
         </button>
       </div>
 
       <div className="case-list">
-        <div className="section-label">Conversations</div>
+        <div className="section-label">Inquiries</div>
         {conversations.length === 0 ? (
-          <div className="no-cases">No conversations yet</div>
+          <div className="no-cases">No inquiries yet</div>
         ) : (
           conversations.map((conv) => {
             const status = getCaseStatus(conv);
@@ -62,7 +62,7 @@ export default function Sidebar({
                 <span className={`case-status ${status}`} title={status === 'resolved' ? 'Completed' : 'In Progress'}></span>
                 <div className="case-content">
                   <div className="case-title">
-                    {conv.title || 'Untitled Conversation'}
+                    {conv.title || 'Untitled Inquiry'}
                   </div>
                   <div className="case-meta">
                     {conv.message_count} {conv.message_count === 1 ? 'entry' : 'entries'}
@@ -71,7 +71,7 @@ export default function Sidebar({
                 <button
                   className="delete-btn"
                   onClick={(e) => handleDelete(e, conv.id)}
-                  title="Delete conversation"
+                  title="Delete inquiry"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6"></polyline>

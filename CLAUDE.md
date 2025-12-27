@@ -86,15 +86,14 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `auth.py` - Basic Auth credential verification
 
 ### Frontend (`frontend/src/`)
-- `App.jsx` - Main orchestration, two-pane layout (sidebar + docket main)
-- `components/ChatInterface.jsx` - Docket view, sticky question header, SSE streaming, input
+- `App.jsx` - Main orchestration, two-pane layout (sidebar + main)
+- `components/ChatInterface.jsx` - Main view, question display, SSE streaming, stage tabs
+- `components/InquiryComposer.jsx` - Home page inquiry form with model selection
 - `components/Stage1.jsx` - Expert opinions with tabbed navigation and keyboard support
 - `components/Stage2.jsx` - Peer review with rankings leaderboard and tabbed evaluations
-- `components/Stage3.jsx` - Final opinion (chairman synthesis)
-- `components/Sidebar.jsx` - Docket list (conversation history) and mobile drawer
-- `components/NewConversationModal.jsx` - Model selection modal for new conversations
-- `components/RightPanel.jsx` - Legacy council panel (currently unused)
-- `components/ProgressOrbit.jsx` - Legacy stage stepper (currently unused)
+- `components/Stage3.jsx` - Final answer (lead model synthesis)
+- `components/Sidebar.jsx` - Inquiry list and mobile drawer
+- `components/NewConversationModal.jsx` - Legacy modal (fallback, mostly unused)
 - `api.js` - Backend communication with SSE streaming support
 - `components/Login.jsx` - Authentication UI
 

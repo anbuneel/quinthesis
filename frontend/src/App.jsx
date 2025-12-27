@@ -38,10 +38,11 @@ function App() {
     checkAuth();
   }, []);
 
-  // Load conversations when authenticated
+  // Load conversations and models when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       loadConversations();
+      loadModelOptions();
     }
   }, [isAuthenticated]);
 
@@ -80,10 +81,10 @@ function App() {
         return;
       }
 
-      // Cmd/Ctrl + N - New conversation
+      // Cmd/Ctrl + N - New inquiry (go to home/composer)
       if (isMod && event.key === 'n') {
         event.preventDefault();
-        handleNewConversation();
+        handleGoToComposer();
       }
     };
 
@@ -150,6 +151,13 @@ function App() {
     }
   };
 
+  const handleGoToComposer = () => {
+    setCurrentConversationId(null);
+    setCurrentConversation(null);
+    setIsSidebarOpen(false);
+    setCreateError('');
+  };
+
   const handleNewConversation = async () => {
     try {
       setCreateError('');
@@ -160,6 +168,142 @@ function App() {
       setIsSidebarOpen(false);
     } catch (error) {
       console.error('Failed to open conversation modal:', error);
+    }
+  };
+
+  // New unified handler: create conversation + send message in one action
+  const handleCreateAndSubmit = async ({ question, models, lead_model }) => {
+    setIsCreatingConversation(true);
+    setCreateError('');
+    try {
+      // Step 1: Create the conversation
+      const newConv = await api.createConversation({ models, lead_model });
+
+      // Add to conversation list
+      setConversations((prev) => [
+        { id: newConv.id, created_at: newConv.created_at, title: newConv.title, message_count: 0 },
+        ...prev,
+      ]);
+
+      // Set as current conversation
+      setCurrentConversationId(newConv.id);
+
+      // Create a minimal conversation object for immediate display
+      const now = new Date().toISOString();
+      const userMessage = { role: 'user', content: question, created_at: now };
+      const assistantMessage = {
+        role: 'assistant',
+        stage1: null,
+        stage2: null,
+        stage3: null,
+        metadata: null,
+        created_at: now,
+        updated_at: now,
+        loading: { stage1: false, stage2: false, stage3: false },
+      };
+
+      setCurrentConversation({
+        ...newConv,
+        messages: [userMessage, assistantMessage],
+      });
+
+      setIsCreatingConversation(false);
+      setIsLoading(true);
+
+      // Step 2: Send the message with streaming
+      await api.sendMessageStream(newConv.id, question, (eventType, event) => {
+        switch (eventType) {
+          case 'stage1_start':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.loading.stage1 = true;
+              lastMsg.updated_at = new Date().toISOString();
+              return { ...prev, messages };
+            });
+            break;
+
+          case 'stage1_complete':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.stage1 = event.data;
+              lastMsg.loading.stage1 = false;
+              lastMsg.updated_at = new Date().toISOString();
+              return { ...prev, messages };
+            });
+            break;
+
+          case 'stage2_start':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.loading.stage2 = true;
+              lastMsg.updated_at = new Date().toISOString();
+              return { ...prev, messages };
+            });
+            break;
+
+          case 'stage2_complete':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.stage2 = event.data;
+              lastMsg.metadata = event.metadata;
+              lastMsg.loading.stage2 = false;
+              lastMsg.updated_at = new Date().toISOString();
+              return { ...prev, messages };
+            });
+            break;
+
+          case 'stage3_start':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.loading.stage3 = true;
+              lastMsg.updated_at = new Date().toISOString();
+              return { ...prev, messages };
+            });
+            break;
+
+          case 'stage3_complete':
+            setCurrentConversation((prev) => {
+              const messages = [...prev.messages];
+              const lastMsg = messages[messages.length - 1];
+              lastMsg.stage3 = event.data;
+              lastMsg.loading.stage3 = false;
+              lastMsg.updated_at = new Date().toISOString();
+              return { ...prev, messages };
+            });
+            break;
+
+          case 'title_complete':
+            loadConversations();
+            break;
+
+          case 'complete':
+            loadConversations();
+            setIsLoading(false);
+            break;
+
+          case 'error':
+            console.error('Stream error:', event.message);
+            setIsLoading(false);
+            break;
+
+          default:
+            console.log('Unknown event type:', eventType);
+        }
+      });
+    } catch (error) {
+      console.error('Failed to create and submit:', error);
+      if (error.message === 'Authentication failed') {
+        setIsAuthenticated(false);
+      } else {
+        setCreateError(error.message || 'Failed to submit inquiry.');
+      }
+      setIsCreatingConversation(false);
+      setIsLoading(false);
     }
   };
 
@@ -185,7 +329,7 @@ function App() {
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
       } else {
-        setCreateError(error.message || 'Failed to create conversation.');
+        setCreateError(error.message || 'Failed to create inquiry.');
       }
     } finally {
       setIsCreatingConversation(false);
@@ -199,7 +343,7 @@ function App() {
 
   const handleDeleteConversation = async (id) => {
     // Confirm before deleting
-    if (!window.confirm('Delete this conversation? This cannot be undone.')) {
+    if (!window.confirm('Delete this inquiry? This cannot be undone.')) {
       return;
     }
 
@@ -220,7 +364,7 @@ function App() {
       if (err.message === 'Authentication failed') {
         setIsAuthenticated(false);
       } else {
-        alert('Failed to delete conversation');
+        alert('Failed to delete inquiry');
       }
     }
   };
@@ -390,7 +534,7 @@ function App() {
         conversations={conversations}
         currentConversationId={currentConversationId}
         onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
+        onNewConversation={handleGoToComposer}
         onDeleteConversation={handleDeleteConversation}
         onLogout={handleLogout}
         isOpen={isSidebarOpen}
@@ -403,6 +547,15 @@ function App() {
           isLoading={isLoading}
           onToggleSidebar={handleToggleSidebar}
           isSidebarOpen={isSidebarOpen}
+          // Inquiry composer props
+          availableModels={availableModels}
+          defaultModels={defaultModels}
+          defaultLeadModel={defaultLeadModel}
+          isLoadingModels={isLoadingModels}
+          modelsError={modelsError}
+          onCreateAndSubmit={handleCreateAndSubmit}
+          isCreating={isCreatingConversation}
+          createError={createError}
         />
       </main>
       <div

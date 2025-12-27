@@ -28,8 +28,8 @@
 .verdict-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1.5rem 2rem;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--paper-border);
   background: var(--paper-aged);
 }
@@ -47,9 +47,9 @@
 }
 
 .stage3 .stage-title {
-  margin: 0 0 0.25rem 0;
+  margin: 0 0 0.125rem 0;
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--ink-black);
   letter-spacing: var(--tracking-tight);
@@ -59,13 +59,13 @@
 .verdict-subtitle {
   margin: 0;
   font-family: var(--font-ui);
-  font-size: var(--text-sm);
+  font-size: var(--text-xs);
   color: var(--ink-medium);
 }
 
 /* Main content - Article style typography */
 .verdict-content {
-  padding: 2rem;
+  padding: 1.5rem;
 }
 
 .verdict-text {
@@ -107,7 +107,7 @@
 
 /* Footer - Lead model attribution */
 .verdict-footer {
-  padding: 1rem 2rem;
+  padding: 0.75rem 1.5rem;
   background: var(--paper-aged);
   border-top: 1px solid var(--paper-border);
 }

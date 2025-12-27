@@ -1,0 +1,353 @@
+/* ==========================================================================
+   Inquiry Composer - "The Editorial Desk"
+   A streamlined, question-first interface for submitting inquiries
+   ========================================================================== */
+
+.inquiry-composer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  padding: 1.5rem var(--container-padding);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Center content when it fits, but allow scroll when it doesn't */
+.composer-inner {
+  width: 100%;
+  max-width: 800px;
+  margin-top: auto;
+  margin-bottom: auto;
+  animation: fadeInUp 400ms ease-out;
+}
+
+/* ==========================================================================
+   Heading - Editorial display typography
+   ========================================================================== */
+.composer-heading {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  font-style: italic;
+  color: var(--ink-dark);
+  text-align: center;
+  margin-bottom: 1.25rem;
+  line-height: var(--leading-snug);
+}
+
+@media (min-width: 640px) {
+  .composer-heading {
+    font-size: var(--text-2xl);
+  }
+}
+
+/* ==========================================================================
+   Form Layout
+   ========================================================================== */
+.composer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.composer-error {
+  padding: 0.875rem 1rem;
+  background: var(--accent-vermillion-bg);
+  border: 1px solid var(--accent-vermillion);
+  border-radius: var(--radius-md);
+  color: var(--accent-vermillion-dark);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+/* ==========================================================================
+   Question Input - The Hero
+   ========================================================================== */
+.composer-input-wrapper {
+  position: relative;
+}
+
+.composer-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 1rem 1.25rem;
+  padding-bottom: 2rem;
+  background: var(--paper-aged);
+  border: 2px solid var(--paper-border);
+  border-radius: var(--radius-md);
+  color: var(--ink-dark);
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  resize: vertical;
+  transition: all var(--transition-normal);
+}
+
+.composer-textarea::placeholder {
+  color: var(--ink-light);
+  font-style: italic;
+}
+
+.composer-textarea:focus {
+  outline: none;
+  border-color: var(--ink-medium);
+  background: var(--paper-cream);
+  box-shadow: var(--shadow-md);
+}
+
+.composer-textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.composer-hint {
+  position: absolute;
+  bottom: 0.75rem;
+  right: 1rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   Configuration Panel - Progressive Disclosure
+   ========================================================================== */
+.composer-config {
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-md);
+  background: var(--paper-cream);
+  overflow: hidden;
+}
+
+.config-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-medium);
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.config-toggle:hover:not(:disabled) {
+  background: var(--paper-aged);
+  color: var(--ink-dark);
+}
+
+.config-toggle:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.config-toggle-icon {
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  width: 1em;
+}
+
+.config-toggle-text {
+  flex: 1;
+}
+
+/* Config Panel Content */
+.config-panel {
+  padding: 0.75rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  border-top: 1px solid var(--paper-border);
+  animation: fadeIn 200ms ease-out;
+}
+
+.config-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.config-label {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  color: var(--ink-light);
+}
+
+.config-warning {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--accent-vermillion);
+  margin-top: 0.25rem;
+}
+
+/* ==========================================================================
+   Model Chips - Compact Selection
+   ========================================================================== */
+.model-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.model-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--paper-aged);
+  border: 1px solid var(--paper-border);
+  border-radius: 100px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  transition: all var(--transition-fast);
+}
+
+.model-chip:hover:not(:disabled) {
+  border-color: var(--ink-faint);
+  background: var(--paper-shadow);
+}
+
+.model-chip.selected {
+  background: var(--ink-black);
+  border-color: var(--ink-black);
+  color: var(--paper-cream);
+}
+
+.model-chip.selected:hover:not(:disabled) {
+  background: var(--ink-dark);
+}
+
+.model-chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chip-check {
+  font-size: var(--text-xs);
+  width: 1em;
+  text-align: center;
+}
+
+.chip-label {
+  font-weight: 500;
+}
+
+/* ==========================================================================
+   Lead Model Select
+   ========================================================================== */
+.lead-select {
+  width: 100%;
+  padding: 0.625rem 1rem;
+  background: var(--paper-aged);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-dark);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%235C5652' d='M6 8L2 4h8z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.lead-select:hover:not(:disabled) {
+  border-color: var(--ink-faint);
+}
+
+.lead-select:focus {
+  outline: none;
+  border-color: var(--accent-vermillion);
+  box-shadow: 0 0 0 3px var(--accent-vermillion-bg);
+}
+
+.lead-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Submit Button - The Call to Action
+   ========================================================================== */
+.composer-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: var(--accent-vermillion);
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--paper-cream);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
+}
+
+.composer-submit:hover:not(:disabled) {
+  background: var(--accent-vermillion-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.composer-submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.composer-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.submit-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: var(--paper-cream);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+@media (max-width: 639px) {
+  .inquiry-composer {
+    padding: 1rem;
+  }
+
+  .composer-heading {
+    font-size: var(--text-lg);
+    margin-bottom: 1rem;
+  }
+
+  .composer-textarea {
+    min-height: 100px;
+  }
+
+  .composer-submit {
+    padding: 0.75rem 1.25rem;
+  }
+}
