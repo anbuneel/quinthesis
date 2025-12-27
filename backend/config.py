@@ -5,13 +5,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# OpenRouter API key
+# OpenRouter API key (fallback for local dev, users provide their own in production)
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
 
 # Database configuration (Supabase PostgreSQL)
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Authentication credentials
+# JWT Authentication
+JWT_SECRET = os.getenv("JWT_SECRET", "change-me-in-production")
+
+# API Key Encryption (required for production)
+API_KEY_ENCRYPTION_KEY = os.getenv("API_KEY_ENCRYPTION_KEY")
+
+# Legacy Basic Auth credentials (deprecated, kept for backwards compatibility)
 AUTH_USERNAME = os.getenv("AUTH_USERNAME")
 AUTH_PASSWORD = os.getenv("AUTH_PASSWORD")
 

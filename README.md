@@ -45,16 +45,29 @@ cd ..
 Create a `.env` file in the project root:
 
 ```bash
-OPENROUTER_API_KEY=sk-or-v1-...
-AUTH_USERNAME=admin
-AUTH_PASSWORD=your-password
-DATABASE_URL=postgresql://user:pass@host/db       # Optional: for production (uses JSON if not set)
+# Database (required for production)
+DATABASE_URL=postgresql://user:pass@host/db
+
+# JWT Authentication (required)
+JWT_SECRET=your-secure-random-secret-here
+
+# API Key Encryption (required for production)
+# Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+API_KEY_ENCRYPTION_KEY=your-fernet-key-here
+
+# CORS origins
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
+
+# Optional: Fallback OpenRouter API key for local dev (users provide their own in production)
+OPENROUTER_API_KEY=sk-or-v1-...
 ```
 
-Get your OpenRouter API key at [openrouter.ai](https://openrouter.ai/). Purchase credits or enable automatic top-up.
+**Multi-User Support (Phase 1):** Users register with email/password and provide their own OpenRouter API key in Settings. Each user's data is isolated. Get your OpenRouter API key at [openrouter.ai](https://openrouter.ai/).
 
-For production deployment, set `DATABASE_URL` to a Supabase PostgreSQL connection string. Without it, the app falls back to local JSON file storage in `data/conversations/`.
+**Database Migrations:** Run migrations before first use:
+```bash
+uv run python -m backend.migrate
+```
 
 ### 3. Configure Models (Optional)
 

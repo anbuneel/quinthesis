@@ -1,68 +1,240 @@
 /**
  * API client for the LLM Council backend.
+ * Uses JWT-based authentication.
  */
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
+// ============== Token Management ==============
+
+let accessToken = localStorage.getItem('ai_council_access_token');
+let refreshToken = localStorage.getItem('ai_council_refresh_token');
+
 /**
- * Store credentials in localStorage.
+ * Store JWT tokens.
  */
-export function setCredentials(username, password) {
-  const encoded = btoa(`${username}:${password}`);
-  localStorage.setItem('ai_council_credentials', encoded);
+export function setTokens(access, refresh) {
+  accessToken = access;
+  refreshToken = refresh;
+  localStorage.setItem('ai_council_access_token', access);
+  localStorage.setItem('ai_council_refresh_token', refresh);
 }
 
 /**
- * Clear stored credentials.
+ * Clear stored tokens.
  */
-export function clearCredentials() {
-  localStorage.removeItem('ai_council_credentials');
+export function clearTokens() {
+  accessToken = null;
+  refreshToken = null;
+  localStorage.removeItem('ai_council_access_token');
+  localStorage.removeItem('ai_council_refresh_token');
 }
 
 /**
- * Check if credentials are stored.
+ * Check if tokens are stored.
  */
-export function hasCredentials() {
-  return !!localStorage.getItem('ai_council_credentials');
+export function hasTokens() {
+  return !!accessToken;
 }
 
+// Legacy compatibility aliases
+export const setCredentials = (username, password) => {
+  console.warn('setCredentials is deprecated, use setTokens instead');
+};
+export const clearCredentials = clearTokens;
+export const hasCredentials = hasTokens;
+
 /**
- * Get the Authorization header value.
+ * Try to refresh the access token using the refresh token.
  */
-function getAuthHeader() {
-  const credentials = localStorage.getItem('ai_council_credentials');
-  if (credentials) {
-    return `Basic ${credentials}`;
+async function tryRefreshToken() {
+  if (!refreshToken) return false;
+
+  try {
+    const response = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      setTokens(data.access_token, data.refresh_token);
+      return true;
+    }
+  } catch (e) {
+    console.error('Token refresh failed:', e);
   }
-  return null;
+  return false;
 }
 
 /**
- * Fetch wrapper that includes auth header.
+ * Fetch wrapper that includes JWT auth header and handles token refresh.
  */
 async function fetchWithAuth(url, options = {}) {
-  const authHeader = getAuthHeader();
-
-  const headers = {
-    ...options.headers,
-  };
-
-  if (authHeader) {
-    headers['Authorization'] = authHeader;
+  if (!accessToken) {
+    throw new Error('Not authenticated');
   }
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  const makeRequest = async (token) => {
+    const headers = {
+      ...options.headers,
+      'Authorization': `Bearer ${token}`,
+    };
 
+    return fetch(url, {
+      ...options,
+      headers,
+    });
+  };
+
+  let response = await makeRequest(accessToken);
+
+  // Handle token expiration
   if (response.status === 401) {
-    clearCredentials();
-    throw new Error('Authentication failed');
+    const refreshed = await tryRefreshToken();
+    if (refreshed) {
+      // Retry with new token
+      response = await makeRequest(accessToken);
+    } else {
+      clearTokens();
+      throw new Error('Authentication failed');
+    }
   }
 
   return response;
 }
+
+// ============== Auth API ==============
+
+export const auth = {
+  /**
+   * Register a new user.
+   */
+  async register(email, password) {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      let message = 'Registration failed';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    const data = await response.json();
+    setTokens(data.access_token, data.refresh_token);
+    return data;
+  },
+
+  /**
+   * Login with email and password.
+   */
+  async login(email, password) {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      let message = 'Login failed';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    const data = await response.json();
+    setTokens(data.access_token, data.refresh_token);
+    return data;
+  },
+
+  /**
+   * Logout (clear tokens).
+   */
+  logout() {
+    clearTokens();
+  },
+
+  /**
+   * Get current user info.
+   */
+  async getMe() {
+    const response = await fetchWithAuth(`${API_BASE}/api/auth/me`);
+    if (!response.ok) {
+      throw new Error('Failed to get user info');
+    }
+    return response.json();
+  },
+};
+
+// ============== Settings API ==============
+
+export const settings = {
+  /**
+   * Save or update API key.
+   */
+  async saveApiKey(apiKey, provider = 'openrouter') {
+    const response = await fetchWithAuth(`${API_BASE}/api/settings/api-key`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ api_key: apiKey, provider }),
+    });
+
+    if (!response.ok) {
+      let message = 'Failed to save API key';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    return response.json();
+  },
+
+  /**
+   * List saved API keys (metadata only).
+   */
+  async listApiKeys() {
+    const response = await fetchWithAuth(`${API_BASE}/api/settings/api-keys`);
+    if (!response.ok) {
+      throw new Error('Failed to list API keys');
+    }
+    return response.json();
+  },
+
+  /**
+   * Delete an API key.
+   */
+  async deleteApiKey(provider) {
+    const response = await fetchWithAuth(
+      `${API_BASE}/api/settings/api-key/${provider}`,
+      { method: 'DELETE' }
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete API key');
+    }
+
+    return response.json();
+  },
+};
+
+// ============== Main API ==============
 
 export const api = {
   /**
@@ -177,14 +349,14 @@ export const api = {
    * @returns {Promise<void>}
    */
   async sendMessageStream(conversationId, content, onEvent) {
-    const authHeader = getAuthHeader();
+    if (!accessToken) {
+      throw new Error('Not authenticated');
+    }
+
     const headers = {
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
     };
-
-    if (authHeader) {
-      headers['Authorization'] = authHeader;
-    }
 
     let response;
     try {
@@ -203,7 +375,13 @@ export const api = {
     }
 
     if (response.status === 401) {
-      clearCredentials();
+      // Try to refresh token
+      const refreshed = await tryRefreshToken();
+      if (refreshed) {
+        // Retry the stream request
+        return this.sendMessageStream(conversationId, content, onEvent);
+      }
+      clearTokens();
       throw new Error('Authentication failed');
     }
 
@@ -245,11 +423,12 @@ export const api = {
   },
 
   /**
-   * Test if credentials are valid by making a test API call.
+   * Test if authentication is valid.
    */
   async testCredentials() {
+    if (!accessToken) return false;
     try {
-      const response = await fetchWithAuth(`${API_BASE}/api/conversations`);
+      const response = await fetchWithAuth(`${API_BASE}/api/auth/me`);
       return response.ok;
     } catch {
       return false;

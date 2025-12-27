@@ -35,11 +35,28 @@ npm run dev                      # Run on http://localhost:5173
 
 Create `.env` in project root:
 ```
-OPENROUTER_API_KEY=sk-or-v1-...
-AUTH_USERNAME=admin
-AUTH_PASSWORD=your-password
-DATABASE_URL=postgresql://user:pass@host/dbname    # Supabase PostgreSQL (required for production)
+# Database (required for production)
+DATABASE_URL=postgresql://user:pass@host/dbname
+
+# JWT Authentication (required)
+JWT_SECRET=your-secure-random-secret-here
+
+# API Key Encryption (required for production)
+# Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+API_KEY_ENCRYPTION_KEY=your-fernet-key-here
+
+# CORS origins
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-frontend.vercel.app
+
+# Optional: Fallback OpenRouter API key for local dev (users provide their own in production)
+OPENROUTER_API_KEY=sk-or-v1-...
+```
+
+**Phase 1 Multi-User Support:** Users register with email/password and provide their own OpenRouter API key in Settings. Each user's conversations are isolated.
+
+**Database Migrations:** Run before first use:
+```bash
+uv run python -m backend.migrate
 ```
 
 Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in `data/conversations/`.
@@ -77,13 +94,18 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 
 ### Backend (`backend/`)
 - `main.py` - FastAPI server, runs on port 8080 (Fly.io) or 8080 (local)
-- `config.py` - `AVAILABLE_MODELS`, `DEFAULT_MODELS`, `DEFAULT_LEAD_MODEL`, `CORS_ORIGINS`, `DATABASE_URL`
+- `config.py` - `AVAILABLE_MODELS`, `DEFAULT_MODELS`, `DEFAULT_LEAD_MODEL`, `CORS_ORIGINS`, `DATABASE_URL`, `JWT_SECRET`, `API_KEY_ENCRYPTION_KEY`
 - `council.py` - Core logic: stage1/2/3, parsing, aggregation
-- `openrouter.py` - OpenRouter API wrapper, parallel queries
-- `storage.py` - PostgreSQL storage (production)
+- `openrouter.py` - OpenRouter API wrapper, parallel queries, accepts per-user API keys
+- `storage.py` - PostgreSQL storage (production) with user and API key management
 - `storage_local.py` - JSON file storage (fallback when `DATABASE_URL` not set)
 - `database.py` - Async PostgreSQL connection pool (asyncpg)
-- `auth.py` - Basic Auth credential verification
+- `auth.py` - Legacy Basic Auth credential verification (deprecated)
+- `auth_jwt.py` - JWT token creation and verification
+- `encryption.py` - Password hashing (bcrypt) and API key encryption (Fernet)
+- `models.py` - Pydantic schemas for auth and API key endpoints
+- `migrate.py` - Database migration runner
+- `migrations/` - SQL migration files for schema updates
 
 ### Frontend (`frontend/src/`)
 - `App.jsx` - Main orchestration, two-pane layout (sidebar + main)
@@ -92,10 +114,11 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/Stage1.jsx` - Expert opinions with tabbed navigation and keyboard support
 - `components/Stage2.jsx` - Peer review with rankings leaderboard and tabbed evaluations
 - `components/Stage3.jsx` - Final answer (lead model synthesis)
-- `components/Sidebar.jsx` - Inquiry list and mobile drawer
+- `components/Sidebar.jsx` - Inquiry list, mobile drawer, user email display
 - `components/NewConversationModal.jsx` - Legacy modal (fallback, mostly unused)
-- `api.js` - Backend communication with SSE streaming support
-- `components/Login.jsx` - Authentication UI
+- `api.js` - Backend communication with JWT auth, token refresh, SSE streaming
+- `components/Login.jsx` - Authentication UI with login/register toggle
+- `components/Settings.jsx` - API key management modal
 
 ---
 
@@ -377,18 +400,20 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Test SPA routing (all paths redirect to `/index.html`)
 
 ### Fly.io (Backend)
-- [ ] Set `OPENROUTER_API_KEY` in Fly.io secrets
-- [ ] Set `AUTH_USERNAME` and `AUTH_PASSWORD` in Fly.io secrets
+- [ ] Set `JWT_SECRET` in Fly.io secrets (required)
+- [ ] Set `API_KEY_ENCRYPTION_KEY` in Fly.io secrets (required)
 - [ ] Set `DATABASE_URL` pointing to Supabase PostgreSQL
 - [ ] Set `CORS_ORIGINS` to include Vercel frontend URL
+- [ ] Optionally set `OPENROUTER_API_KEY` as fallback for dev
 - [ ] Verify `fly.toml` configuration (port 8080, region, memory)
 - [ ] Test health check endpoint: `GET /`
+- [ ] Run database migrations: `uv run python -m backend.migrate`
 
 ### Supabase
 - [ ] Create PostgreSQL database
 - [ ] Generate connection string and set as `DATABASE_URL`
-- [ ] Enable required extensions if needed
-- [ ] Verify schema creation via `storage.py` migrations
+- [ ] Enable `gen_random_uuid()` extension (usually enabled by default)
+- [ ] Run migrations to create users, user_api_keys tables, and add user_id to conversations
 
 ---
 

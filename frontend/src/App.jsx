@@ -2,19 +2,22 @@ import { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import Login from './components/Login';
+import Settings from './components/Settings';
 import NewConversationModal from './components/NewConversationModal';
-import { api, hasCredentials, clearCredentials } from './api';
+import { api, auth, hasTokens, clearTokens } from './api';
 import './App.css';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [userEmail, setUserEmail] = useState('');
   const [conversations, setConversations] = useState([]);
   const [currentConversationId, setCurrentConversationId] = useState(null);
   const [currentConversation, setCurrentConversation] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
   const [defaultModels, setDefaultModels] = useState([]);
   const [defaultLeadModel, setDefaultLeadModel] = useState('');
@@ -23,14 +26,21 @@ function App() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [createError, setCreateError] = useState('');
 
-  // Check for existing credentials on mount
+  // Check for existing tokens on mount
   useEffect(() => {
     const checkAuth = async () => {
-      if (hasCredentials()) {
-        // Verify credentials are still valid
+      if (hasTokens()) {
+        // Verify tokens are still valid
         const isValid = await api.testCredentials();
         if (isValid) {
           setIsAuthenticated(true);
+          // Load user info
+          try {
+            const user = await auth.getMe();
+            setUserEmail(user.email);
+          } catch (e) {
+            console.error('Failed to load user info:', e);
+          }
         }
       }
       setIsCheckingAuth(false);
@@ -117,18 +127,35 @@ function App() {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setIsAuthenticated(true);
+    // Load user info after login
+    try {
+      const user = await auth.getMe();
+      setUserEmail(user.email);
+    } catch (e) {
+      console.error('Failed to load user info:', e);
+    }
   };
 
   const handleLogout = () => {
-    clearCredentials();
+    clearTokens();
     setIsAuthenticated(false);
+    setUserEmail('');
     setConversations([]);
     setCurrentConversationId(null);
     setCurrentConversation(null);
     setIsSidebarOpen(false);
     setIsNewConversationOpen(false);
+    setIsSettingsOpen(false);
+  };
+
+  const handleOpenSettings = () => {
+    setIsSettingsOpen(true);
+  };
+
+  const handleCloseSettings = () => {
+    setIsSettingsOpen(false);
   };
 
   const loadModelOptions = async () => {
@@ -538,8 +565,10 @@ function App() {
         onNewConversation={handleGoToComposer}
         onDeleteConversation={handleDeleteConversation}
         onLogout={handleLogout}
+        onOpenSettings={handleOpenSettings}
         isOpen={isSidebarOpen}
         onClose={handleCloseSidebar}
+        userEmail={userEmail}
       />
       <main className="main-pane">
         <ChatInterface
@@ -576,6 +605,11 @@ function App() {
         loadError={modelsError}
         submitError={createError}
         isSubmitting={isCreatingConversation}
+      />
+      <Settings
+        isOpen={isSettingsOpen}
+        onClose={handleCloseSettings}
+        userEmail={userEmail}
       />
     </div>
   );

@@ -1,19 +1,22 @@
 """3-stage LLM Council orchestration."""
 
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from .openrouter import query_models_parallel, query_model
 from .config import DEFAULT_MODELS, DEFAULT_LEAD_MODEL
 
 
 async def stage1_collect_responses(
     user_query: str,
-    models: List[str] | None = None
+    models: List[str] | None = None,
+    api_key: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Stage 1: Collect individual responses from all council models.
 
     Args:
         user_query: The user's question
+        models: Optional list of models to use
+        api_key: Optional user-provided API key
 
     Returns:
         List of dicts with 'model' and 'response' keys
@@ -23,7 +26,7 @@ async def stage1_collect_responses(
     active_models = models or DEFAULT_MODELS
 
     # Query all models in parallel
-    responses = await query_models_parallel(active_models, messages)
+    responses = await query_models_parallel(active_models, messages, api_key=api_key)
 
     # Format results
     stage1_results = []
@@ -40,7 +43,8 @@ async def stage1_collect_responses(
 async def stage2_collect_rankings(
     user_query: str,
     stage1_results: List[Dict[str, Any]],
-    models: List[str] | None = None
+    models: List[str] | None = None,
+    api_key: Optional[str] = None
 ) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
     """
     Stage 2: Each model ranks the anonymized responses.
@@ -48,6 +52,8 @@ async def stage2_collect_rankings(
     Args:
         user_query: The original user query
         stage1_results: Results from Stage 1
+        models: Optional list of models to use
+        api_key: Optional user-provided API key
 
     Returns:
         Tuple of (rankings list, label_to_model mapping)
@@ -103,7 +109,7 @@ Now provide your evaluation and ranking:"""
     active_models = models or DEFAULT_MODELS
 
     # Get rankings from all council models in parallel
-    responses = await query_models_parallel(active_models, messages)
+    responses = await query_models_parallel(active_models, messages, api_key=api_key)
 
     # Format results
     stage2_results = []
@@ -124,7 +130,8 @@ async def stage3_synthesize_final(
     user_query: str,
     stage1_results: List[Dict[str, Any]],
     stage2_results: List[Dict[str, Any]],
-    lead_model: str | None = None
+    lead_model: str | None = None,
+    api_key: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Stage 3: Chairman synthesizes final response.
@@ -133,6 +140,8 @@ async def stage3_synthesize_final(
         user_query: The original user query
         stage1_results: Individual model responses from Stage 1
         stage2_results: Rankings from Stage 2
+        lead_model: Optional lead model for synthesis
+        api_key: Optional user-provided API key
 
     Returns:
         Dict with 'model' and 'response' keys
@@ -169,8 +178,8 @@ Provide a clear, well-reasoned final answer that represents the council's collec
 
     active_lead = lead_model or DEFAULT_LEAD_MODEL
 
-    # Query the lead model
-    response = await query_model(active_lead, messages)
+    # Query the lead model with user's API key
+    response = await query_model(active_lead, messages, api_key=api_key)
 
     if response is None:
         # Fallback if chairman fails
@@ -266,12 +275,16 @@ def calculate_aggregate_rankings(
     return aggregate
 
 
-async def generate_conversation_title(user_query: str) -> str:
+async def generate_conversation_title(
+    user_query: str,
+    api_key: Optional[str] = None
+) -> str:
     """
     Generate a short title for a conversation based on the first user message.
 
     Args:
         user_query: The first user message
+        api_key: Optional user-provided API key
 
     Returns:
         A short title (3-5 words)
@@ -286,7 +299,12 @@ Title:"""
     messages = [{"role": "user", "content": title_prompt}]
 
     # Use gemini-2.5-flash for title generation (fast and cheap)
-    response = await query_model("google/gemini-2.5-flash", messages, timeout=30.0)
+    response = await query_model(
+        "google/gemini-2.5-flash",
+        messages,
+        timeout=30.0,
+        api_key=api_key
+    )
 
     if response is None:
         # Fallback to a generic title
@@ -307,19 +325,27 @@ Title:"""
 async def run_full_council(
     user_query: str,
     models: List[str] | None = None,
-    lead_model: str | None = None
+    lead_model: str | None = None,
+    api_key: Optional[str] = None
 ) -> Tuple[List, List, Dict, Dict]:
     """
     Run the complete 3-stage council process.
 
     Args:
         user_query: The user's question
+        models: Optional list of models to use
+        lead_model: Optional lead model for synthesis
+        api_key: Optional user-provided API key
 
     Returns:
         Tuple of (stage1_results, stage2_results, stage3_result, metadata)
     """
     # Stage 1: Collect individual responses
-    stage1_results = await stage1_collect_responses(user_query, models=models)
+    stage1_results = await stage1_collect_responses(
+        user_query,
+        models=models,
+        api_key=api_key
+    )
 
     # If no models responded successfully, return error
     if not stage1_results:
@@ -332,7 +358,8 @@ async def run_full_council(
     stage2_results, label_to_model = await stage2_collect_rankings(
         user_query,
         stage1_results,
-        models=models
+        models=models,
+        api_key=api_key
     )
 
     # Calculate aggregate rankings
@@ -343,7 +370,8 @@ async def run_full_council(
         user_query,
         stage1_results,
         stage2_results,
-        lead_model=lead_model
+        lead_model=lead_model,
+        api_key=api_key
     )
 
     # Prepare metadata
