@@ -4,7 +4,7 @@ import ChatInterface from './components/ChatInterface';
 import Login from './components/Login';
 import Settings from './components/Settings';
 import NewConversationModal from './components/NewConversationModal';
-import { api, auth, hasTokens, clearTokens } from './api';
+import { api, auth, settings, hasTokens, clearTokens } from './api';
 import './App.css';
 
 function App() {
@@ -26,6 +26,18 @@ function App() {
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [createError, setCreateError] = useState('');
 
+  // Check if user has an API key, auto-open Settings if not
+  const checkApiKeyAndPrompt = async () => {
+    try {
+      const keys = await settings.listApiKeys();
+      if (!keys || keys.length === 0) {
+        setIsSettingsOpen(true);
+      }
+    } catch (e) {
+      console.error('Failed to check API keys:', e);
+    }
+  };
+
   // Check for existing tokens on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -41,6 +53,8 @@ function App() {
           } catch (e) {
             console.error('Failed to load user info:', e);
           }
+          // Check if user has API key, prompt if not
+          await checkApiKeyAndPrompt();
         }
       }
       setIsCheckingAuth(false);
@@ -136,6 +150,8 @@ function App() {
     } catch (e) {
       console.error('Failed to load user info:', e);
     }
+    // Check if user has API key, prompt if not
+    await checkApiKeyAndPrompt();
   };
 
   const handleLogout = () => {
@@ -564,11 +580,8 @@ function App() {
         onSelectConversation={handleSelectConversation}
         onNewConversation={handleGoToComposer}
         onDeleteConversation={handleDeleteConversation}
-        onLogout={handleLogout}
-        onOpenSettings={handleOpenSettings}
         isOpen={isSidebarOpen}
         onClose={handleCloseSidebar}
-        userEmail={userEmail}
       />
       <main className="main-pane">
         <ChatInterface
@@ -586,6 +599,10 @@ function App() {
           onCreateAndSubmit={handleCreateAndSubmit}
           isCreating={isCreatingConversation}
           createError={createError}
+          // User controls
+          userEmail={userEmail}
+          onOpenSettings={handleOpenSettings}
+          onLogout={handleLogout}
         />
       </main>
       <div

@@ -42,6 +42,57 @@
   width: 70px; /* Same width as Archive button for centering */
 }
 
+/* Masthead user controls */
+.masthead-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.masthead-email {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 0.5rem;
+}
+
+.masthead-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-sm);
+  color: var(--ink-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.masthead-btn:hover {
+  background: var(--paper-aged);
+  border-color: var(--ink-faint);
+  color: var(--ink-dark);
+}
+
+.masthead-btn-logout:hover {
+  color: var(--accent-vermillion);
+  border-color: var(--accent-vermillion);
+  background: var(--accent-vermillion-bg);
+}
+
+@media (max-width: 480px) {
+  .masthead-email {
+    display: none;
+  }
+}
+
 @media (min-width: 768px) {
   .masthead {
     padding: 0.75rem 2rem;

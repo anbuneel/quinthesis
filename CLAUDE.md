@@ -310,6 +310,7 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 ### Development (Local JSON)
 - Default fallback if `DATABASE_URL` not set
 - JSON files in `data/conversations/{id}.json`
+- User data in `data/users/` and `data/api_keys/`
 - Uses `storage_local.py`
 - Same async interface as PostgreSQL version
 
@@ -359,6 +360,12 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 - Question header stays pinned within each docket entry
 - Status pill and last-updated line shown under the question
 - Input stays sticky at the bottom of the main pane
+
+### Header User Controls
+- User email, settings, and logout buttons in masthead (top-right)
+- Sidebar is dedicated to archived conversations only
+- Settings modal auto-opens for new users without API key
+- Email hidden on mobile (480px and below)
 
 ### Mobile Drawer + Accessibility
 - Sidebar becomes a drawer on mobile with overlay

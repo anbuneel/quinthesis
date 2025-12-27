@@ -4,11 +4,14 @@ import json
 import os
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from uuid import UUID, uuid4
 from .config import DEFAULT_MODELS, DEFAULT_LEAD_MODEL
 from pathlib import Path
 
-# Local storage directory
+# Local storage directories
 DATA_DIR = Path("data/conversations")
+USERS_DIR = Path("data/users")
+API_KEYS_DIR = Path("data/api_keys")
 
 
 def _ensure_data_dir():
@@ -150,4 +153,194 @@ async def delete_conversation(conversation_id: str) -> bool:
         return False
 
     path.unlink()
+    return True
+
+
+# ============== User Management ==============
+
+def _ensure_users_dir():
+    """Ensure the users directory exists."""
+    USERS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _ensure_api_keys_dir():
+    """Ensure the API keys directory exists."""
+    API_KEYS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _get_user_path(user_id: str) -> Path:
+    """Get the file path for a user."""
+    return USERS_DIR / f"{user_id}.json"
+
+
+def _get_user_by_email_path() -> Path:
+    """Get the email index file path."""
+    return USERS_DIR / "_email_index.json"
+
+
+def _load_email_index() -> Dict[str, str]:
+    """Load the email to user_id index."""
+    _ensure_users_dir()
+    index_path = _get_user_by_email_path()
+    if index_path.exists():
+        with open(index_path, 'r') as f:
+            return json.load(f)
+    return {}
+
+
+def _save_email_index(index: Dict[str, str]):
+    """Save the email to user_id index."""
+    _ensure_users_dir()
+    with open(_get_user_by_email_path(), 'w') as f:
+        json.dump(index, f, indent=2)
+
+
+async def create_user(email: str, password_hash: str) -> Dict[str, Any]:
+    """Create a new user."""
+    _ensure_users_dir()
+
+    user_id = str(uuid4())
+    now = datetime.utcnow().isoformat()
+
+    user = {
+        "id": user_id,
+        "email": email,
+        "password_hash": password_hash,
+        "created_at": now,
+        "updated_at": now
+    }
+
+    # Save user file
+    with open(_get_user_path(user_id), 'w') as f:
+        json.dump(user, f, indent=2)
+
+    # Update email index
+    index = _load_email_index()
+    index[email.lower()] = user_id
+    _save_email_index(index)
+
+    return user
+
+
+async def get_user_by_email(email: str) -> Optional[Dict[str, Any]]:
+    """Get a user by email."""
+    index = _load_email_index()
+    user_id = index.get(email.lower())
+
+    if not user_id:
+        return None
+
+    return await get_user_by_id(UUID(user_id))
+
+
+async def get_user_by_id(user_id: UUID) -> Optional[Dict[str, Any]]:
+    """Get a user by ID."""
+    path = _get_user_path(str(user_id))
+
+    if not path.exists():
+        return None
+
+    with open(path, 'r') as f:
+        return json.load(f)
+
+
+# ============== API Key Management ==============
+
+def _get_api_keys_path(user_id: str) -> Path:
+    """Get the file path for a user's API keys."""
+    return API_KEYS_DIR / f"{user_id}.json"
+
+
+async def save_user_api_key(
+    user_id: UUID,
+    provider: str,
+    encrypted_key: str,
+    key_hint: str
+) -> Dict[str, Any]:
+    """Save or update a user's API key."""
+    _ensure_api_keys_dir()
+
+    path = _get_api_keys_path(str(user_id))
+    now = datetime.utcnow().isoformat()
+
+    # Load existing keys
+    keys = {}
+    if path.exists():
+        with open(path, 'r') as f:
+            keys = json.load(f)
+
+    # Upsert the key
+    keys[provider] = {
+        "user_id": str(user_id),
+        "provider": provider,
+        "encrypted_key": encrypted_key,
+        "key_hint": key_hint,
+        "created_at": keys.get(provider, {}).get("created_at", now),
+        "updated_at": now
+    }
+
+    with open(path, 'w') as f:
+        json.dump(keys, f, indent=2)
+
+    return keys[provider]
+
+
+async def get_user_api_key(user_id: UUID, provider: str) -> Optional[str]:
+    """Get a user's decrypted API key for a provider."""
+    from .encryption import decrypt_api_key
+
+    path = _get_api_keys_path(str(user_id))
+
+    if not path.exists():
+        return None
+
+    with open(path, 'r') as f:
+        keys = json.load(f)
+
+    key_data = keys.get(provider)
+    if not key_data:
+        return None
+
+    return decrypt_api_key(key_data["encrypted_key"])
+
+
+async def get_user_api_keys(user_id: UUID) -> List[Dict[str, Any]]:
+    """List all API keys for a user (metadata only, no decrypted keys)."""
+    path = _get_api_keys_path(str(user_id))
+
+    if not path.exists():
+        return []
+
+    with open(path, 'r') as f:
+        keys = json.load(f)
+
+    return [
+        {
+            "provider": data["provider"],
+            "key_hint": data["key_hint"],
+            "created_at": data["created_at"],
+            "updated_at": data["updated_at"]
+        }
+        for data in keys.values()
+    ]
+
+
+async def delete_user_api_key(user_id: UUID, provider: str) -> bool:
+    """Delete a user's API key."""
+    path = _get_api_keys_path(str(user_id))
+
+    if not path.exists():
+        return False
+
+    with open(path, 'r') as f:
+        keys = json.load(f)
+
+    if provider not in keys:
+        return False
+
+    del keys[provider]
+
+    with open(path, 'w') as f:
+        json.dump(keys, f, indent=2)
+
     return True
