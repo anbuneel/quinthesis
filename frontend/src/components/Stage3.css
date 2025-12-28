@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Stage 3: The Council's Position - "The Paper of Record" Theme
-   HERO component - The final synthesized answer
+   Stage 3: Final Answer - "The Paper of Record" Theme
+   HERO component - The synthesized consensus
    ========================================================================== */
 
 .stage3 {
@@ -24,7 +24,7 @@
   }
 }
 
-/* Header - The Council's Position masthead */
+/* Header - Final Answer masthead */
 .verdict-header {
   display: flex;
   align-items: center;

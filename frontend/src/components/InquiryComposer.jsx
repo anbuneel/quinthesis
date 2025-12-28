@@ -119,7 +119,7 @@ export default function InquiryComposer({
             {isConfigOpen && !isLoadingModels && (
               <div className="config-panel" id="council-config">
                 <div className="config-section">
-                  <div className="config-label">Select models for deliberation</div>
+                  <div className="config-label">Select models</div>
                   <div className="model-chips">
                     {availableModels.map((model) => {
                       const selected = selectedModels.includes(model);

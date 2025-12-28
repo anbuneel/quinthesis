@@ -9,7 +9,7 @@ export default function Sidebar({
   isOpen = false,
   onClose,
 }) {
-  // Determine if a case is "resolved" (has messages) or "in deliberation"
+  // Determine if an inquiry is "resolved" (has messages) or "pending"
   const getCaseStatus = (conv) => {
     return conv.message_count > 0 ? 'resolved' : 'pending';
   };
@@ -40,7 +40,7 @@ export default function Sidebar({
       </div>
 
       <div className="case-list">
-        <div className="section-label">Inquiries</div>
+        <div className="section-label">Archive</div>
         {conversations.length === 0 ? (
           <div className="no-cases">No inquiries yet</div>
         ) : (
