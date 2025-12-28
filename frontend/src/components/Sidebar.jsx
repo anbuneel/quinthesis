@@ -32,7 +32,6 @@ export default function Sidebar({
   return (
     <aside className={`sidebar ${isOpen ? 'open' : ''}`} id="sidebar" aria-label="Inquiry list">
       <div className="sidebar-header">
-        <h1 className="sidebar-title">AI Council</h1>
         <button className="new-case-btn" onClick={handleNewConversation} title="New inquiry (Ctrl+N)">
           <span className="btn-icon">+</span>
           <span>New Inquiry</span>

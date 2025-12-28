@@ -28,30 +28,20 @@
 
 /* Header with masthead styling */
 .sidebar-header {
-  padding: 1.5rem;
-  border-bottom: 2px solid var(--ink-black);
+  padding: 1.25rem 1rem;
+  border-bottom: 1px solid var(--paper-border);
 }
 
-.sidebar-title {
-  font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 700;
-  margin: 0 0 1.25rem 0;
-  color: var(--ink-black);
-  letter-spacing: var(--tracking-tight);
-  text-transform: uppercase;
-}
-
-/* New conversation button */
+/* New conversation button - matches header button style */
 .new-case-btn {
   width: 100%;
-  padding: 0.875rem 1.25rem;
-  background: var(--ink-black);
-  border: none;
+  padding: 0.625rem 1rem;
+  background: var(--paper-aged);
+  border: 1px solid var(--paper-border);
   border-radius: var(--radius-sm);
-  color: var(--paper-cream);
+  color: var(--ink-medium);
   cursor: pointer;
-  font-size: var(--text-sm);
+  font-size: 0.75rem;
   font-weight: 600;
   font-family: var(--font-ui);
   text-transform: uppercase;
@@ -64,13 +54,13 @@
 }
 
 .new-case-btn:hover {
-  background: var(--ink-dark);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  background: var(--paper-shadow);
+  border-color: var(--ink-faint);
+  color: var(--ink-dark);
 }
 
 .new-case-btn:active {
-  transform: translateY(0);
+  background: var(--paper-shadow);
 }
 
 .btn-icon {
