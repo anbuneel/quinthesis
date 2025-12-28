@@ -67,10 +67,22 @@ function Settings({ isOpen, onClose, userEmail }) {
     <div className="settings-overlay" onClick={onClose}>
       <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
-          <h2>Settings</h2>
           <button className="settings-close" onClick={onClose} aria-label="Close">
-            X
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
           </button>
+          <div className="settings-title-wrapper">
+            <span className="settings-title-rule"></span>
+            <h2>Settings</h2>
+            <span className="settings-title-rule"></span>
+          </div>
+          <div className="settings-header-divider">
+            <span className="settings-divider-line"></span>
+            <span className="settings-divider-ornament">&#9830;</span>
+            <span className="settings-divider-line"></span>
+          </div>
         </div>
 
         <div className="settings-body">
@@ -84,6 +96,10 @@ function Settings({ isOpen, onClose, userEmail }) {
               <span className="account-value">{userEmail || 'Unknown'}</span>
             </div>
           </section>
+
+          <div className="settings-section-divider">
+            <span className="settings-section-divider-ornament">&#167;</span>
+          </div>
 
           <section className="settings-section">
             <h3>OpenRouter API Key</h3>
