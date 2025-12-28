@@ -15,9 +15,9 @@
 | Masthead header redesign | ✅ Complete | `ace7f9f` |
 | Settings modal editorial styling | ✅ Complete | `4055906` |
 | Branding direction (general-purpose) | ✅ Decided | — |
-| Sidebar status indicator size | ✅ Complete | (pending) |
-| InquiryComposer polish | ✅ Complete | (pending) |
-| Micro-interactions ("Convening" state) | ✅ Complete | (pending) |
+| Sidebar status indicator size | ✅ Complete | `ea7f1a4` |
+| InquiryComposer polish | 🔶 Partial | `d23d0c4` |
+| Micro-interactions ("Convening" state) | ⏸️ Reverted | — |
 | Name & Logo finalization | 🔲 Deferred | — |
 
 ---
@@ -107,7 +107,7 @@ The "Paper of Record" concept is well-executed with:
 5. ✅ Refined form styling with bold borders and uppercase buttons
 6. ⏸️ "Wax seal" confirmation metaphor - deferred (nice-to-have)
 
-### InquiryComposer ✅ IMPLEMENTED
+### InquiryComposer 🔶 PARTIAL
 
 **Original Issues:**
 - "What would you like to ask the Council?" felt bland
@@ -117,11 +117,9 @@ The "Paper of Record" concept is well-executed with:
 
 **Implemented Changes:**
 1. ✅ Changed "Select models for deliberation" to "Select models" (commit `f0e58ac`)
-2. ✅ Added decorative heading with rules and diamond ornament
-3. ✅ Ornate double-line border on textarea (matches login screen)
-4. ✅ Enhanced submit button with uppercase styling and hover invert
-5. ✅ "Convening..." state with pulsing animation effect
-6. ⏸️ Quill/scroll decoration - deferred (visual complexity)
+2. ✅ Changed "Convene the Council" to "Ask the Council" (less formal)
+3. ⏸️ Ornate styling reverted - user preferred original simpler design
+4. ⏸️ Quill/scroll decoration - deferred
 
 ### Stage Components
 
@@ -331,30 +329,30 @@ You could test both framings:
 | 1 | **Login screen** - Add editorial character (ornate borders, paper texture) | ✅ Done |
 | 2 | **Branding direction** - Decide general-purpose vs legal terminology | ✅ Decided |
 | 3 | **Name & Logo** - Finalize after branding direction is set | 🔲 Deferred |
-| 4 | **Masthead** - Give it more breathing room and a date stamp | ✅ Done |
+| 4 | **Masthead** - Give it more breathing room (date stamp removed) | ✅ Done |
 | 5 | **Sidebar** - Rename to "Archive" or "History" (less legal) | ✅ Done |
 | 6 | **Settings modal** - Match editorial theme | ✅ Done |
 | 7 | **Sidebar status indicators** - Increase size (8px → 10-12px) | ✅ Done |
-| 8 | **InquiryComposer** - Polish and micro-interactions | ✅ Done |
-| 9 | **Micro-interactions** - Add subtle animations during "Convening" state | ✅ Done |
+| 8 | **InquiryComposer** - Simplified button text ("Ask the Council") | 🔶 Partial |
+| 9 | **Micro-interactions** - Ornate styling reverted per user preference | ⏸️ Reverted |
 
 ---
 
 ## 8. Conclusion
 
-**All major UI/UX improvements have been implemented.** The editorial "Paper of Record" theme is now applied consistently across the entire app.
+**Major UI/UX improvements have been implemented.** The editorial "Paper of Record" theme is applied to key surfaces while keeping the InquiryComposer clean and simple.
 
 **Key accomplishments:**
 
-1. ✅ **Aesthetic consistency achieved** - Login screen, masthead, settings modal, sidebar, and InquiryComposer all share the same editorial design language with ornate borders, paper textures, and decorative rules.
+1. ✅ **Editorial styling on key surfaces** - Login screen, masthead, and settings modal share ornate borders, paper textures, and decorative rules.
 
-2. ✅ **Branding direction settled** - General-purpose "collective expertise" positioning, moving away from legal terminology. "Deliberation" removed, "Docket" changed to "Archive."
+2. ✅ **Branding direction settled** - General-purpose "collective expertise" positioning. "Deliberation" removed, "Docket" changed to "Archive," "Convene" changed to "Ask."
 
 3. ✅ **Typography and color** - Consistent use of Playfair Display, Source Serif 4, and IBM Plex across all components.
 
-4. ✅ **Micro-interactions** - Added pulsing animation on "Convening..." state, improved button hover effects, and increased visibility of status indicators.
+4. ✅ **Sidebar improvements** - Larger status indicators (10px), delete buttons visible on mobile.
 
-5. ✅ **Mobile improvements** - Delete buttons now visible on mobile, responsive adjustments across all updated components.
+5. ✅ **Simplified InquiryComposer** - User preferred original design; ornate styling reverted. Button text simplified to "Ask the Council."
 
 **Remaining (deferred):**
 1. 🔲 Name and logo finalization - Under consideration
