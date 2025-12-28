@@ -76,14 +76,7 @@ export default function InquiryComposer({
   return (
     <div className="inquiry-composer">
       <div className="composer-inner">
-        <div className="composer-heading-wrapper">
-          <h2 className="composer-heading">What would you like to ask the Council?</h2>
-          <div className="composer-heading-rule">
-            <span className="composer-heading-line"></span>
-            <span className="composer-heading-ornament">&#9830;</span>
-            <span className="composer-heading-line"></span>
-          </div>
-        </div>
+        <h2 className="composer-heading">What would you like to ask the Council?</h2>
 
         <form onSubmit={handleSubmit} className="composer-form">
           {(modelsError || submitError) && (
@@ -173,16 +166,16 @@ export default function InquiryComposer({
 
           <button
             type="submit"
-            className={`composer-submit ${isSubmitting ? 'convening' : ''}`}
+            className="composer-submit"
             disabled={!isValid || isSubmitting || isLoadingModels}
           >
             {isSubmitting ? (
               <>
                 <span className="submit-spinner"></span>
-                <span className="submit-text">Convening...</span>
+                Convening...
               </>
             ) : (
-              <span className="submit-text">Convene the Council</span>
+              'Convene the Council'
             )}
           </button>
         </form>

@@ -23,16 +23,8 @@
 }
 
 /* ==========================================================================
-   Heading - Editorial display typography with decorative rules
+   Heading - Editorial display typography
    ========================================================================== */
-.composer-heading-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-}
-
 .composer-heading {
   font-family: var(--font-display);
   font-size: var(--text-xl);
@@ -40,34 +32,13 @@
   font-style: italic;
   color: var(--ink-dark);
   text-align: center;
-  margin: 0;
+  margin-bottom: 1.25rem;
   line-height: var(--leading-snug);
-}
-
-.composer-heading-rule {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.composer-heading-line {
-  width: 40px;
-  height: 1px;
-  background: var(--ink-medium);
-}
-
-.composer-heading-ornament {
-  font-size: 0.625rem;
-  color: var(--ink-medium);
 }
 
 @media (min-width: 640px) {
   .composer-heading {
     font-size: var(--text-2xl);
-  }
-
-  .composer-heading-line {
-    width: 60px;
   }
 }
 
@@ -91,7 +62,7 @@
 }
 
 /* ==========================================================================
-   Question Input - The Hero (Editorial treatment)
+   Question Input - The Hero
    ========================================================================== */
 .composer-input-wrapper {
   position: relative;
@@ -99,23 +70,18 @@
 
 .composer-textarea {
   width: 100%;
-  min-height: 140px;
-  padding: 1.25rem 1.5rem;
-  padding-bottom: 2.25rem;
-  background: var(--paper-cream);
-  border: 2px solid var(--ink-black);
+  min-height: 120px;
+  padding: 1rem 1.25rem;
+  padding-bottom: 2rem;
+  background: var(--paper-aged);
+  border: 2px solid var(--paper-border);
+  border-radius: var(--radius-md);
   color: var(--ink-dark);
   font-family: var(--font-body);
   font-size: var(--text-base);
   line-height: var(--leading-relaxed);
   resize: vertical;
   transition: all var(--transition-normal);
-
-  /* Ornate inner border effect */
-  box-shadow:
-    inset 0 0 0 1px var(--paper-cream),
-    inset 0 0 0 3px var(--ink-black),
-    inset 0 0 0 4px var(--paper-cream);
 }
 
 .composer-textarea::placeholder {
@@ -125,12 +91,9 @@
 
 .composer-textarea:focus {
   outline: none;
-  border-color: var(--accent-vermillion);
-  box-shadow:
-    inset 0 0 0 1px var(--paper-cream),
-    inset 0 0 0 3px var(--accent-vermillion),
-    inset 0 0 0 4px var(--paper-cream),
-    0 4px 12px rgba(196, 61, 46, 0.1);
+  border-color: var(--ink-medium);
+  background: var(--paper-cream);
+  box-shadow: var(--shadow-md);
 }
 
 .composer-textarea:disabled {
@@ -140,13 +103,12 @@
 
 .composer-hint {
   position: absolute;
-  bottom: 0.875rem;
-  right: 1.25rem;
-  font-family: var(--font-mono);
+  bottom: 0.75rem;
+  right: 1rem;
+  font-family: var(--font-ui);
   font-size: var(--text-xs);
   color: var(--ink-light);
   pointer-events: none;
-  letter-spacing: 0.02em;
 }
 
 /* ==========================================================================
@@ -319,72 +281,53 @@
 }
 
 /* ==========================================================================
-   Submit Button - The Call to Action (Editorial Treatment)
+   Submit Button - The Call to Action
    ========================================================================== */
 .composer-submit {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.625rem;
+  gap: 0.5rem;
   width: 100%;
-  padding: 1rem 1.5rem;
-  background: var(--ink-black);
-  border: 2px solid var(--ink-black);
+  padding: 0.875rem 1.5rem;
+  background: var(--accent-vermillion);
+  border: none;
+  border-radius: var(--radius-md);
   color: var(--paper-cream);
   font-family: var(--font-ui);
   font-size: var(--text-sm);
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: var(--tracking-wide);
   cursor: pointer;
-  transition: all var(--transition-normal);
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-sm);
 }
 
 .composer-submit:hover:not(:disabled) {
-  background: var(--paper-cream);
-  color: var(--ink-black);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(26, 22, 20, 0.2);
+  background: var(--accent-vermillion-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .composer-submit:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: none;
+  box-shadow: var(--shadow-sm);
 }
 
 .composer-submit:disabled {
-  opacity: 0.4;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
-}
-
-/* Convening state - special styling */
-.composer-submit.convening {
-  background: var(--accent-vermillion);
-  border-color: var(--accent-vermillion);
-  animation: convening-pulse 2s ease-in-out infinite;
-}
-
-@keyframes convening-pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(196, 61, 46, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(196, 61, 46, 0);
-  }
+  box-shadow: none;
 }
 
 .submit-spinner {
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: var(--paper-cream);
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-
-.submit-text {
-  letter-spacing: 0.15em;
+  animation: spin 0.8s linear infinite;
 }
 
 /* ==========================================================================
@@ -395,25 +338,16 @@
     padding: 1rem;
   }
 
-  .composer-heading-wrapper {
-    margin-bottom: 1.25rem;
-  }
-
   .composer-heading {
     font-size: var(--text-lg);
-  }
-
-  .composer-heading-line {
-    width: 30px;
+    margin-bottom: 1rem;
   }
 
   .composer-textarea {
-    min-height: 120px;
-    padding: 1rem 1.25rem;
-    padding-bottom: 2rem;
+    min-height: 100px;
   }
 
   .composer-submit {
-    padding: 0.875rem 1.25rem;
+    padding: 0.75rem 1.25rem;
   }
 }
