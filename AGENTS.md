@@ -302,15 +302,15 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 
 ---
 
-## Design Theme: The Modern Chamber
+## Design Theme: The Paper of Record
 
-- Dark deliberative aesthetic (Gotham/political vibe)
-- Colors: `--bg-chamber` (#050713), `--bg-card` (#141829), `--accent-gold` (#D4AF37)
-- Typography: DM Serif Display (headers), Inter (body), JetBrains Mono (code)
-- Terminology: "Docket" (conversation), "Filed Question" (user prompt),
-  "Deliberation Records" (Stage 1/2), "Final Opinion" (Stage 3),
-  "Expert A/B/C" (models), "Chairman" (final synthesizer)
-- Design docs: `docs/DESIGN_PROPOSAL.md` and `docs/ui-redesign-plan.md`
+- Warm, editorial-inspired aesthetic (newspaper/journal vibe)
+- Colors: `--paper-cream` (#FAF8F5), `--ink-black` (#1A1614), `--accent-vermillion` (#C43D2E)
+- Typography: Playfair Display (headers), Source Serif 4 (body), IBM Plex Sans (UI), IBM Plex Mono (code)
+- Terminology: "Inquiry" (user prompt), "Archive" (conversation list),
+  "Stage 1/2" (expert responses and peer review), "Final Answer" (Stage 3),
+  "Model A/B/C" (experts), "Lead Model" (final synthesizer)
+- Design docs: `docs/UI_REDESIGN_PROPOSAL_opus_claude.md` and `docs/UI_UX_REVIEW.md`
 
 ## UX Features (Latest Implementation)
 

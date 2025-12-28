@@ -20,7 +20,7 @@ In a bit more detail, here is what happens when you submit a query:
 
 ## Status
 
-Originally a vibe-coded exploration, AI Council is now a fully-featured production application deployed to Vercel, Fly.io, and Supabase. See `AGENTS.md` for deployment and development reference, `CLAUDE.md` for technical notes, and `docs/ui-redesign-plan.md` for the docket redesign plan.
+Originally a vibe-coded exploration, AI Council is now a fully-featured production application deployed to Vercel, Fly.io, and Supabase. See `AGENTS.md` for deployment and development reference, `CLAUDE.md` for technical notes, and `docs/UI_REDESIGN_PROPOSAL_opus_claude.md` for the "Paper of Record" design system.
 
 ## Setup
 
