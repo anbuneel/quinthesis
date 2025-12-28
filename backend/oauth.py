@@ -31,8 +31,13 @@ class GoogleOAuth:
     USERINFO_URL = "https://www.googleapis.com/oauth2/v2/userinfo"
 
     @staticmethod
-    def get_authorization_url(state: str) -> str:
-        """Generate Google OAuth authorization URL."""
+    def get_authorization_url(state: str, code_challenge: str) -> str:
+        """Generate Google OAuth authorization URL with PKCE.
+
+        Args:
+            state: CSRF protection token
+            code_challenge: PKCE code challenge (S256)
+        """
         redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/callback/google"
         params = {
             "client_id": GOOGLE_CLIENT_ID,
@@ -42,12 +47,20 @@ class GoogleOAuth:
             "state": state,
             "access_type": "offline",
             "prompt": "select_account",
+            # PKCE parameters
+            "code_challenge": code_challenge,
+            "code_challenge_method": "S256",
         }
         return f"{GoogleOAuth.AUTH_URL}?{urlencode(params)}"
 
     @staticmethod
-    async def exchange_code(code: str) -> Dict[str, Any]:
-        """Exchange authorization code for tokens."""
+    async def exchange_code(code: str, code_verifier: str) -> Dict[str, Any]:
+        """Exchange authorization code for tokens with PKCE verification.
+
+        Args:
+            code: Authorization code from OAuth callback
+            code_verifier: PKCE code verifier that matches the challenge
+        """
         redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/callback/google"
         async with httpx.AsyncClient() as client:
             response = await client.post(
@@ -58,6 +71,7 @@ class GoogleOAuth:
                     "code": code,
                     "grant_type": "authorization_code",
                     "redirect_uri": redirect_uri,
+                    "code_verifier": code_verifier,
                 },
             )
             response.raise_for_status()
@@ -91,8 +105,16 @@ class GitHubOAuth:
     EMAILS_URL = "https://api.github.com/user/emails"
 
     @staticmethod
-    def get_authorization_url(state: str) -> str:
-        """Generate GitHub OAuth authorization URL."""
+    def get_authorization_url(state: str, code_challenge: str) -> str:
+        """Generate GitHub OAuth authorization URL.
+
+        Note: GitHub does not support PKCE, but we include the state parameter
+        for CSRF protection. The code_challenge is accepted but not used.
+
+        Args:
+            state: CSRF protection token
+            code_challenge: PKCE code challenge (not used by GitHub)
+        """
         redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/callback/github"
         params = {
             "client_id": GITHUB_CLIENT_ID,
@@ -103,8 +125,16 @@ class GitHubOAuth:
         return f"{GitHubOAuth.AUTH_URL}?{urlencode(params)}"
 
     @staticmethod
-    async def exchange_code(code: str) -> Dict[str, Any]:
-        """Exchange authorization code for tokens."""
+    async def exchange_code(code: str, code_verifier: str) -> Dict[str, Any]:
+        """Exchange authorization code for tokens.
+
+        Note: GitHub does not support PKCE verification, so code_verifier
+        is accepted for API consistency but not sent to GitHub.
+
+        Args:
+            code: Authorization code from OAuth callback
+            code_verifier: PKCE code verifier (not used by GitHub)
+        """
         redirect_uri = f"{OAUTH_REDIRECT_BASE}/auth/callback/github"
         async with httpx.AsyncClient() as client:
             response = await client.post(

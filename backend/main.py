@@ -36,6 +36,7 @@ from .models import (
     ApiKeyResponse
 )
 from .oauth import GoogleOAuth, GitHubOAuth
+from .oauth_state import create_oauth_state, validate_and_consume_state
 from .council import (
     run_full_council,
     generate_conversation_title,
@@ -53,7 +54,7 @@ if DATABASE_URL:
 else:
     from . import storage_local as storage
     USE_LOCAL_STORAGE = True
-    print("⚠️  DATABASE_URL not set - using local JSON storage")
+    print("[WARNING] DATABASE_URL not set - using local JSON storage")
 
 
 @asynccontextmanager
@@ -180,14 +181,18 @@ async def find_or_create_oauth_user(oauth_user) -> dict:
 
 @app.get("/api/auth/oauth/{provider}")
 async def get_oauth_url(provider: str):
-    """Get OAuth authorization URL for the specified provider."""
-    import secrets
-    state = secrets.token_urlsafe(32)
+    """Get OAuth authorization URL for the specified provider.
+
+    Creates a server-side state token with PKCE code challenge for
+    CSRF protection and authorization code interception prevention.
+    """
+    # Create state with PKCE - state and code_verifier are stored server-side
+    state, code_challenge = create_oauth_state()
 
     if provider == "google":
-        url = GoogleOAuth.get_authorization_url(state)
+        url = GoogleOAuth.get_authorization_url(state, code_challenge)
     elif provider == "github":
-        url = GitHubOAuth.get_authorization_url(state)
+        url = GitHubOAuth.get_authorization_url(state, code_challenge)
     else:
         raise HTTPException(status_code=400, detail=f"Unknown OAuth provider: {provider}")
 
@@ -196,17 +201,29 @@ async def get_oauth_url(provider: str):
 
 @app.post("/api/auth/oauth/{provider}/callback", response_model=TokenResponse)
 async def oauth_callback(provider: str, data: OAuthCallbackRequest):
-    """Complete OAuth flow and return JWT tokens."""
+    """Complete OAuth flow and return JWT tokens.
+
+    Validates the state token server-side and uses the stored PKCE
+    code_verifier for token exchange.
+    """
+    # Validate state and get PKCE code_verifier
+    code_verifier = validate_and_consume_state(data.state)
+    if code_verifier is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired OAuth state - please try again"
+        )
+
     try:
         if provider == "google":
-            # Exchange code for tokens
-            tokens = await GoogleOAuth.exchange_code(data.code)
+            # Exchange code for tokens with PKCE verification
+            tokens = await GoogleOAuth.exchange_code(data.code, code_verifier)
             access_token = tokens["access_token"]
             # Get user info
             oauth_user = await GoogleOAuth.get_user_info(access_token)
         elif provider == "github":
-            # Exchange code for tokens
-            tokens = await GitHubOAuth.exchange_code(data.code)
+            # Exchange code for tokens (GitHub doesn't use PKCE but we pass verifier for consistency)
+            tokens = await GitHubOAuth.exchange_code(data.code, code_verifier)
             access_token = tokens["access_token"]
             # Get user info
             oauth_user = await GitHubOAuth.get_user_info(access_token)
@@ -226,6 +243,8 @@ async def oauth_callback(provider: str, data: OAuthCallbackRequest):
             expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")
 

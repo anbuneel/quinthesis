@@ -129,12 +129,19 @@ export const auth = {
    * Complete OAuth flow - exchange code for tokens.
    */
   async completeOAuth(provider, code, state) {
-    // Validate state (CSRF protection)
+    // Validate state (CSRF protection) - fail hard if mismatch
     const storedState = sessionStorage.getItem('oauth_state');
-    if (storedState && state && storedState !== state) {
-      throw new Error('Invalid OAuth state - possible CSRF attack');
-    }
     sessionStorage.removeItem('oauth_state');
+
+    if (!storedState) {
+      throw new Error('OAuth state not found - please start login again');
+    }
+    if (!state) {
+      throw new Error('OAuth state missing from callback - possible attack');
+    }
+    if (storedState !== state) {
+      throw new Error('OAuth state mismatch - possible CSRF attack');
+    }
 
     const response = await fetch(`${API_BASE}/api/auth/oauth/${provider}/callback`, {
       method: 'POST',

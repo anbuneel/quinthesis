@@ -11,7 +11,7 @@ from typing import Optional
 class OAuthCallbackRequest(BaseModel):
     """Request to complete OAuth flow."""
     code: str
-    state: Optional[str] = None
+    state: str  # Required for CSRF protection
 
 
 class RefreshTokenRequest(BaseModel):
