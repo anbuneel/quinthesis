@@ -119,7 +119,7 @@ export default function InquiryComposer({
             {isConfigOpen && !isLoadingModels && (
               <div className="config-panel" id="council-config">
                 <div className="config-section">
-                  <div className="config-label">Select models</div>
+                  <div className="config-label">Select experts</div>
                   <div className="model-chips">
                     {availableModels.map((model) => {
                       const selected = selectedModels.includes(model);
@@ -146,7 +146,7 @@ export default function InquiryComposer({
                 </div>
 
                 <div className="config-section">
-                  <div className="config-label">Lead model (synthesizes final answer)</div>
+                  <div className="config-label">Lead expert (synthesizes final answer)</div>
                   <select
                     className="lead-select"
                     value={leadModel}
