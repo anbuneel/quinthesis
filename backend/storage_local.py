@@ -52,7 +52,7 @@ async def create_conversation(
     return conversation
 
 
-async def get_conversation(conversation_id: str) -> Optional[Dict[str, Any]]:
+async def get_conversation(conversation_id: str, user_id: Optional[UUID] = None) -> Optional[Dict[str, Any]]:
     """Load a conversation from storage."""
     path = _get_conversation_path(conversation_id)
 
@@ -61,6 +61,11 @@ async def get_conversation(conversation_id: str) -> Optional[Dict[str, Any]]:
 
     with open(path, 'r') as f:
         conversation = json.load(f)
+        # Filter by user_id if provided
+        if user_id is not None:
+            conv_user_id = conversation.get("user_id")
+            if conv_user_id != str(user_id):
+                return None
         conversation.setdefault("models", list(DEFAULT_MODELS))
         conversation.setdefault("lead_model", DEFAULT_LEAD_MODEL)
         return conversation
@@ -144,20 +149,28 @@ async def update_conversation_title(conversation_id: str, title: str):
         json.dump(conv, f, indent=2)
 
 
-async def delete_conversation(conversation_id: str) -> bool:
+async def delete_conversation(conversation_id: str, user_id: Optional[UUID] = None) -> bool:
     """
     Delete a conversation from local storage.
 
     Args:
         conversation_id: Conversation identifier
+        user_id: Optional user ID for ownership verification
 
     Returns:
-        True if deleted, False if not found
+        True if deleted, False if not found or not owned by user
     """
     path = _get_conversation_path(conversation_id)
 
     if not path.exists():
         return False
+
+    # Verify ownership if user_id provided
+    if user_id is not None:
+        with open(path, 'r') as f:
+            conv = json.load(f)
+            if conv.get("user_id") != str(user_id):
+                return False
 
     path.unlink()
     return True

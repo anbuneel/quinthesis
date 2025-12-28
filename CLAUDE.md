@@ -441,7 +441,7 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 ## Quick Links
 
 - GitHub: https://github.com/anbuneel/ai-council
-- Frontend (Vercel): https://ai-council.vercel.app
+- Frontend (Vercel): https://ai-council-anbs.vercel.app
 - Backend (Fly.io): https://ai-council-api.fly.dev (health check at `GET /`)
 
 ---

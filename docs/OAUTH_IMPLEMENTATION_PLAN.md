@@ -31,7 +31,7 @@ GOOGLE_CLIENT_ID=xxx
 GOOGLE_CLIENT_SECRET=xxx
 GITHUB_CLIENT_ID=xxx
 GITHUB_CLIENT_SECRET=xxx
-OAUTH_REDIRECT_BASE=http://localhost:5173  # or https://ai-council.vercel.app
+OAUTH_REDIRECT_BASE=http://localhost:5173  # or https://ai-council-anbs.vercel.app
 ```
 
 ### 1.3 New Files
@@ -106,14 +106,14 @@ Replace `auth.login/register` with:
 2. Create OAuth 2.0 Client ID
 3. Redirect URIs:
    - `http://localhost:5173/auth/callback/google`
-   - `https://ai-council.vercel.app/auth/callback/google`
+   - `https://ai-council-anbs.vercel.app/auth/callback/google`
 
 ### GitHub Developer Settings
 1. https://github.com/settings/developers
 2. Create OAuth App
 3. Callback URL:
    - `http://localhost:5173/auth/callback/github`
-   - `https://ai-council.vercel.app/auth/callback/github`
+   - `https://ai-council-anbs.vercel.app/auth/callback/github`
 
 ---
 

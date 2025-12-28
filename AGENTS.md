@@ -335,7 +335,7 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 ## Quick Links
 
 - GitHub: https://github.com/anbuneel/ai-council
-- Frontend (Vercel): https://ai-council.vercel.app
+- Frontend (Vercel): https://ai-council-anbs.vercel.app
 - Backend (Fly.io): https://ai-council-api.fly.dev (health check at `GET /`)
 
 ---

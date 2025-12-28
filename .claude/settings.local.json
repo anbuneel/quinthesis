@@ -7,7 +7,12 @@
       "Bash(git push:*)",
       "Bash(git commit:*)",
       "Bash(npm run build:*)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(mkdir:*)",
+      "Bash(cat:*)",
+      "Bash(python:*)",
+      "Bash(curl:*)",
+      "Bash(fly secrets set:*)"
     ]
   }
 }
