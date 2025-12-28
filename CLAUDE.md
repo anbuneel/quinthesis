@@ -407,7 +407,7 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 ## UX Features (Latest Implementation)
 
 ### Two-Pane Layout
-- Left pane shows prior conversations (Archive)
+- Left pane shows prior conversations (Archive drawer)
 - Right pane shows the inquiry with question, final answer, and collapsible Stage 1/2 details
 - Stage 1/2 are collapsed by default; Stage 3 is always prominent
 
@@ -417,12 +417,17 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 - Input stays sticky at the bottom of the main pane
 
 ### Header User Controls
-- Avatar menu dropdown in masthead (top-right) with user initial/photo
+- Avatar menu dropdown in masthead (top-right) with user initial
   - Shows email, Settings button, and Logout option
   - Closes on Escape key or clicking outside
-- "New" button in masthead when viewing existing conversation
-- Sidebar is dedicated to archived conversations only
+- "New Inquiry" button in masthead when viewing existing conversation
 - Settings modal auto-opens for new users without API key
+
+### Archive Sidebar
+- Search box to filter conversations by title
+- Date-based grouping: Today, Yesterday, This Week, This Month, Older
+- Collapsible sections with item counts
+- Conversations only appear after first response (prevents empty entries)
 
 ### Mobile Drawer + Accessibility
 - Sidebar becomes a drawer on mobile with overlay
@@ -439,6 +444,11 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 - Skeleton loaders with shimmer animation for Stage 3, Stage 1, and Stage 2
 - Status text with spinner during each stage
 - Staggered reveal animations on page load
+
+### Custom Dialogs
+- ConfirmDialog component replaces browser confirm/alert modals
+- Editorial styling with support for danger/alert variants
+- Focus trap and keyboard navigation (Escape, Enter, Tab)
 
 ---
 

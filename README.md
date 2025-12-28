@@ -7,8 +7,8 @@ A collaborative deliberation system where multiple LLMs answer your questions, t
 Instead of asking a single LLM provider, submit your question to the AI Council, a group of leading models (OpenAI GPT-5.1, Google Gemini 3 Pro, Anthropic Claude Sonnet 4.5, xAI Grok 4, etc.). The Council deliberates in three stages: individual responses, peer review, and final synthesis.
 
 The UI uses a two-pane docket layout:
-- Left pane: prior conversations (dockets)
-- Right pane: a docket entry with the filed question, final opinion, and collapsible deliberation records (Stage 1 and Stage 2)
+- Left pane: Archive drawer with search and date-grouped conversations (Today, Yesterday, This Week, etc.)
+- Right pane: The inquiry with question, final answer, and collapsible Stage 1/2 deliberation records
 
 **Live Demo:** https://ai-council-anbs.vercel.app
 
