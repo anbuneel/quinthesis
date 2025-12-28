@@ -624,6 +624,7 @@ function App() {
           userEmail={userEmail}
           onOpenSettings={handleOpenSettings}
           onLogout={handleLogout}
+          onNewInquiry={handleGoToComposer}
         />
       </main>
       <div
