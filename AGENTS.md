@@ -314,13 +314,13 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 
 ## UX Features (Latest Implementation)
 
-### Docket Layout (Two Pane)
-- Left pane shows prior conversations (dockets)
-- Right pane shows a docket entry with the question, final opinion, and deliberation records
+### Two-Pane Layout
+- Left pane shows prior conversations (Archive)
+- Right pane shows the inquiry with question, final answer, and collapsible Stage 1/2 details
 - Stage 1/2 are collapsed by default; Stage 3 is always prominent
 
-### Sticky Docket Header + Input
-- Question header stays pinned within each docket entry
+### Sticky Header + Input
+- Question header stays pinned within each inquiry view
 - Status pill and last-updated line shown under the question
 - Input stays sticky at the bottom of the main pane
 

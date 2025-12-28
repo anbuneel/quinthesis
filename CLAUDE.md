@@ -335,29 +335,30 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 - Accents: `--accent-vermillion` (#C43D2E), `--accent-forest` (#2D5A3D), `--accent-ochre` (#C4943D)
 
 ### Typography
-- Display: Playfair Display (headlines, Council's Position)
+- Display: Playfair Display (headlines, Final Answer)
 - Body: Source Serif 4 (readable article text)
 - UI: IBM Plex Sans (labels, buttons)
 - Mono: IBM Plex Mono (code, model identifiers)
 
 ### Design Philosophy
-- "Answer-First" hierarchy: Stage 3 (Council's Position) is the hero with editorial flourishes (drop cap, two-column layout)
-- Deliberation as footnotes: Stage 1 & 2 are secondary, accordion-style
+- "Answer-First" hierarchy: Stage 3 (Final Answer) is the hero with editorial flourishes (drop cap, two-column layout)
+- Supporting details as secondary: Stage 1 & 2 are collapsed by default
 - Editorial conventions: Double-rule borders, pull-quote questions, masthead styling
 - Warm, authoritative feel inspired by The Economist and The New York Times
 
 ### Design Docs
 - `docs/UI_REDESIGN_PROPOSAL_opus_claude.md` - Full design proposal
+- `docs/UI_UX_REVIEW.md` - Latest UI/UX review and recommendations
 
 ## UX Features (Latest Implementation)
 
-### Docket Layout (Two Pane)
-- Left pane shows prior conversations (dockets)
-- Right pane shows a docket entry with the question, final opinion, and deliberation records
+### Two-Pane Layout
+- Left pane shows prior conversations (Archive)
+- Right pane shows the inquiry with question, final answer, and collapsible Stage 1/2 details
 - Stage 1/2 are collapsed by default; Stage 3 is always prominent
 
-### Sticky Docket Header + Input
-- Question header stays pinned within each docket entry
+### Sticky Header + Input
+- Question header stays pinned within each inquiry view
 - Status pill and last-updated line shown under the question
 - Input stays sticky at the bottom of the main pane
 
