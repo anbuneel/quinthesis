@@ -1,17 +1,14 @@
-# Code Cleanup Plan: AI Council
+# Code Cleanup Record: AI Council
 
 **Date:** 2025-12-28
-**Status:** Completed
-**Branch:** `cleanup/remove-dead-code`
-**Commit:** `ca1aca7`
 
 ---
 
 ## Overview
 
-After thorough analysis of the codebase, this document outlines code and files that were safely removed without breaking the application. The app went through many iterations, leaving behind deprecated authentication code, unused components, and legacy aliases.
+This document records the code cleanup performed after the OAuth migration. The app went through many iterations during development, leaving behind deprecated HTTP Basic Auth code, unused components from earlier designs, and legacy compatibility aliases. All items below were removed in PR #15.
 
-**Stats:** 18 files changed, 158 insertions(+), 566 deletions(-)
+**Impact:** 18 files changed, ~400 lines of dead code removed
 
 ---
 
@@ -86,16 +83,6 @@ Removed unused dependencies:
 
 ### README.md
 - Updated config variable names (`AVAILABLE_MODELS`, `DEFAULT_LEAD_MODEL` instead of `COUNCIL_MODELS`, `CHAIRMAN_MODEL`)
-
----
-
-## Test Plan
-
-- [ ] Backend starts without errors: `uv run python -m backend.main`
-- [ ] Frontend builds without errors: `cd frontend && npm run build`
-- [ ] OAuth login still works
-- [ ] API key settings still work
-- [ ] Conversations load and stream correctly
 
 ---
 
