@@ -236,11 +236,8 @@ function App() {
       // Step 1: Create the conversation
       const newConv = await api.createConversation({ models, lead_model });
 
-      // Add to conversation list
-      setConversations((prev) => [
-        { id: newConv.id, created_at: newConv.created_at, title: newConv.title, message_count: 0 },
-        ...prev,
-      ]);
+      // Don't add to conversations list yet - wait until stage1_complete
+      // This prevents empty conversations from cluttering the archive
 
       // Set as current conversation
       setCurrentConversationId(newConv.id);
@@ -281,6 +278,15 @@ function App() {
             break;
 
           case 'stage1_complete':
+            // Now that we have actual content, add to conversations list
+            setConversations((prev) => {
+              // Check if already in list (avoid duplicates)
+              if (prev.some((c) => c.id === newConv.id)) return prev;
+              return [
+                { id: newConv.id, created_at: newConv.created_at, title: newConv.title, message_count: 1 },
+                ...prev,
+              ];
+            });
             setCurrentConversation((prev) => {
               const messages = [...prev.messages];
               const lastMsg = messages[messages.length - 1];

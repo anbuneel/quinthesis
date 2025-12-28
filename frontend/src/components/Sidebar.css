@@ -26,64 +26,30 @@
   transform: translateX(0);
 }
 
-/* Header with masthead styling */
-.sidebar-header {
-  padding: 1.25rem 1rem;
-  border-bottom: 1px solid var(--paper-border);
-}
-
-/* New conversation button - matches header button style */
-.new-case-btn {
-  width: 100%;
-  padding: 0.625rem 1rem;
-  background: var(--paper-aged);
-  border: 1px solid var(--paper-border);
-  border-radius: var(--radius-sm);
-  color: var(--ink-medium);
-  cursor: pointer;
-  font-size: 0.75rem;
-  font-weight: 600;
-  font-family: var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wide);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  transition: all var(--transition-normal);
-}
-
-.new-case-btn:hover {
-  background: var(--paper-shadow);
-  border-color: var(--ink-faint);
-  color: var(--ink-dark);
-}
-
-.new-case-btn:active {
-  background: var(--paper-shadow);
-}
-
-.btn-icon {
-  font-size: 1.1rem;
-  font-weight: 400;
-}
-
-/* Conversation list */
+/* Conversation list - padding-top aligns Archive label with header Archive button */
 .case-list {
   flex: 1;
   overflow-y: auto;
   padding: 1rem;
+  /* Push down to align with header Archive button */
+  padding-top: 2.75rem;
 }
 
 .section-label {
   font-family: var(--font-ui);
-  font-size: var(--text-xs);
+  font-size: 0.75rem;
   font-weight: 600;
-  color: var(--ink-light);
+  color: var(--ink-medium);
   text-transform: uppercase;
-  letter-spacing: var(--tracking-wider);
-  padding: 0.5rem 0.75rem;
+  letter-spacing: var(--tracking-wide);
+  padding: 0 0.5rem 0.75rem;
   margin-bottom: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .case-list {
+    padding-top: 3rem;
+  }
 }
 
 .no-cases {
