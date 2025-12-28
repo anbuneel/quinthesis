@@ -10,6 +10,8 @@ The UI uses a two-pane docket layout:
 - Left pane: prior conversations (dockets)
 - Right pane: a docket entry with the filed question, final opinion, and collapsible deliberation records (Stage 1 and Stage 2)
 
+**Live Demo:** https://ai-council-anbs.vercel.app
+
 Production Application: Deployed on Vercel (frontend), Fly.io (backend), and Supabase (database).
 
 In a bit more detail, here is what happens when you submit a query:
