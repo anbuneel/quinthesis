@@ -9,11 +9,6 @@ export default function Sidebar({
   isOpen = false,
   onClose,
 }) {
-  // Determine if an inquiry is "resolved" (has messages) or "pending"
-  const getCaseStatus = (conv) => {
-    return conv.message_count > 0 ? 'resolved' : 'pending';
-  };
-
   const handleDelete = (e, convId) => {
     e.stopPropagation(); // Prevent selecting the conversation
     onDeleteConversation(convId);
@@ -36,16 +31,12 @@ export default function Sidebar({
         {conversations.length === 0 ? (
           <div className="no-cases">No inquiries yet</div>
         ) : (
-          conversations.map((conv) => {
-            const status = getCaseStatus(conv);
-            return (
+          conversations.map((conv) => (
               <div
                 key={conv.id}
-                className={`case-item ${conv.id === currentConversationId ? 'active' : ''
-                  }`}
+                className={`case-item ${conv.id === currentConversationId ? 'active' : ''}`}
                 onClick={() => handleSelectConversation(conv.id)}
               >
-                <span className={`case-status ${status}`} title={status === 'resolved' ? 'Completed' : 'In Progress'}></span>
                 <div className="case-content">
                   <div className="case-title">
                     {conv.title || 'Untitled Inquiry'}
@@ -65,8 +56,7 @@ export default function Sidebar({
                   </svg>
                 </button>
               </div>
-            );
-          })
+          ))
         )}
       </div>
 

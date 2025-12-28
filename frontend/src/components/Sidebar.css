@@ -84,25 +84,6 @@
   margin-left: -3px;
 }
 
-/* Status indicator */
-.case-status {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-top: 5px;
-  flex-shrink: 0;
-  box-shadow: 0 0 0 2px var(--paper-cream);
-}
-
-.case-status.pending {
-  background: var(--accent-ochre);
-  animation: pulse 2s ease-in-out infinite;
-}
-
-.case-status.resolved {
-  background: var(--accent-forest);
-}
-
 /* Content */
 .case-content {
   flex: 1;
