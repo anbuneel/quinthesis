@@ -1,33 +1,42 @@
 """Async PostgreSQL storage for conversations and users."""
 
 import json
+import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from . import database as db
 from .config import DEFAULT_MODELS, DEFAULT_LEAD_MODEL
 
+logger = logging.getLogger(__name__)
+
 _schema_ready = False
 
 
 async def ensure_schema():
-    """Ensure conversation settings columns exist."""
+    """Ensure conversation settings columns exist.
+
+    Attempts to add optional columns to the conversations table.
+    Logs errors instead of silently ignoring them.
+    """
     global _schema_ready
     if _schema_ready:
         return
+
     # Add columns one at a time (PostgreSQL requires separate statements for IF NOT EXISTS)
-    try:
-        await db.execute("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS models JSONB")
-    except Exception:
-        pass
-    try:
-        await db.execute("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS lead_model TEXT")
-    except Exception:
-        pass
-    try:
-        await db.execute("ALTER TABLE conversations ADD COLUMN IF NOT EXISTS user_id UUID")
-    except Exception:
-        pass
+    columns = [
+        ("models", "JSONB"),
+        ("lead_model", "TEXT"),
+        ("user_id", "UUID"),
+    ]
+
+    for col_name, col_type in columns:
+        try:
+            await db.execute(f"ALTER TABLE conversations ADD COLUMN IF NOT EXISTS {col_name} {col_type}")
+        except Exception as e:
+            # Log error but continue - column may already exist or table structure differs
+            logger.warning(f"Failed to add column {col_name} to conversations: {e}")
+
     _schema_ready = True
 
 
