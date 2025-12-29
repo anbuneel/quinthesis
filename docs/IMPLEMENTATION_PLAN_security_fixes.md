@@ -13,8 +13,8 @@
 |-------|------|--------|-----|
 | 1.1 | OAuth State Validation & PKCE | ✅ Complete | [#16](https://github.com/anbuneel/ai-council/pull/16) |
 | 1.2 | Fail-Fast Secret Validation | ✅ Complete | [#17](https://github.com/anbuneel/ai-council/pull/17) |
-| 1.3 | Complete Database Migrations | ⏳ Pending | - |
-| 1.4 | Rate Limiting & Request Size Limits | ⏳ Pending | - |
+| 1.3 | Complete Database Migrations | ⚠️ Deprioritized | N/A (DevOps, not security) |
+| 1.4 | Rate Limiting & Request Size Limits | ✅ Complete | [#18](https://github.com/anbuneel/ai-council/pull/18) |
 | 2.x | Medium Priority Fixes | ⏳ Pending | - |
 | 3.x | Low Priority Fixes | ⏳ Pending | - |
 
@@ -147,62 +147,26 @@
 
 ---
 
-### 1.4 Rate Limiting & Request Size Limits
+### 1.4 Rate Limiting & Request Size Limits ✅ COMPLETED
 
-**Files to modify:**
-- `backend/main.py`
-- New: `backend/rate_limit.py`
+**Status:** Implemented in PR #18 (`security/rate-limiting`)
+**Completed:** 2025-12-28
 
-**Implementation steps:**
+**Files created/modified:**
+- `backend/rate_limit.py` (NEW) - Rate limiter with sliding window algorithm
+- `backend/main.py` - Request size middleware and rate limit checks
 
-1. **Add request body size limit**
-   ```python
-   # backend/main.py
-   from fastapi import Request
-   from starlette.middleware.base import BaseHTTPMiddleware
+**Implementation details:**
+- Request body size limit: 1MB max (returns 413 if exceeded)
+- Streaming/message endpoints: 10 requests/minute per user
+- Thread-safe with asyncio.Lock
+- Sliding window algorithm for accurate rate limiting
+- Logs warnings when rate limit exceeded
+- Single-instance only (same as OAuth state - use Redis for multi-instance)
 
-   MAX_REQUEST_BODY_SIZE = 1024 * 1024  # 1MB
-
-   @app.middleware("http")
-   async def limit_request_size(request: Request, call_next):
-       if request.headers.get("content-length"):
-           content_length = int(request.headers["content-length"])
-           if content_length > MAX_REQUEST_BODY_SIZE:
-               return JSONResponse(
-                   status_code=413,
-                   content={"detail": "Request body too large"}
-               )
-       return await call_next(request)
-   ```
-
-2. **Add simple rate limiting (in-memory for single instance)**
-   ```python
-   # backend/rate_limit.py
-   from collections import defaultdict
-   from datetime import datetime, timedelta
-   from fastapi import HTTPException
-
-   class RateLimiter:
-       def __init__(self, requests_per_minute: int = 30):
-           self.requests_per_minute = requests_per_minute
-           self._requests: dict[str, list[datetime]] = defaultdict(list)
-
-       def check(self, user_id: str) -> None:
-           now = datetime.utcnow()
-           cutoff = now - timedelta(minutes=1)
-
-           # Clean old entries
-           self._requests[user_id] = [
-               ts for ts in self._requests[user_id] if ts > cutoff
-           ]
-
-           if len(self._requests[user_id]) >= self.requests_per_minute:
-               raise HTTPException(429, "Rate limit exceeded")
-
-           self._requests[user_id].append(now)
-
-   rate_limiter = RateLimiter()
-   ```
+**Rate limits applied to:**
+- `POST /api/conversations/{id}/message` - 10/min
+- `POST /api/conversations/{id}/message/stream` - 10/min
 
 3. **Apply to streaming endpoint**
    ```python

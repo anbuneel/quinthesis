@@ -516,9 +516,9 @@ A comprehensive security review was conducted on 2025-12-28 (see `docs/ai-counci
 - [x] PKCE implementation for Google OAuth (S256 code challenge)
 - [x] Frontend strict state validation (fail hard on mismatch)
 - [x] Fail-fast secret validation at startup - `backend/config.py:validate_secrets()`
+- [x] Rate limiting (10 req/min for council queries) - `backend/rate_limit.py`
+- [x] Request body size limit (1MB max)
 
-**Remaining items before launch:**
-- [ ] Complete database migrations for all tables
-- [ ] Rate limiting and request size limits
+**Launch readiness:** All critical security items from Phase 1 are complete.
 
 See `docs/IMPLEMENTATION_PLAN_security_fixes.md` for the detailed implementation plan.

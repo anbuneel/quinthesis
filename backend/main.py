@@ -1,8 +1,8 @@
 """FastAPI backend for LLM Council."""
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 from contextlib import asynccontextmanager
@@ -10,6 +10,8 @@ from uuid import UUID
 import uuid
 import json
 import asyncio
+
+from .rate_limit import api_rate_limiter, streaming_rate_limiter
 
 from .config import (
     CORS_ORIGINS,
@@ -83,6 +85,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Request body size limit (1MB)
+MAX_REQUEST_BODY_SIZE = 1024 * 1024  # 1MB
+
+
+@app.middleware("http")
+async def limit_request_size(request: Request, call_next):
+    """Reject requests with body larger than MAX_REQUEST_BODY_SIZE."""
+    content_length = request.headers.get("content-length")
+    if content_length:
+        try:
+            if int(content_length) > MAX_REQUEST_BODY_SIZE:
+                return JSONResponse(
+                    status_code=413,
+                    content={"detail": "Request body too large (max 1MB)"}
+                )
+        except ValueError:
+            pass  # Invalid content-length header, let it through
+    return await call_next(request)
 
 
 class CreateConversationRequest(BaseModel):
@@ -388,7 +409,12 @@ async def send_message(
     """
     Send a message and run the 3-stage council process.
     Returns the complete response with all stages.
+
+    Rate limited to 10 requests/minute per user to control OpenRouter costs.
     """
+    # Rate limit check (council queries are expensive - limit to 10/min)
+    await streaming_rate_limiter.check(str(user_id))
+
     # Get user's API key
     api_key = await storage.get_user_api_key(user_id, "openrouter")
     if not api_key:
@@ -451,7 +477,12 @@ async def send_message_stream(
     """
     Send a message and stream the 3-stage council process.
     Returns Server-Sent Events as each stage completes.
+
+    Rate limited to 10 requests/minute per user to control OpenRouter costs.
     """
+    # Rate limit check (streaming is expensive - limit to 10/min)
+    await streaming_rate_limiter.check(str(user_id))
+
     # Get user's API key (check early before streaming starts)
     api_key = await storage.get_user_api_key(user_id, "openrouter")
     if not api_key:
