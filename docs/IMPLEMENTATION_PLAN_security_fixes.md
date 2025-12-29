@@ -15,7 +15,10 @@
 | 1.2 | Fail-Fast Secret Validation | ✅ Complete | [#17](https://github.com/anbuneel/ai-council/pull/17) |
 | 1.3 | Complete Database Migrations | ⚠️ Deprioritized | N/A (DevOps, not security) |
 | 1.4 | Rate Limiting & Request Size Limits | ✅ Complete | [#18](https://github.com/anbuneel/ai-council/pull/18) |
-| 2.x | Medium Priority Fixes | ⏳ Pending | - |
+| 2.1 | Fix SSE Parsing | ✅ Complete | [#19](https://github.com/anbuneel/ai-council/pull/19) |
+| 2.2 | GitHub Users Without Verified Email | ✅ Complete | [#19](https://github.com/anbuneel/ai-council/pull/19) |
+| 2.3 | ORDER BY Stage Response Queries | ✅ Complete | [#19](https://github.com/anbuneel/ai-council/pull/19) |
+| 2.4 | Title Generation Model Fallback | ⏭️ Skipped | N/A (current behavior acceptable) |
 | 3.x | Low Priority Fixes | ⏳ Pending | - |
 
 ---
@@ -180,92 +183,61 @@
 
 ## Phase 2: Medium Priority Fixes
 
-### 2.1 Fix SSE Parsing
+### 2.1 Fix SSE Parsing ✅ COMPLETED
 
-**File:** `frontend/src/api.js`
+**Status:** Implemented in PR #19 (`security/phase2-medium-fixes`)
+**Completed:** 2025-12-28
 
-```javascript
-// Replace current SSE parsing with proper buffering
-async sendMessageStream(conversationId, content, onEvent) {
-    // ... existing setup ...
+**File modified:** `frontend/src/api.js`
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+**Implementation details:**
+- Added buffer to accumulate incomplete lines between chunks
+- Use `decoder.decode(value, { stream: true })` for proper UTF-8 handling
+- Keep incomplete line in buffer with `buffer = lines.pop() || ''`
+- Flush decoder and process remaining buffer at stream end
+- Prevents silent data loss when JSON payloads span multiple chunks
 
-    while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+---
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';  // Keep incomplete line in buffer
+### 2.2 Handle GitHub Users Without Verified Email ✅ COMPLETED
 
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                try {
-                    const event = JSON.parse(data);
-                    onEvent(event.type, event);
-                } catch (e) {
-                    console.error('Failed to parse SSE event:', e);
-                }
-            }
-        }
-    }
+**Status:** Implemented in PR #19 (`security/phase2-medium-fixes`)
+**Completed:** 2025-12-28
 
-    // Process any remaining buffer
-    decoder.decode();  // Flush
-}
-```
+**File modified:** `backend/oauth.py`
 
-### 2.2 Handle GitHub Users Without Verified Email
+**Implementation details:**
+- Added explicit check after email lookup loop
+- Raises `ValueError` with user-friendly message if no verified email found
+- Error is caught by existing exception handler and returned as HTTP 400
+- Message: "GitHub account requires a verified primary email address. Please add and verify an email in your GitHub settings."
 
-**File:** `backend/oauth.py`
+---
 
-```python
-# After email lookup loop, add fallback
-if not email:
-    raise HTTPException(
-        status_code=400,
-        detail="GitHub account requires a verified email address"
-    )
-```
+### 2.3 Add ORDER BY to Stage Response Queries ✅ COMPLETED
 
-### 2.3 Add ORDER BY to Stage Response Queries
+**Status:** Implemented in PR #19 (`security/phase2-medium-fixes`)
+**Completed:** 2025-12-28
 
-**File:** `backend/storage.py`
+**File modified:** `backend/storage.py`
 
-```python
-# Line ~151
-stage1_rows = await db.fetch(
-    """
-    SELECT model, response
-    FROM stage1_responses
-    WHERE message_id = $1
-    ORDER BY display_order ASC, model ASC
-    """,
-    message_id
-)
+**Implementation details:**
+- Added `ORDER BY model ASC` to stage1_responses query
+- Added `ORDER BY model ASC` to stage2_rankings query
+- Ensures consistent ordering across page loads
+- Note: `display_order` column not implemented; alphabetical by model is sufficient
 
-# Similar for stage2_responses
-```
+---
 
-### 2.4 Title Generation Model Fallback
+### 2.4 Title Generation Model Fallback ⏭️ SKIPPED
 
-**File:** `backend/council.py`
+**Status:** Skipped - current behavior is acceptable
+**Reason:** The hardcoded `google/gemini-2.5-flash` is intentionally chosen for:
+- Fast response times (title generation shouldn't block UI)
+- Low cost (simple task doesn't need expensive models)
+- Already has fallback to "New Conversation" if model fails
 
-```python
-async def generate_title(user_query: str, api_key: str, lead_model: str = None) -> str:
-    # Use lead model if provided, else fallback
-    title_model = lead_model or "google/gemini-2.5-flash"
-
-    # Try with selected model, fallback to default if it fails
-    response = await query_model(title_model, messages, timeout=30.0, api_key=api_key)
-    if response is None and title_model != "google/gemini-2.5-flash":
-        response = await query_model("google/gemini-2.5-flash", messages, timeout=30.0, api_key=api_key)
-    # ...
-```
+Using lead_model would increase latency and cost for marginal benefit.
 
 ---
 

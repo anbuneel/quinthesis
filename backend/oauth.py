@@ -183,6 +183,13 @@ class GitHubOAuth:
                         email = e["email"]
                         break
 
+            # Require a verified email for account creation
+            if not email:
+                raise ValueError(
+                    "GitHub account requires a verified primary email address. "
+                    "Please add and verify an email in your GitHub settings."
+                )
+
             return OAuthUser(
                 provider="github",
                 provider_id=str(data["id"]),

@@ -405,13 +405,18 @@ export const api = {
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    let buffer = '';
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
 
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n');
+      // Append new chunk to buffer, using stream mode to handle partial UTF-8 sequences
+      buffer += decoder.decode(value, { stream: true });
+
+      // Split on newlines, keeping incomplete line in buffer
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Last element is incomplete line (or empty if ended with \n)
 
       for (const line of lines) {
         if (line.startsWith('data: ')) {
@@ -423,6 +428,20 @@ export const api = {
             console.error('Failed to parse SSE event:', e);
           }
         }
+      }
+    }
+
+    // Flush any remaining bytes from the decoder
+    buffer += decoder.decode();
+
+    // Process any remaining data in buffer
+    if (buffer.startsWith('data: ')) {
+      const data = buffer.slice(6);
+      try {
+        const event = JSON.parse(data);
+        onEvent(event.type, event);
+      } catch (e) {
+        console.error('Failed to parse final SSE event:', e);
       }
     }
   },

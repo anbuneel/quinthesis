@@ -162,6 +162,7 @@ async def get_conversation(
                 SELECT model, response
                 FROM stage1_responses
                 WHERE message_id = $1
+                ORDER BY model ASC
                 """,
                 message_id
             )
@@ -173,6 +174,7 @@ async def get_conversation(
                 SELECT model, ranking, parsed_ranking
                 FROM stage2_rankings
                 WHERE message_id = $1
+                ORDER BY model ASC
                 """,
                 message_id
             )
