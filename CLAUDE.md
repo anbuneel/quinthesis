@@ -511,7 +511,7 @@ Tested on latest Chrome/Firefox. Frontend uses modern React patterns (hooks, str
 
 A comprehensive security review was conducted on 2025-12-28 (see `docs/ai-council-review-codex-20251228-154048.md`).
 
-**Completed security fixes:**
+**Completed security fixes (Phase 1 - Critical):**
 - [x] OAuth state validation (server-side) - `backend/oauth_state.py`
 - [x] PKCE implementation for Google OAuth (S256 code challenge)
 - [x] Frontend strict state validation (fail hard on mismatch)
@@ -519,6 +519,11 @@ A comprehensive security review was conducted on 2025-12-28 (see `docs/ai-counci
 - [x] Rate limiting (10 req/min for council queries) - `backend/rate_limit.py`
 - [x] Request body size limit (1MB max)
 
-**Launch readiness:** All critical security items from Phase 1 are complete.
+**Completed quality fixes (Phase 2 - Medium):**
+- [x] SSE parsing with proper buffering - `frontend/src/api.js`
+- [x] GitHub users without verified email - explicit error handling
+- [x] ORDER BY for stage response queries - consistent display order
+
+**Launch readiness:** All Phase 1 and Phase 2 items are complete.
 
 See `docs/IMPLEMENTATION_PLAN_security_fixes.md` for the detailed implementation plan.
