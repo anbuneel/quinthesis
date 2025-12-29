@@ -19,7 +19,10 @@
 | 2.2 | GitHub Users Without Verified Email | ✅ Complete | [#19](https://github.com/anbuneel/ai-council/pull/19) |
 | 2.3 | ORDER BY Stage Response Queries | ✅ Complete | [#19](https://github.com/anbuneel/ai-council/pull/19) |
 | 2.4 | Title Generation Model Fallback | ⏭️ Skipped | N/A (current behavior acceptable) |
-| 3.x | Low Priority Fixes | ⏳ Pending | - |
+| 3.1 | Archive Items Keyboard Accessibility | ✅ Complete | [#20](https://github.com/anbuneel/ai-council/pull/20) |
+| 3.2 | Settings Modal Dialog Semantics | ✅ Complete | [#20](https://github.com/anbuneel/ai-council/pull/20) |
+| 3.3 | Local Storage API Key ID Fix | ✅ Complete | [#20](https://github.com/anbuneel/ai-council/pull/20) |
+| 3.4 | Documentation Updates | ✅ Complete | [#20](https://github.com/anbuneel/ai-council/pull/20) |
 
 ---
 
@@ -243,75 +246,61 @@ Using lead_model would increase latency and cost for marginal benefit.
 
 ## Phase 3: Low Priority Fixes
 
-### 3.1 Archive Items Keyboard Accessibility
+### 3.1 Archive Items Keyboard Accessibility ✅ COMPLETED
 
-**File:** `frontend/src/components/Sidebar.jsx`
+**Status:** Implemented in PR #20 (`security/phase3-low-priority-fixes`)
+**Completed:** 2025-12-28
 
-```jsx
-// Replace div with button or add keyboard support
-<div
-    key={conv.id}
-    className={`case-item ${conv.id === currentConversationId ? 'active' : ''}`}
-    onClick={() => handleSelectConversation(conv.id)}
-    onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleSelectConversation(conv.id);
-        }
-    }}
-    role="button"
-    tabIndex={0}
-    aria-current={conv.id === currentConversationId ? 'true' : undefined}
->
-```
+**File modified:** `frontend/src/components/Sidebar.jsx`
 
-### 3.2 Settings Modal Dialog Semantics
+**Implementation details:**
+- Added `role="button"` for semantic meaning
+- Added `tabIndex={0}` for keyboard focusability
+- Added `onKeyDown` handler for Enter and Space keys
+- Added `aria-current="true"` for active conversation
 
-**File:** `frontend/src/components/Settings.jsx`
+---
 
-```jsx
-<div
-    className="settings-overlay"
-    onClick={onClose}
-    role="presentation"
->
-    <div
-        className="settings-modal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="settings-title"
-    >
-        <h2 id="settings-title">Settings</h2>
-        {/* ... */}
-    </div>
-</div>
-```
+### 3.2 Settings Modal Dialog Semantics ✅ COMPLETED
 
-Add focus trap using a library like `focus-trap-react` or manual implementation.
+**Status:** Implemented in PR #20 (`security/phase3-low-priority-fixes`)
+**Completed:** 2025-12-28
 
-### 3.3 Local Storage API Key ID Fix
+**File modified:** `frontend/src/components/Settings.jsx`
 
-**File:** `backend/storage_local.py`
+**Implementation details:**
+- Added `role="presentation"` to overlay
+- Added `role="dialog"`, `aria-modal="true"`, `aria-labelledby="settings-title"` to modal
+- Added `id="settings-title"` to h2 heading
+- Implemented manual focus trap (Tab cycles within modal)
+- Added Escape key handler to close modal
+- Focus returns to previously focused element on close
 
-Ensure returned API key metadata includes an `id` field:
+---
 
-```python
-return {
-    "id": key_file.stem,  # Use filename as ID
-    "provider": data.get("provider"),
-    "hint": data.get("hint"),
-    # ...
-}
-```
+### 3.3 Local Storage API Key ID Fix ✅ COMPLETED
 
-### 3.4 Documentation Updates
+**Status:** Implemented in PR #20 (`security/phase3-low-priority-fixes`)
+**Completed:** 2025-12-28
 
-**Files:** `CLAUDE.md`, `AGENTS.md`
+**File modified:** `backend/storage_local.py`
 
-Update field names to match actual API:
-- `evaluation` -> `ranking` (Stage 2)
-- `avg_position` -> `average_rank` (aggregate rankings)
+**Implementation details:**
+- Added `id` field to `get_user_api_keys()` return value
+- Added fallback for `updated_at` field (uses `created_at` if missing)
+
+---
+
+### 3.4 Documentation Updates ✅ COMPLETED
+
+**Status:** Implemented in PR #20 (`security/phase3-low-priority-fixes`)
+**Completed:** 2025-12-28
+
+**Files modified:** `CLAUDE.md`, `AGENTS.md`
+
+**Implementation details:**
+- Fixed `evaluation` -> `ranking` in Stage 2 response example
+- Fixed `avg_position` -> `average_rank` in aggregate_rankings example
 
 ---
 

@@ -162,6 +162,15 @@ export default function Sidebar({
                         key={conv.id}
                         className={`case-item ${conv.id === currentConversationId ? 'active' : ''}`}
                         onClick={() => handleSelectConversation(conv.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleSelectConversation(conv.id);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-current={conv.id === currentConversationId ? 'true' : undefined}
                       >
                         <div className="case-content">
                           <div className="case-title">

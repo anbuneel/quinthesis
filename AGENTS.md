@@ -228,14 +228,14 @@ Response:
   "stage2": [
     {
       "model": "google/gemini-3-pro-preview",
-      "evaluation": "Raw evaluation text...",
+      "ranking": "Raw ranking text...",
       "parsed_ranking": ["C", "A", "B"]
     }
   ],
   "stage3": {"role": "chairman", "content": "Final answer..."},
   "metadata": {
     "label_to_model": {"Response A": "openai/gpt-5.1", ...},
-    "aggregate_rankings": [{"model": "...", "avg_position": 1.5}, ...]
+    "aggregate_rankings": [{"model": "...", "average_rank": 1.5}, ...]
   }
 }
 ```

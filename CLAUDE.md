@@ -281,14 +281,14 @@ Response:
   "stage2": [
     {
       "model": "google/gemini-3-pro-preview",
-      "evaluation": "Raw evaluation text...",
+      "ranking": "Raw ranking text...",
       "parsed_ranking": ["C", "A", "B"]
     }
   ],
   "stage3": {"role": "chairman", "content": "Final answer..."},
   "metadata": {
     "label_to_model": {"Response A": "openai/gpt-5.1", ...},
-    "aggregate_rankings": [{"model": "...", "avg_position": 1.5}, ...]
+    "aggregate_rankings": [{"model": "...", "average_rank": 1.5}, ...]
   }
 }
 ```
@@ -524,6 +524,12 @@ A comprehensive security review was conducted on 2025-12-28 (see `docs/ai-counci
 - [x] GitHub users without verified email - explicit error handling
 - [x] ORDER BY for stage response queries - consistent display order
 
-**Launch readiness:** All Phase 1 and Phase 2 items are complete.
+**Completed accessibility/polish fixes (Phase 3 - Low):**
+- [x] Archive items keyboard accessibility - `frontend/src/components/Sidebar.jsx`
+- [x] Settings modal dialog semantics with focus trap - `frontend/src/components/Settings.jsx`
+- [x] Local storage API key ID fix - `backend/storage_local.py`
+- [x] Documentation field name corrections - `CLAUDE.md`, `AGENTS.md`
+
+**Launch readiness:** All Phase 1, Phase 2, and Phase 3 items are complete.
 
 See `docs/IMPLEMENTATION_PLAN_security_fixes.md` for the detailed implementation plan.

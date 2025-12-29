@@ -457,10 +457,11 @@ async def get_user_api_keys(user_id: UUID) -> List[Dict[str, Any]]:
 
     return [
         {
+            "id": data["id"],
             "provider": data["provider"],
             "key_hint": data["key_hint"],
             "created_at": data["created_at"],
-            "updated_at": data["updated_at"]
+            "updated_at": data.get("updated_at", data["created_at"])
         }
         for data in keys.values()
     ]

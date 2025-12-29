@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { settings } from '../api';
 import ConfirmDialog from './ConfirmDialog';
 import './Settings.css';
@@ -12,12 +12,53 @@ function Settings({ isOpen, onClose, userEmail }) {
   const [success, setSuccess] = useState('');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingDeleteProvider, setPendingDeleteProvider] = useState(null);
+  const modalRef = useRef(null);
+  const previousActiveElement = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
       loadApiKeys();
+      // Store the previously focused element
+      previousActiveElement.current = document.activeElement;
+      // Focus the modal
+      setTimeout(() => modalRef.current?.focus(), 0);
+    } else {
+      // Restore focus when modal closes
+      previousActiveElement.current?.focus();
     }
   }, [isOpen]);
+
+  // Handle Escape key and focus trap
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !confirmOpen) {
+        onClose();
+        return;
+      }
+
+      // Focus trap
+      if (e.key === 'Tab' && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+
+        if (e.shiftKey && document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement?.focus();
+        } else if (!e.shiftKey && document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement?.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, confirmOpen, onClose]);
 
   const loadApiKeys = async () => {
     setIsLoading(true);
@@ -80,8 +121,16 @@ function Settings({ isOpen, onClose, userEmail }) {
   if (!isOpen) return null;
 
   return (
-    <div className="settings-overlay" onClick={onClose}>
-      <div className="settings-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="settings-overlay" onClick={onClose} role="presentation">
+      <div
+        className="settings-modal"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-title"
+        ref={modalRef}
+        tabIndex={-1}
+      >
         <div className="settings-header">
           <button className="settings-close" onClick={onClose} aria-label="Close">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -91,7 +140,7 @@ function Settings({ isOpen, onClose, userEmail }) {
           </button>
           <div className="settings-title-wrapper">
             <span className="settings-title-rule"></span>
-            <h2>Settings</h2>
+            <h2 id="settings-title">Settings</h2>
             <span className="settings-title-rule"></span>
           </div>
           <div className="settings-header-divider">
