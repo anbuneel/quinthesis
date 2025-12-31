@@ -26,9 +26,7 @@ function Login({ onLogin }) {
         <header className="login-masthead">
           <div className="masthead-rule"></div>
           <h1 className="masthead-title">The AI Council</h1>
-          <p className="masthead-tagline">
-            Submit your question to a council of leading models. They deliberate in three stages—then a Chairman synthesizes the verdict.
-          </p>
+          <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
         </header>
 
         {/* Process diagram - horizontal */}
