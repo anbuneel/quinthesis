@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem var(--container-padding);
+  padding: 0.25rem var(--container-padding);
   border-bottom: 2px solid var(--ink-black);
   position: relative;
   z-index: 1;
@@ -50,32 +50,34 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0;
   flex: 1;
 }
 
 .masthead-title {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
+  font-size: var(--text-base);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.05em;
   color: var(--ink-black);
   text-transform: uppercase;
   margin: 0;
   text-align: center;
+  line-height: 1;
 }
 
 .masthead-tagline {
   font-family: var(--font-body);
-  font-size: var(--text-sm);
+  font-size: 0.625rem;
   font-style: italic;
   color: var(--ink-medium);
   margin: 0;
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: var(--tracking-normal);
+  line-height: 1;
 }
 
 .masthead-spacer {
-  width: 70px; /* Same width as Archive button for centering */
+  width: 60px; /* Same width as Archive button for centering */
 }
 
 /* Masthead user controls */
@@ -101,8 +103,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   background: transparent;
   border: 1px solid var(--paper-border);
@@ -126,9 +128,9 @@
 
 .masthead-btn-new {
   width: auto;
-  height: 30px;
-  padding: 0 0.75rem;
-  gap: 0.375rem;
+  height: 26px;
+  padding: 0 0.625rem;
+  gap: 0.25rem;
   background: var(--paper-aged);
   border: 1px solid var(--paper-border);
   color: var(--ink-medium);
@@ -142,7 +144,7 @@
 
 .masthead-btn-label {
   font-family: var(--font-ui);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -154,7 +156,7 @@
   }
 
   .masthead-btn-new {
-    width: 34px;
+    width: 28px;
     padding: 0;
   }
 }
@@ -164,27 +166,23 @@
     display: none;
   }
 
-  .masthead-tagline {
-    display: none;
-  }
-
   .masthead-row {
-    padding: 0.75rem var(--container-padding);
+    padding: 0.25rem var(--container-padding);
   }
 
   .masthead-title {
-    font-size: var(--text-lg);
-    letter-spacing: 0.06em;
+    font-size: var(--text-sm);
+    letter-spacing: 0.04em;
   }
 }
 
 @media (min-width: 768px) {
   .masthead-row {
-    padding: 1.25rem 2rem;
+    padding: 0.375rem 2rem;
   }
 
   .masthead-title {
-    font-size: var(--text-2xl);
+    font-size: var(--text-base);
   }
 }
 
@@ -193,7 +191,7 @@
    ========================================================================== */
 .question-panel {
   border-bottom: 2px solid var(--ink-black);
-  background: var(--paper-cream);
+  background: var(--paper-aged);
   padding: 0.75rem var(--container-padding);
 }
 
@@ -232,7 +230,7 @@
   left: 0;
   right: 0;
   height: 24px;
-  background: linear-gradient(transparent, var(--paper-cream));
+  background: linear-gradient(transparent, var(--paper-aged));
   pointer-events: none;
 }
 
@@ -283,14 +281,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 30px;
-  padding: 0 0.75rem;
+  height: 26px;
+  padding: 0 0.625rem;
   border-radius: var(--radius-sm);
   background: var(--paper-aged);
   border: 1px solid var(--paper-border);
   color: var(--ink-medium);
   font-family: var(--font-ui);
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -326,31 +324,23 @@
 }
 
 /* ==========================================================================
-   Status Pills - Editorial style
+   Status Labels - Simple text style
    ========================================================================== */
 .question-status {
   font-family: var(--font-ui);
   font-size: var(--text-xs);
   font-weight: 600;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--paper-border);
-  background: var(--paper-aged);
-  color: var(--ink-medium);
+  color: var(--ink-light);
   text-transform: uppercase;
   letter-spacing: var(--tracking-wide);
 }
 
 .question-status.pending {
   color: var(--accent-ochre);
-  border-color: var(--accent-ochre);
-  background: var(--accent-ochre-bg);
 }
 
 .question-status.resolved {
   color: var(--accent-forest);
-  border-color: var(--accent-forest);
-  background: var(--accent-forest-bg);
 }
 
 .last-updated {
