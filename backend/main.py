@@ -502,10 +502,16 @@ async def send_message(
     }
 
 
+class ClientDisconnectedError(Exception):
+    """Raised when client disconnects during streaming."""
+    pass
+
+
 @app.post("/api/conversations/{conversation_id}/message/stream")
 async def send_message_stream(
     conversation_id: str,
-    request: SendMessageRequest,
+    message_request: SendMessageRequest,
+    http_request: Request,
     user_id: UUID = Depends(get_current_user)
 ):
     """
@@ -513,6 +519,7 @@ async def send_message_stream(
     Returns Server-Sent Events as each stage completes.
 
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
+    Detects client disconnection and cancels in-flight API calls to save costs.
     """
     # Rate limit check (streaming is expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
@@ -537,31 +544,38 @@ async def send_message_stream(
         conversation.get("lead_model")
     )
 
+    async def check_disconnected():
+        """Check if client has disconnected and raise if so."""
+        if await http_request.is_disconnected():
+            raise ClientDisconnectedError("Client disconnected")
+
     async def event_generator():
+        title_task = None
         try:
             # Add user message
-            await storage.add_user_message(conversation_id, request.content)
+            await storage.add_user_message(conversation_id, message_request.content)
 
             # Start title generation in parallel (don't await yet)
-            title_task = None
             if is_first_message:
                 title_task = asyncio.create_task(
-                    generate_conversation_title(request.content, api_key=api_key)
+                    generate_conversation_title(message_request.content, api_key=api_key)
                 )
 
             # Stage 1: Collect responses
+            await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage1_start'})}\n\n"
             stage1_results = await stage1_collect_responses(
-                request.content,
+                message_request.content,
                 models=selected_models,
                 api_key=api_key
             )
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Collect rankings
+            await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage2_start'})}\n\n"
             stage2_results, label_to_model = await stage2_collect_rankings(
-                request.content,
+                message_request.content,
                 stage1_results,
                 models=selected_models,
                 api_key=api_key
@@ -570,9 +584,10 @@ async def send_message_stream(
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_model': label_to_model, 'aggregate_rankings': aggregate_rankings}})}\n\n"
 
             # Stage 3: Synthesize final answer
+            await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage3_start'})}\n\n"
             stage3_result = await stage3_synthesize_final(
-                request.content,
+                message_request.content,
                 stage1_results,
                 stage2_results,
                 lead_model=selected_lead,
@@ -596,6 +611,13 @@ async def send_message_stream(
 
             # Send completion event
             yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+
+        except ClientDisconnectedError:
+            # Client disconnected - cancel any running tasks and stop
+            if title_task and not title_task.done():
+                title_task.cancel()
+            # No need to yield anything - client is gone
+            return
 
         except Exception as e:
             # Send error event

@@ -263,6 +263,9 @@ async def add_user_message(conversation_id: str, content: str) -> int:
     """
     Add a user message to a conversation.
 
+    Uses a transaction with FOR UPDATE to prevent race conditions
+    when calculating message order.
+
     Args:
         conversation_id: Conversation identifier
         content: User message content
@@ -270,27 +273,29 @@ async def add_user_message(conversation_id: str, content: str) -> int:
     Returns:
         The message_order of the new message
     """
-    # Get the next message order
-    next_order = await db.fetchval(
-        """
-        SELECT COALESCE(MAX(message_order), -1) + 1
-        FROM messages
-        WHERE conversation_id = $1
-        """,
-        conversation_id
-    )
+    async with db.transaction() as conn:
+        # Get the next message order (with FOR UPDATE to prevent race conditions)
+        next_order = await conn.fetchval(
+            """
+            SELECT COALESCE(MAX(message_order), -1) + 1
+            FROM messages
+            WHERE conversation_id = $1
+            FOR UPDATE
+            """,
+            conversation_id
+        )
 
-    await db.execute(
-        """
-        INSERT INTO messages (conversation_id, role, content, message_order)
-        VALUES ($1, 'user', $2, $3)
-        """,
-        conversation_id,
-        content,
-        next_order
-    )
+        await conn.execute(
+            """
+            INSERT INTO messages (conversation_id, role, content, message_order)
+            VALUES ($1, 'user', $2, $3)
+            """,
+            conversation_id,
+            content,
+            next_order
+        )
 
-    return next_order
+        return next_order
 
 
 async def add_assistant_message(
