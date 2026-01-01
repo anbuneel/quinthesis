@@ -1,6 +1,9 @@
 """FastAPI backend for LLM Council."""
 
+import logging
 from fastapi import FastAPI, HTTPException, Depends, Request
+
+logger = logging.getLogger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
@@ -48,6 +51,7 @@ from .council import (
     stage3_synthesize_final,
     calculate_aggregate_rankings
 )
+from .openrouter import close_client as close_openrouter_client
 
 # Use local JSON storage if DATABASE_URL is not set
 if DATABASE_URL:
@@ -79,8 +83,9 @@ async def lifespan(app: FastAPI):
         # Startup: initialize database pool
         await get_pool()
     yield
+    # Shutdown: close all clients
+    await close_openrouter_client()
     if not USE_LOCAL_STORAGE:
-        # Shutdown: close database pool
         await close_pool()
 
 
@@ -285,7 +290,9 @@ async def oauth_callback(provider: str, data: OAuthCallbackRequest, request: Req
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")
+        # Log full error details server-side, return generic message to client
+        logger.exception(f"OAuth authentication failed for provider {provider}")
+        raise HTTPException(status_code=400, detail="OAuth authentication failed. Please try again.")
 
 
 @app.post("/api/auth/refresh", response_model=TokenResponse)
@@ -551,6 +558,21 @@ async def send_message_stream(
 
     async def event_generator():
         title_task = None
+        keepalive_event = ": keepalive\n\n"
+
+        async def run_with_keepalive(coro, interval=15):
+            """Run a coroutine while yielding keepalive pings every interval seconds."""
+            task = asyncio.create_task(coro)
+            pings = []
+            while not task.done():
+                try:
+                    # Wait for task with timeout
+                    await asyncio.wait_for(asyncio.shield(task), timeout=interval)
+                except asyncio.TimeoutError:
+                    # Task still running, queue a keepalive ping
+                    pings.append(keepalive_event)
+            return task.result(), pings
+
         try:
             # Add user message
             await storage.add_user_message(conversation_id, message_request.content)
@@ -564,35 +586,47 @@ async def send_message_stream(
             # Stage 1: Collect responses
             await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage1_start'})}\n\n"
-            stage1_results = await stage1_collect_responses(
-                message_request.content,
-                models=selected_models,
-                api_key=api_key
+            stage1_results, pings = await run_with_keepalive(
+                stage1_collect_responses(
+                    message_request.content,
+                    models=selected_models,
+                    api_key=api_key
+                )
             )
+            for ping in pings:
+                yield ping
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Collect rankings
             await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage2_start'})}\n\n"
-            stage2_results, label_to_model = await stage2_collect_rankings(
-                message_request.content,
-                stage1_results,
-                models=selected_models,
-                api_key=api_key
+            (stage2_results, label_to_model), pings = await run_with_keepalive(
+                stage2_collect_rankings(
+                    message_request.content,
+                    stage1_results,
+                    models=selected_models,
+                    api_key=api_key
+                )
             )
+            for ping in pings:
+                yield ping
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_model)
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_model': label_to_model, 'aggregate_rankings': aggregate_rankings}})}\n\n"
 
             # Stage 3: Synthesize final answer
             await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage3_start'})}\n\n"
-            stage3_result = await stage3_synthesize_final(
-                message_request.content,
-                stage1_results,
-                stage2_results,
-                lead_model=selected_lead,
-                api_key=api_key
+            stage3_result, pings = await run_with_keepalive(
+                stage3_synthesize_final(
+                    message_request.content,
+                    stage1_results,
+                    stage2_results,
+                    lead_model=selected_lead,
+                    api_key=api_key
+                )
             )
+            for ping in pings:
+                yield ping
             yield f"data: {json.dumps({'type': 'stage3_complete', 'data': stage3_result})}\n\n"
 
             # Wait for title generation if it was started
