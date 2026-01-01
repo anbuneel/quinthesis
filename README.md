@@ -67,11 +67,17 @@ OAUTH_REDIRECT_BASE=http://localhost:5173
 # CORS origins
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
-# Optional: Fallback OpenRouter API key for local dev (users provide their own in production)
-OPENROUTER_API_KEY=sk-or-v1-...
+# Stripe (for credit purchases)
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# OpenRouter Provisioning (for per-user API keys)
+OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
 ```
 
-**Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email to preserve their data. Each user provides their own OpenRouter API key in Settings. Get your API key at [openrouter.ai](https://openrouter.ai/).
+**Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email to preserve their data.
+
+**Credits System:** Users purchase credit packs via Stripe. Each query consumes 1 credit. The system provisions per-user OpenRouter API keys with spending limits.
 
 **Database Migrations:** Run migrations before first use:
 ```bash

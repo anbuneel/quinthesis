@@ -337,3 +337,211 @@
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+/* ==========================================================================
+   Credits UI Styles
+   ========================================================================== */
+
+.credits-balance {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem;
+  background: var(--paper-aged, #F5F0E8);
+  border: 2px solid var(--ink-black, #1A1614);
+  margin-bottom: 1rem;
+}
+
+.credits-balance-value {
+  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--ink-black, #1A1614);
+  line-height: 1;
+}
+
+.credits-balance-label {
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
+  font-size: 0.875rem;
+  color: var(--ink-gray, #666);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-top: 0.5rem;
+}
+
+.credit-packs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.credit-pack {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: var(--paper-aged, #F5F0E8);
+  border: 1px solid var(--border-light, #E5E0D8);
+  transition: border-color 0.2s;
+}
+
+.credit-pack:hover {
+  border-color: var(--ink-black, #1A1614);
+}
+
+.pack-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pack-name {
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--ink-dark, #2D2926);
+}
+
+.pack-credits {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 0.8125rem;
+  color: var(--ink-gray, #666);
+}
+
+.pack-buy-btn {
+  padding: 0.625rem 1.25rem;
+  background: var(--accent-forest, #2D5A3D);
+  color: white;
+  border: 2px solid var(--accent-forest, #2D5A3D);
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pack-buy-btn:hover:not(:disabled) {
+  background: white;
+  color: var(--accent-forest, #2D5A3D);
+}
+
+.pack-buy-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Transaction History */
+
+.history-toggle {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.875rem 1rem;
+  background: none;
+  border: 1px solid var(--border-light, #E5E0D8);
+  cursor: pointer;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--ink-dark, #2D2926);
+  transition: border-color 0.2s;
+}
+
+.history-toggle:hover {
+  border-color: var(--ink-black, #1A1614);
+}
+
+.history-toggle-icon {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s;
+}
+
+.history-toggle-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.transaction-history {
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-light, #E5E0D8);
+  border-top: none;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-empty {
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--ink-gray, #666);
+  font-style: italic;
+}
+
+.history-list {
+  padding: 0.5rem;
+}
+
+.history-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--border-light, #E5E0D8);
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.history-amount {
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.history-amount.positive {
+  color: var(--accent-forest, #2D5A3D);
+}
+
+.history-amount.negative {
+  color: var(--accent-vermillion, #C43D2E);
+}
+
+.history-type {
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-gray, #666);
+  padding: 0.125rem 0.5rem;
+  background: var(--paper-aged, #F5F0E8);
+  border-radius: 2px;
+}
+
+.history-item-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8125rem;
+}
+
+.history-desc {
+  color: var(--ink-gray, #666);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 1rem;
+}
+
+.history-date {
+  color: var(--ink-gray, #888);
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}

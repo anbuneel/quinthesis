@@ -12,7 +12,18 @@
       "Bash(cat:*)",
       "Bash(python:*)",
       "Bash(curl:*)",
-      "Bash(fly secrets set:*)"
+      "Bash(fly secrets set:*)",
+      "Bash(git checkout:*)",
+      "Bash(uv run python:*)",
+      "Bash(fly status:*)",
+      "Bash(gh pr create:*)",
+      "Bash(fly deploy:*)",
+      "Bash(gh api:*)",
+      "Bash(npm install:*)",
+      "Bash(gh pr view:*)",
+      "Bash(gh pr merge:*)",
+      "Bash(git pull:*)",
+      "WebSearch"
     ]
   }
 }

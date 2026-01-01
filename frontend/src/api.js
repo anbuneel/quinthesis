@@ -239,6 +239,98 @@ export const settings = {
   },
 };
 
+// ============== Credits API ==============
+
+export const credits = {
+  /**
+   * Get current credit balance.
+   */
+  async getBalance() {
+    const response = await fetchWithAuth(`${API_BASE}/api/credits`);
+    if (!response.ok) {
+      throw new Error('Failed to get credit balance');
+    }
+    return response.json();
+  },
+
+  /**
+   * Get available credit packs.
+   */
+  async getPacks() {
+    const response = await fetchWithAuth(`${API_BASE}/api/credits/packs`);
+    if (!response.ok) {
+      throw new Error('Failed to get credit packs');
+    }
+    return response.json();
+  },
+
+  /**
+   * Get credit transaction history.
+   */
+  async getHistory() {
+    const response = await fetchWithAuth(`${API_BASE}/api/credits/history`);
+    if (!response.ok) {
+      throw new Error('Failed to get credit history');
+    }
+    return response.json();
+  },
+
+  /**
+   * Create checkout session and redirect to Stripe.
+   */
+  async purchasePack(packId) {
+    const successUrl = `${window.location.origin}/credits/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${window.location.origin}/credits/cancel`;
+
+    const response = await fetchWithAuth(`${API_BASE}/api/credits/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        pack_id: packId,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      let message = 'Failed to create checkout session';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    const data = await response.json();
+    // Redirect to Stripe Checkout
+    window.location.href = data.checkout_url;
+  },
+
+  /**
+   * Retry OpenRouter key provisioning for users who have credits but no key.
+   */
+  async retryProvisioning() {
+    const response = await fetchWithAuth(`${API_BASE}/api/credits/provision-key`, {
+      method: 'POST',
+    });
+
+    if (!response.ok) {
+      let message = 'Failed to provision API key';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    return response.json();
+  },
+};
+
 // ============== Main API ==============
 
 export const api = {

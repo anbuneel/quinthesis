@@ -486,3 +486,164 @@ async def delete_user_api_key(user_id: UUID, provider: str) -> bool:
         json.dump(keys, f, indent=2)
 
     return True
+
+
+# ============== Credits System Stubs (Local Dev) ==============
+# These are stubs for local development without a database.
+# The full credits system requires PostgreSQL.
+
+CREDITS_DIR = Path("data/credits")
+
+
+def _ensure_credits_dir():
+    """Ensure the credits directory exists."""
+    CREDITS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _get_user_credits_path(user_id: str) -> Path:
+    """Get the path for a user's credits file."""
+    return CREDITS_DIR / f"{user_id}.json"
+
+
+def _load_user_credits(user_id: str) -> Dict[str, Any]:
+    """Load user credits data."""
+    _ensure_credits_dir()
+    path = _get_user_credits_path(user_id)
+    if path.exists():
+        with open(path, 'r') as f:
+            return json.load(f)
+    return {"credits": 0, "openrouter_total_limit": 0, "transactions": []}
+
+
+def _save_user_credits(user_id: str, data: Dict[str, Any]):
+    """Save user credits data."""
+    _ensure_credits_dir()
+    with open(_get_user_credits_path(user_id), 'w') as f:
+        json.dump(data, f, indent=2)
+
+
+async def get_user_credits(user_id: UUID) -> int:
+    """Get user's current credit balance."""
+    data = _load_user_credits(str(user_id))
+    return data.get("credits", 0)
+
+
+async def add_credits(
+    user_id: UUID,
+    amount: int,
+    transaction_type: str,
+    description: str = None,
+    stripe_session_id: str = None,
+    stripe_payment_intent_id: str = None
+) -> int:
+    """Add credits to user and record transaction."""
+    data = _load_user_credits(str(user_id))
+    data["credits"] = data.get("credits", 0) + amount
+    data["transactions"].append({
+        "id": str(uuid4()),
+        "amount": amount,
+        "balance_after": data["credits"],
+        "transaction_type": transaction_type,
+        "description": description,
+        "stripe_session_id": stripe_session_id,
+        "created_at": datetime.utcnow().isoformat()
+    })
+    _save_user_credits(str(user_id), data)
+    return data["credits"]
+
+
+async def consume_credit(user_id: UUID, description: str = None) -> bool:
+    """Consume one credit from user. Returns False if insufficient credits."""
+    data = _load_user_credits(str(user_id))
+    if data.get("credits", 0) <= 0:
+        return False
+    data["credits"] -= 1
+    data["transactions"].append({
+        "id": str(uuid4()),
+        "amount": -1,
+        "balance_after": data["credits"],
+        "transaction_type": "usage",
+        "description": description,
+        "created_at": datetime.utcnow().isoformat()
+    })
+    _save_user_credits(str(user_id), data)
+    return True
+
+
+async def get_credit_transactions(user_id: UUID, limit: int = 50) -> List[Dict]:
+    """Get user's credit transaction history."""
+    data = _load_user_credits(str(user_id))
+    transactions = data.get("transactions", [])
+    return sorted(transactions, key=lambda x: x["created_at"], reverse=True)[:limit]
+
+
+async def get_active_credit_packs() -> List[Dict]:
+    """List available credit packs (hardcoded for local dev)."""
+    return [
+        {"id": "pack-starter", "name": "Starter Pack", "credits": 10, "price_cents": 500, "openrouter_credit_limit": 2.00},
+        {"id": "pack-value", "name": "Value Pack", "credits": 50, "price_cents": 2000, "openrouter_credit_limit": 10.00},
+        {"id": "pack-pro", "name": "Pro Pack", "credits": 150, "price_cents": 5000, "openrouter_credit_limit": 30.00},
+    ]
+
+
+async def get_credit_pack(pack_id: UUID) -> Optional[Dict]:
+    """Get a specific credit pack by ID."""
+    packs = await get_active_credit_packs()
+    for pack in packs:
+        if pack["id"] == str(pack_id):
+            return pack
+    return None
+
+
+async def was_session_processed(stripe_session_id: str) -> bool:
+    """Check if a Stripe session was already processed."""
+    # For local dev, check all user credit files
+    _ensure_credits_dir()
+    for path in CREDITS_DIR.glob("*.json"):
+        with open(path, 'r') as f:
+            data = json.load(f)
+            for tx in data.get("transactions", []):
+                if tx.get("stripe_session_id") == stripe_session_id:
+                    return True
+    return False
+
+
+async def get_user_openrouter_key(user_id: UUID) -> Optional[str]:
+    """Get user's provisioned OpenRouter API key (decrypted)."""
+    # For local dev, return None (no provisioning)
+    return None
+
+
+async def get_user_openrouter_key_hash(user_id: UUID) -> Optional[str]:
+    """Get user's OpenRouter key hash."""
+    return None
+
+
+async def save_user_openrouter_key(user_id: UUID, encrypted_key: str, key_hash: str) -> None:
+    """Save user's provisioned OpenRouter key."""
+    # For local dev, just log
+    pass
+
+
+async def get_user_stripe_customer_id(user_id: UUID) -> Optional[str]:
+    """Get user's Stripe customer ID."""
+    return None
+
+
+async def save_user_stripe_customer_id(user_id: UUID, stripe_customer_id: str) -> None:
+    """Save user's Stripe customer ID."""
+    pass
+
+
+async def increment_openrouter_limit(user_id: UUID, additional_limit: float) -> float:
+    """Atomically increment user's OpenRouter limit and return the new total."""
+    data = _load_user_credits(str(user_id))
+    data["openrouter_total_limit"] = data.get("openrouter_total_limit", 0) + additional_limit
+    _save_user_credits(str(user_id), data)
+    return data["openrouter_total_limit"]
+
+
+async def get_openrouter_total_limit(user_id: UUID) -> float:
+    """Get user's total OpenRouter limit."""
+    data = _load_user_credits(str(user_id))
+    return data.get("openrouter_total_limit", 0)

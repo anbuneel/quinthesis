@@ -55,11 +55,17 @@ OAUTH_REDIRECT_BASE=http://localhost:5173  # or https://your-frontend.vercel.app
 # CORS origins
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000,https://your-vercel-frontend.vercel.app
 
-# Optional: Fallback OpenRouter API key for local dev (users provide their own in production)
-OPENROUTER_API_KEY=sk-or-v1-...
+# Stripe Configuration (for credit purchases)
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# OpenRouter Provisioning (for per-user API keys)
+OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
 ```
 
-**Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email address to preserve their archives. Each user provides their own OpenRouter API key in Settings.
+**Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email address to preserve their archives.
+
+**Monetization:** Users purchase credit packs via Stripe. Each query consumes 1 credit. The system provisions per-user OpenRouter API keys with spending limits.
 
 **Database Migrations:** Run before first use:
 ```bash
@@ -101,22 +107,24 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 ## Key File Locations
 
 ### Backend (`backend/`)
-- `main.py` - FastAPI server, OAuth endpoints, runs on port 8080
-- `config.py` - Models, CORS, DB, JWT, OAuth environment variables
+- `main.py` - FastAPI server, OAuth endpoints, credits endpoints, runs on port 8080
+- `config.py` - Models, CORS, DB, JWT, OAuth, Stripe environment variables
 - `oauth.py` - Google and GitHub OAuth handlers (code exchange, user info)
 - `council.py` - Core logic: stage1/2/3, parsing, aggregation
 - `openrouter.py` - OpenRouter API wrapper, parallel queries, accepts per-user API keys
-- `storage.py` - PostgreSQL storage with user, OAuth, and API key management
+- `openrouter_provisioning.py` - OpenRouter Provisioning API for per-user key management
+- `stripe_client.py` - Stripe Checkout and webhook handling
+- `storage.py` - PostgreSQL storage with user, OAuth, credits, and provisioned key management
 - `storage_local.py` - JSON file storage (fallback when `DATABASE_URL` not set)
 - `database.py` - Async PostgreSQL connection pool (asyncpg)
 - `auth_jwt.py` - JWT token creation and verification
 - `encryption.py` - API key encryption (Fernet)
-- `models.py` - Pydantic schemas for OAuth and API key endpoints
+- `models.py` - Pydantic schemas for OAuth, credits, and checkout endpoints
 - `migrate.py` - Database migration runner
-- `migrations/` - SQL migration files (includes 004_oauth_users.sql)
+- `migrations/` - SQL migration files (includes 005_user_credits.sql)
 
 ### Frontend (`frontend/src/`)
-- `App.jsx` - Main orchestration with BrowserRouter, OAuth callback routing
+- `App.jsx` - Main orchestration with BrowserRouter, OAuth callback, credit state
 - `components/ChatInterface.jsx` - Main view, question display, SSE streaming, stage tabs
 - `components/InquiryComposer.jsx` - Home page inquiry form with model selection
 - `components/Stage1.jsx` - Expert opinions with tabbed navigation and keyboard support
@@ -125,10 +133,13 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/Sidebar.jsx` - Inquiry list, mobile drawer
 - `components/OAuthCallback.jsx` - Handles OAuth provider redirects
 - `components/Login.jsx` - OAuth login UI (Google and GitHub buttons)
-- `components/Settings.jsx` - API key management modal
+- `components/Settings.jsx` - Credits purchase and balance display
+- `components/CreditBalance.jsx` - Header credit balance indicator
+- `components/PaymentSuccess.jsx` - Post-checkout success page
+- `components/PaymentCancel.jsx` - Checkout cancelled page
 - `components/AvatarMenu.jsx` - User avatar dropdown with settings/logout
 - `components/ConfirmDialog.jsx` - Custom styled confirmation/alert dialogs
-- `api.js` - Backend communication with OAuth auth, JWT tokens, SSE streaming
+- `api.js` - Backend communication with OAuth auth, JWT tokens, credits API, SSE streaming
 
 ---
 
@@ -312,6 +323,66 @@ data: {"type":"title_complete","data":{"title":"..."}}
 
 data: {"type":"complete"}
 ```
+
+### Credits API
+
+#### GET `/api/credits`
+Get current credit balance (requires auth):
+```json
+{
+  "credits": 10,
+  "has_openrouter_key": true
+}
+```
+
+#### GET `/api/credits/packs`
+List available credit packs:
+```json
+{
+  "packs": [
+    {"id": "uuid", "name": "Starter Pack", "credits": 10, "price_cents": 500},
+    {"id": "uuid", "name": "Value Pack", "credits": 50, "price_cents": 2000}
+  ]
+}
+```
+
+#### GET `/api/credits/history`
+Get credit transaction history (requires auth):
+```json
+{
+  "transactions": [
+    {"id": "uuid", "amount": 10, "balance_after": 10, "transaction_type": "purchase", "description": "Purchased Starter Pack", "created_at": "..."}
+  ]
+}
+```
+
+#### POST `/api/credits/checkout`
+Create Stripe Checkout session (requires auth):
+```json
+{
+  "pack_id": "uuid",
+  "success_url": "https://example.com/credits/success",
+  "cancel_url": "https://example.com/credits/cancel"
+}
+```
+Returns:
+```json
+{
+  "checkout_url": "https://checkout.stripe.com/..."
+}
+```
+
+#### POST `/api/credits/provision-key`
+Retry OpenRouter key provisioning (for users with credits but no key):
+```json
+{
+  "status": "ok",
+  "message": "OpenRouter key provisioned successfully"
+}
+```
+
+#### POST `/api/webhooks/stripe`
+Stripe webhook endpoint (signature verified). Handles `checkout.session.completed` events.
 
 ---
 
@@ -497,7 +568,23 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Create PostgreSQL database
 - [ ] Generate connection string and set as `DATABASE_URL`
 - [ ] Enable `gen_random_uuid()` extension (usually enabled by default)
-- [ ] Run migrations (includes OAuth user columns in 004_oauth_users.sql)
+- [ ] Run migrations (includes 005_user_credits.sql for credits system)
+
+### Stripe Setup (for credit purchases)
+- [ ] Create Stripe account at https://stripe.com
+- [ ] Get API keys from https://dashboard.stripe.com/apikeys
+- [ ] Set `STRIPE_SECRET_KEY` in Fly.io secrets
+- [ ] Add webhook endpoint: `https://ai-council-api.fly.dev/api/webhooks/stripe`
+- [ ] Select event: `checkout.session.completed`
+- [ ] Copy webhook signing secret and set as `STRIPE_WEBHOOK_SECRET`
+- [ ] Test with Stripe CLI: `stripe listen --forward-to localhost:8080/api/webhooks/stripe`
+
+### OpenRouter Provisioning (for per-user API keys)
+- [ ] Go to https://openrouter.ai/settings/provisioning-keys
+- [ ] Create a provisioning key (not a regular API key)
+- [ ] Set `OPENROUTER_PROVISIONING_KEY` in Fly.io secrets
+- [ ] Add credits to your OpenRouter account (this is the pool for all users)
+- [ ] Monitor usage at https://openrouter.ai/activity
 
 ---
 
@@ -554,3 +641,20 @@ Deferred/Accepted:
 - [x] Content-Length bypass - accepted (low risk, defense in depth)
 - [x] JWTs in localStorage - accepted (standard SPA, CSP is better mitigation)
 - [x] Blocking file I/O in local storage - accepted (dev-only)
+
+**Credits System Security Review (2025-12-31):**
+
+A security review of the Stripe credits implementation was conducted.
+
+Completed fixes:
+- [x] Payment status verification (check `payment_status == "paid"`)
+- [x] Webhook idempotency via unique constraint on `stripe_session_id`
+- [x] Session verification from Stripe API (don't trust webhook metadata alone)
+- [x] Amount/currency validation against pack price
+- [x] Credit consumption after precondition checks
+- [x] Refund credits on OpenRouter query failures
+- [x] Atomic OpenRouter limit increment (prevents race conditions)
+- [x] URL allowlisting for success/cancel redirects (prevents open redirect)
+- [x] Provisioning retry endpoint for users with credits but no key
+- [x] Decimal precision for currency calculations
+- [x] Local storage credits stubs for dev mode

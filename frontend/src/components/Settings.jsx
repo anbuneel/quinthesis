@@ -1,23 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { settings } from '../api';
-import ConfirmDialog from './ConfirmDialog';
+import { credits } from '../api';
 import './Settings.css';
 
-function Settings({ isOpen, onClose, userEmail }) {
-  const [apiKey, setApiKey] = useState('');
-  const [savedKeys, setSavedKeys] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits }) {
+  const [packs, setPacks] = useState([]);
+  const [history, setHistory] = useState([]);
+  const [isLoadingPacks, setIsLoadingPacks] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingDeleteProvider, setPendingDeleteProvider] = useState(null);
+  const [showHistory, setShowHistory] = useState(false);
   const modalRef = useRef(null);
   const previousActiveElement = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
-      loadApiKeys();
+      loadPacks();
       // Store the previously focused element
       previousActiveElement.current = document.activeElement;
       // Focus the modal
@@ -33,7 +31,7 @@ function Settings({ isOpen, onClose, userEmail }) {
     if (!isOpen) return;
 
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !confirmOpen) {
+      if (e.key === 'Escape') {
         onClose();
         return;
       }
@@ -58,64 +56,66 @@ function Settings({ isOpen, onClose, userEmail }) {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, confirmOpen, onClose]);
+  }, [isOpen, onClose]);
 
-  const loadApiKeys = async () => {
-    setIsLoading(true);
+  const loadPacks = async () => {
+    setIsLoadingPacks(true);
     setError('');
     try {
-      const keys = await settings.listApiKeys();
-      setSavedKeys(keys);
+      const data = await credits.getPacks();
+      setPacks(data);
     } catch (err) {
-      setError('Failed to load API keys');
+      setError('Failed to load credit packs');
     } finally {
-      setIsLoading(false);
+      setIsLoadingPacks(false);
     }
   };
 
-  const handleSaveKey = async (e) => {
-    e.preventDefault();
-    if (!apiKey.trim()) return;
+  const loadHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await credits.getHistory();
+      setHistory(data);
+    } catch (err) {
+      // Non-critical, don't show error
+      console.error('Failed to load history:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
-    setIsSaving(true);
+  const handleToggleHistory = () => {
+    if (!showHistory && history.length === 0) {
+      loadHistory();
+    }
+    setShowHistory(!showHistory);
+  };
+
+  const handlePurchase = async (packId) => {
+    setIsPurchasing(true);
     setError('');
-    setSuccess('');
-
     try {
-      await settings.saveApiKey(apiKey.trim());
-      setApiKey('');
-      setSuccess('API key saved successfully');
-      loadApiKeys();
+      await credits.purchasePack(packId);
+      // Redirect happens in purchasePack
     } catch (err) {
       setError(err.message);
-    } finally {
-      setIsSaving(false);
+      setIsPurchasing(false);
     }
   };
 
-  const handleDeleteKey = (provider) => {
-    setPendingDeleteProvider(provider);
-    setConfirmOpen(true);
+  const formatPrice = (cents) => {
+    return `$${(cents / 100).toFixed(2)}`;
   };
 
-  const confirmDeleteKey = async () => {
-    setConfirmOpen(false);
-    if (!pendingDeleteProvider) return;
-
-    try {
-      await settings.deleteApiKey(pendingDeleteProvider);
-      setSuccess('API key removed');
-      loadApiKeys();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setPendingDeleteProvider(null);
-    }
-  };
-
-  const cancelDeleteKey = () => {
-    setConfirmOpen(false);
-    setPendingDeleteProvider(null);
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   if (!isOpen) return null;
@@ -152,7 +152,6 @@ function Settings({ isOpen, onClose, userEmail }) {
 
         <div className="settings-body">
           {error && <div className="settings-message settings-error">{error}</div>}
-          {success && <div className="settings-message settings-success">{success}</div>}
 
           <section className="settings-section">
             <h3>Account</h3>
@@ -167,72 +166,97 @@ function Settings({ isOpen, onClose, userEmail }) {
           </div>
 
           <section className="settings-section">
-            <h3>OpenRouter API Key</h3>
+            <h3>Credits</h3>
+            <div className="credits-balance">
+              <span className="credits-balance-value">{userCredits ?? 0}</span>
+              <span className="credits-balance-label">credits available</span>
+            </div>
             <p className="settings-desc">
-              Your API key is encrypted and stored securely. Each user provides their own key.
-              Get yours at{' '}
-              <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer">
-                openrouter.ai/keys
-              </a>
+              Each inquiry uses 1 credit. Purchase credits below to continue using AI Council.
             </p>
+          </section>
 
-            {isLoading ? (
-              <p className="settings-loading">Loading...</p>
+          <div className="settings-section-divider">
+            <span className="settings-section-divider-ornament">&#167;</span>
+          </div>
+
+          <section className="settings-section">
+            <h3>Purchase Credits</h3>
+
+            {isLoadingPacks ? (
+              <p className="settings-loading">Loading packs...</p>
             ) : (
-              <>
-                {savedKeys.length > 0 && (
-                  <div className="saved-keys">
-                    {savedKeys.map((key) => (
-                      <div key={key.id} className="saved-key">
-                        <div className="key-info">
-                          <span className="key-provider">{key.provider}</span>
-                          <span className="key-hint">{key.key_hint}</span>
+              <div className="credit-packs">
+                {packs.map((pack) => (
+                  <div key={pack.id} className="credit-pack">
+                    <div className="pack-info">
+                      <span className="pack-name">{pack.name}</span>
+                      <span className="pack-credits">{pack.credits} credits</span>
+                    </div>
+                    <button
+                      className="pack-buy-btn"
+                      onClick={() => handlePurchase(pack.id)}
+                      disabled={isPurchasing}
+                    >
+                      {formatPrice(pack.price_cents)}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <div className="settings-section-divider">
+            <span className="settings-section-divider-ornament">&#167;</span>
+          </div>
+
+          <section className="settings-section">
+            <button
+              className="history-toggle"
+              onClick={handleToggleHistory}
+              aria-expanded={showHistory}
+            >
+              <span>Transaction History</span>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`history-toggle-icon ${showHistory ? 'expanded' : ''}`}
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            {showHistory && (
+              <div className="transaction-history">
+                {isLoadingHistory ? (
+                  <p className="settings-loading">Loading history...</p>
+                ) : history.length === 0 ? (
+                  <p className="history-empty">No transactions yet</p>
+                ) : (
+                  <div className="history-list">
+                    {history.map((tx) => (
+                      <div key={tx.id} className="history-item">
+                        <div className="history-item-info">
+                          <span className={`history-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
+                            {tx.amount > 0 ? '+' : ''}{tx.amount}
+                          </span>
+                          <span className="history-type">{tx.transaction_type}</span>
                         </div>
-                        <button
-                          className="key-delete"
-                          onClick={() => handleDeleteKey(key.provider)}
-                          aria-label="Remove API key"
-                        >
-                          Remove
-                        </button>
+                        <div className="history-item-meta">
+                          <span className="history-desc">{tx.description || '-'}</span>
+                          <span className="history-date">{formatDate(tx.created_at)}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
                 )}
-
-                <form onSubmit={handleSaveKey} className="api-key-form">
-                  <input
-                    type="password"
-                    placeholder="sk-or-v1-..."
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    disabled={isSaving}
-                    className="api-key-input"
-                  />
-                  <button
-                    type="submit"
-                    disabled={isSaving || !apiKey.trim()}
-                    className="api-key-submit"
-                  >
-                    {savedKeys.length > 0 ? 'Update Key' : 'Save Key'}
-                  </button>
-                </form>
-              </>
+              </div>
             )}
           </section>
         </div>
       </div>
-      <ConfirmDialog
-        isOpen={confirmOpen}
-        title="Remove API Key"
-        message="Are you sure you want to remove this API key? You will need to add a new key to continue using the Council."
-        variant="danger"
-        icon="warning"
-        confirmLabel="Remove"
-        cancelLabel="Cancel"
-        onConfirm={confirmDeleteKey}
-        onCancel={cancelDeleteKey}
-      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import Stage2 from './Stage2';
 import Stage3 from './Stage3';
 import InquiryComposer from './InquiryComposer';
 import AvatarMenu from './AvatarMenu';
+import CreditBalance from './CreditBalance';
 import './ChatInterface.css';
 
 const MAX_COLLAPSED_HEIGHT = 60; // pixels
@@ -72,6 +73,7 @@ export default function ChatInterface({
     createError,
     // User controls
     userEmail,
+    userCredits,
     onOpenSettings,
     onLogout,
     onNewInquiry,
@@ -183,6 +185,7 @@ export default function ChatInterface({
                             <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
                         </div>
                         <div className="masthead-actions">
+                            <CreditBalance credits={userCredits} onClick={onOpenSettings} />
                             <AvatarMenu
                                 userEmail={userEmail}
                                 onOpenSettings={onOpenSettings}
@@ -239,6 +242,7 @@ export default function ChatInterface({
                                 <span className="masthead-btn-label">New Inquiry</span>
                             </button>
                         )}
+                        <CreditBalance credits={userCredits} onClick={onOpenSettings} />
                         <AvatarMenu
                             userEmail={userEmail}
                             onOpenSettings={onOpenSettings}

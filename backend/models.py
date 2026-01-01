@@ -68,3 +68,42 @@ class MessageResponse(BaseModel):
 class StatusResponse(BaseModel):
     """Generic status response."""
     status: str
+
+
+# ============== Credits Schemas ==============
+
+class CreditPackResponse(BaseModel):
+    """Credit pack information."""
+    id: UUID
+    name: str
+    credits: int
+    price_cents: int
+    openrouter_credit_limit: Optional[float] = None
+
+
+class UserCreditsResponse(BaseModel):
+    """User's credit balance."""
+    credits: int
+
+
+class CreditTransactionResponse(BaseModel):
+    """Credit transaction history item."""
+    id: UUID
+    amount: int
+    balance_after: int
+    transaction_type: str
+    description: Optional[str] = None
+    created_at: datetime
+
+
+class CreateCheckoutRequest(BaseModel):
+    """Request to create Stripe checkout session."""
+    pack_id: UUID
+    success_url: str
+    cancel_url: str
+
+
+class CheckoutSessionResponse(BaseModel):
+    """Stripe checkout session response."""
+    checkout_url: str
+    session_id: str

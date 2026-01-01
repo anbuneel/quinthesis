@@ -13,6 +13,8 @@ from uuid import UUID
 import uuid
 import json
 import asyncio
+import asyncpg
+from decimal import Decimal
 
 from .rate_limit import api_rate_limiter, streaming_rate_limiter
 
@@ -39,7 +41,12 @@ from .models import (
     ApiKeyCreate,
     TokenResponse,
     UserResponse,
-    ApiKeyResponse
+    ApiKeyResponse,
+    CreditPackResponse,
+    UserCreditsResponse,
+    CreditTransactionResponse,
+    CreateCheckoutRequest,
+    CheckoutSessionResponse
 )
 from .oauth import GoogleOAuth, GitHubOAuth
 from .oauth_state import create_oauth_state, validate_and_consume_state
@@ -52,6 +59,8 @@ from .council import (
     calculate_aggregate_rankings
 )
 from .openrouter import close_client as close_openrouter_client
+from . import stripe_client
+from . import openrouter_provisioning
 
 # Use local JSON storage if DATABASE_URL is not set
 if DATABASE_URL:
@@ -85,6 +94,7 @@ async def lifespan(app: FastAPI):
     yield
     # Shutdown: close all clients
     await close_openrouter_client()
+    await openrouter_provisioning.close_client()
     if not USE_LOCAL_STORAGE:
         await close_pool()
 
@@ -379,6 +389,291 @@ async def delete_api_key(provider: str, user_id: UUID = Depends(get_current_user
     return {"status": "deleted"}
 
 
+# ============== Credits Endpoints ==============
+
+@app.get("/api/credits", response_model=UserCreditsResponse)
+async def get_credits(user_id: UUID = Depends(get_current_user)):
+    """Get current user's credit balance."""
+    credits = await storage.get_user_credits(user_id)
+    return UserCreditsResponse(credits=credits)
+
+
+@app.get("/api/credits/packs", response_model=List[CreditPackResponse])
+async def list_credit_packs(user_id: UUID = Depends(get_current_user)):
+    """List available credit packs for purchase."""
+    packs = await storage.get_active_credit_packs()
+    return [CreditPackResponse(**pack) for pack in packs]
+
+
+@app.get("/api/credits/history", response_model=List[CreditTransactionResponse])
+async def get_credit_history(user_id: UUID = Depends(get_current_user)):
+    """Get user's credit transaction history."""
+    transactions = await storage.get_credit_transactions(user_id)
+    return [CreditTransactionResponse(**t) for t in transactions]
+
+
+@app.post("/api/credits/provision-key")
+async def provision_openrouter_key(user_id: UUID = Depends(get_current_user)):
+    """Retry OpenRouter key provisioning for users who have credits but no key.
+
+    MEDIUM: This provides a retry path for users whose initial provisioning failed.
+    """
+    if not openrouter_provisioning.is_provisioning_configured():
+        raise HTTPException(status_code=503, detail="Provisioning not configured")
+
+    # Check if user already has a key
+    existing_key_hash = await storage.get_user_openrouter_key_hash(user_id)
+    if existing_key_hash:
+        return {"status": "already_provisioned", "message": "API key already exists"}
+
+    # Check if user has any credits (meaning they've made a purchase)
+    credits = await storage.get_user_credits(user_id)
+    if credits <= 0:
+        raise HTTPException(status_code=400, detail="No credits available. Please purchase credits first.")
+
+    # Get user's allocated limit
+    total_limit = await storage.get_openrouter_total_limit(user_id)
+    if total_limit <= 0:
+        raise HTTPException(status_code=400, detail="No OpenRouter limit allocated. Please contact support.")
+
+    # Get user info for key name
+    user = await storage.get_user_by_id(user_id)
+    user_email = user["email"] if user else "unknown"
+
+    try:
+        key_data = await openrouter_provisioning.create_user_key(
+            user_id=str(user_id),
+            name=user_email,
+            limit_dollars=total_limit
+        )
+        from .encryption import encrypt_api_key
+        encrypted_key = encrypt_api_key(key_data["key"])
+        await storage.save_user_openrouter_key(user_id, encrypted_key, key_data["hash"])
+        logger.info(f"Provisioned OpenRouter key for user {user_id} via retry endpoint")
+        return {"status": "provisioned", "message": "API key created successfully"}
+    except Exception as e:
+        logger.error(f"Failed to provision key for user {user_id}: {e}")
+        raise HTTPException(status_code=502, detail=f"Provisioning failed: {str(e)}")
+
+
+def _validate_redirect_url(url: str) -> bool:
+    """Validate that a redirect URL is from an allowed origin.
+
+    MEDIUM: Prevents open-redirect attacks by allowlisting domains.
+    """
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(url)
+        # Check against CORS origins (which are our allowed frontend origins)
+        for allowed_origin in CORS_ORIGINS:
+            allowed_parsed = urlparse(allowed_origin.strip())
+            if parsed.scheme == allowed_parsed.scheme and parsed.netloc == allowed_parsed.netloc:
+                return True
+        return False
+    except Exception:
+        return False
+
+
+@app.post("/api/credits/checkout", response_model=CheckoutSessionResponse)
+async def create_checkout(
+    data: CreateCheckoutRequest,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Create Stripe checkout session for credit purchase."""
+    if not stripe_client.is_stripe_configured():
+        raise HTTPException(status_code=503, detail="Payment system not configured")
+
+    # MEDIUM: Validate redirect URLs to prevent open-redirect attacks
+    if not _validate_redirect_url(data.success_url):
+        raise HTTPException(status_code=400, detail="Invalid success URL")
+    if not _validate_redirect_url(data.cancel_url):
+        raise HTTPException(status_code=400, detail="Invalid cancel URL")
+
+    # Get credit pack
+    pack = await storage.get_credit_pack(data.pack_id)
+    if not pack:
+        raise HTTPException(status_code=404, detail="Credit pack not found")
+
+    # Get user info
+    user = await storage.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get existing Stripe customer ID if any
+    stripe_customer_id = await storage.get_user_stripe_customer_id(user_id)
+
+    # MEDIUM: Handle null openrouter_credit_limit safely
+    # OpenRouter API expects dollars, not cents
+    openrouter_limit_raw = pack.get("openrouter_credit_limit")
+    openrouter_limit_dollars = float(openrouter_limit_raw) if openrouter_limit_raw is not None else 0.0
+
+    # Create checkout session
+    result = await stripe_client.create_checkout_session(
+        user_id=user_id,
+        user_email=user["email"],
+        pack_id=data.pack_id,
+        pack_name=pack["name"],
+        credits=pack["credits"],
+        price_cents=pack["price_cents"],
+        openrouter_limit_dollars=openrouter_limit_dollars,
+        success_url=data.success_url,
+        cancel_url=data.cancel_url,
+        stripe_customer_id=stripe_customer_id
+    )
+
+    return CheckoutSessionResponse(**result)
+
+
+@app.post("/api/webhooks/stripe")
+async def stripe_webhook(request: Request):
+    """Handle Stripe webhook events for credit purchases."""
+    if not stripe_client.is_webhook_configured():
+        raise HTTPException(status_code=503, detail="Webhook not configured")
+
+    payload = await request.body()
+    sig_header = request.headers.get("stripe-signature")
+
+    if not sig_header:
+        raise HTTPException(status_code=400, detail="Missing signature")
+
+    try:
+        event = stripe_client.verify_webhook_signature(payload, sig_header)
+    except Exception as e:
+        logger.warning(f"Invalid Stripe webhook signature: {e}")
+        raise HTTPException(status_code=400, detail="Invalid signature")
+
+    # Handle checkout.session.completed event
+    if event["type"] == "checkout.session.completed":
+        session = event["data"]["object"]
+
+        # HIGH: Verify payment_status is "paid" before crediting
+        # Some payment methods are async and may not be paid yet
+        payment_status = session.get("payment_status")
+        if payment_status != "paid":
+            logger.info(f"Session {session['id']} has payment_status={payment_status}, skipping (not paid yet)")
+            return {"status": "ok"}
+
+        await handle_successful_payment(session)
+
+    return {"status": "ok"}
+
+
+async def handle_successful_payment(session: dict):
+    """Process successful payment and add credits.
+
+    Creates or updates OpenRouter provisioned key for the user.
+    Order of operations is critical for atomicity:
+    1. Verify session from Stripe API (don't trust webhook metadata alone)
+    2. Look up pack from our database to compute credits
+    3. Add credits (uses unique constraint for idempotency)
+    4. Update/create OpenRouter key (if provisioning configured)
+    """
+    session_id = session["id"]
+
+    # RECOMMENDATION: Verify session details from Stripe API instead of trusting metadata
+    # This prevents attacks where someone crafts fake webhook events with inflated credits
+    try:
+        verified_session = stripe_client.get_session_details(session_id)
+    except Exception as e:
+        logger.error(f"Failed to verify Stripe session {session_id}: {e}")
+        raise
+
+    metadata = verified_session.get("metadata", {})
+    user_id = UUID(metadata["user_id"])
+    pack_id = UUID(metadata["pack_id"])
+
+    # RECOMMENDATION: Compute credits from our database pack, not from metadata
+    pack = await storage.get_credit_pack(pack_id)
+    if not pack:
+        logger.error(f"Pack {pack_id} not found for session {session_id}")
+        raise ValueError(f"Invalid pack ID in session metadata: {pack_id}")
+
+    credits_amount = pack["credits"]
+    expected_price_cents = pack["price_cents"]
+
+    # MEDIUM: Validate amount and currency match our pack price
+    # This prevents attacks where someone modifies the checkout amount
+    actual_amount = verified_session.get("amount_total", 0)
+    actual_currency = verified_session.get("currency", "").lower()
+    if actual_amount != expected_price_cents:
+        logger.error(f"Amount mismatch for session {session_id}: expected {expected_price_cents}, got {actual_amount}")
+        raise ValueError(f"Payment amount mismatch: expected {expected_price_cents}, got {actual_amount}")
+    if actual_currency != "usd":
+        logger.error(f"Currency mismatch for session {session_id}: expected usd, got {actual_currency}")
+        raise ValueError(f"Payment currency mismatch: expected usd, got {actual_currency}")
+
+    # LOW: Use Decimal for currency math to avoid floating point drift
+    # OpenRouter limit from our database (in dollars)
+    openrouter_limit_raw = pack.get("openrouter_credit_limit")
+    openrouter_limit_dollars = Decimal(str(openrouter_limit_raw)) if openrouter_limit_raw is not None else Decimal("0")
+
+    # Save Stripe customer ID if new (from verified session)
+    customer_id = verified_session.get("customer")
+    if customer_id:
+        await storage.save_user_stripe_customer_id(user_id, customer_id)
+
+    # HIGH: Add credits FIRST with atomic idempotency
+    # The unique constraint on stripe_session_id will prevent double-crediting
+    amount_paid = verified_session.get("amount_total", 0)
+    try:
+        await storage.add_credits(
+            user_id=user_id,
+            amount=credits_amount,
+            transaction_type="purchase",
+            description=f"Purchased {credits_amount} credits for ${amount_paid/100:.2f}",
+            stripe_session_id=session_id,
+            stripe_payment_intent_id=verified_session.get("payment_intent")
+        )
+        logger.info(f"Added {credits_amount} credits to user {user_id} from session {session_id}")
+    except asyncpg.UniqueViolationError:
+        # Idempotency working correctly - session already processed
+        logger.info(f"Session {session_id} already processed (unique constraint), skipping")
+        return
+    except Exception as e:
+        # Real error - re-raise
+        logger.error(f"Failed to add credits for session {session_id}: {e}")
+        raise
+
+    # Only proceed to OpenRouter provisioning AFTER credits are successfully added
+    if not openrouter_provisioning.is_provisioning_configured():
+        logger.warning("OpenRouter provisioning not configured, skipping key creation")
+        return
+
+    # MEDIUM: Atomically increment our stored limit to avoid race conditions
+    # This ensures concurrent purchases don't lose increments
+    new_total_limit = await storage.increment_openrouter_limit(user_id, openrouter_limit_dollars)
+    logger.info(f"Incremented OpenRouter limit for user {user_id}: +{openrouter_limit_dollars} -> {new_total_limit}")
+
+    # Get user info for OpenRouter key name
+    user = await storage.get_user_by_id(user_id)
+    user_email = user["email"] if user else "unknown"
+
+    # Handle OpenRouter provisioned key
+    existing_key_hash = await storage.get_user_openrouter_key_hash(user_id)
+
+    try:
+        if existing_key_hash:
+            # User already has a key - set to our authoritative total (idempotent)
+            await openrouter_provisioning.update_key_limit(existing_key_hash, new_total_limit)
+            logger.info(f"Set OpenRouter key limit for user {user_id} to {new_total_limit}")
+        else:
+            # Create new provisioned key for user with the total limit
+            key_data = await openrouter_provisioning.create_user_key(
+                user_id=str(user_id),
+                name=user_email,
+                limit_dollars=new_total_limit
+            )
+            # Encrypt and store the key
+            from .encryption import encrypt_api_key
+            encrypted_key = encrypt_api_key(key_data["key"])
+            await storage.save_user_openrouter_key(user_id, encrypted_key, key_data["hash"])
+            logger.info(f"Created OpenRouter key for user {user_id} with limit {new_total_limit}")
+    except Exception as e:
+        # Log error but don't fail - credits are already added
+        # User can retry or contact support
+        logger.error(f"Failed to provision OpenRouter key for user {user_id}: {e}")
+
+
 # ============== Conversation Endpoints ==============
 
 @app.get("/api/conversations", response_model=List[ConversationMetadata])
@@ -452,22 +747,31 @@ async def send_message(
     Returns the complete response with all stages.
 
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
+    Requires credits - consumes 1 credit per query.
     """
     # Rate limit check (council queries are expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
 
-    # Get user's API key
-    api_key = await storage.get_user_api_key(user_id, "openrouter")
-    if not api_key:
-        raise HTTPException(
-            status_code=400,
-            detail="No API key configured. Please add your OpenRouter API key in Settings."
-        )
-
-    # Check if conversation exists and belongs to user
+    # HIGH: Check if conversation exists BEFORE consuming credit
+    # This prevents charging users for 404 errors
     conversation = await storage.get_conversation(conversation_id, user_id=user_id)
     if conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Get user's provisioned OpenRouter API key (check before consuming credit)
+    api_key = await storage.get_user_openrouter_key(user_id)
+    if not api_key:
+        raise HTTPException(
+            status_code=402,
+            detail="No API access configured. Please purchase credits to get started."
+        )
+
+    # Now consume credit (after all preconditions are verified)
+    if not await storage.consume_credit(user_id, f"Query: {request.content[:50]}..."):
+        raise HTTPException(
+            status_code=402,
+            detail="Insufficient credits. Please purchase more credits to continue."
+        )
 
     # Check if this is the first message
     is_first_message = len(conversation["messages"]) == 0
@@ -479,34 +783,40 @@ async def send_message(
     # Add user message
     await storage.add_user_message(conversation_id, request.content)
 
-    # If this is the first message, generate a title
-    if is_first_message:
-        title = await generate_conversation_title(request.content, api_key=api_key)
-        await storage.update_conversation_title(conversation_id, title)
+    try:
+        # If this is the first message, generate a title
+        if is_first_message:
+            title = await generate_conversation_title(request.content, api_key=api_key)
+            await storage.update_conversation_title(conversation_id, title)
 
-    # Run the 3-stage council process with user's API key
-    stage1_results, stage2_results, stage3_result, metadata = await run_full_council(
-        request.content,
-        models=selected_models,
-        lead_model=selected_lead,
-        api_key=api_key
-    )
+        # Run the 3-stage council process with user's API key
+        stage1_results, stage2_results, stage3_result, metadata = await run_full_council(
+            request.content,
+            models=selected_models,
+            lead_model=selected_lead,
+            api_key=api_key
+        )
 
-    # Add assistant message with all stages
-    await storage.add_assistant_message(
-        conversation_id,
-        stage1_results,
-        stage2_results,
-        stage3_result
-    )
+        # Add assistant message with all stages
+        await storage.add_assistant_message(
+            conversation_id,
+            stage1_results,
+            stage2_results,
+            stage3_result
+        )
 
-    # Return the complete response with metadata
-    return {
-        "stage1": stage1_results,
-        "stage2": stage2_results,
-        "stage3": stage3_result,
-        "metadata": metadata
-    }
+        # Return the complete response with metadata
+        return {
+            "stage1": stage1_results,
+            "stage2": stage2_results,
+            "stage3": stage3_result,
+            "metadata": metadata
+        }
+    except Exception as e:
+        # RECOMMENDATION: Refund credit when OpenRouter query fails
+        logger.error(f"Council query failed for user {user_id}, refunding credit: {e}")
+        await storage.add_credits(user_id, 1, "refund", f"Refund - query failed: {str(e)[:100]}")
+        raise HTTPException(status_code=502, detail="AI query failed. Your credit has been refunded.")
 
 
 class ClientDisconnectedError(Exception):
@@ -526,23 +836,32 @@ async def send_message_stream(
     Returns Server-Sent Events as each stage completes.
 
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
+    Requires credits - consumes 1 credit per query.
     Detects client disconnection and cancels in-flight API calls to save costs.
     """
     # Rate limit check (streaming is expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
 
-    # Get user's API key (check early before streaming starts)
-    api_key = await storage.get_user_api_key(user_id, "openrouter")
-    if not api_key:
-        raise HTTPException(
-            status_code=400,
-            detail="No API key configured. Please add your OpenRouter API key in Settings."
-        )
-
-    # Check if conversation exists and belongs to user
+    # HIGH: Check if conversation exists BEFORE consuming credit
+    # This prevents charging users for 404 errors
     conversation = await storage.get_conversation(conversation_id, user_id=user_id)
     if conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
+
+    # Get user's provisioned OpenRouter API key (check before consuming credit)
+    api_key = await storage.get_user_openrouter_key(user_id)
+    if not api_key:
+        raise HTTPException(
+            status_code=402,
+            detail="No API access configured. Please purchase credits to get started."
+        )
+
+    # Now consume credit (after all preconditions are verified)
+    if not await storage.consume_credit(user_id, f"Query: {message_request.content[:50]}..."):
+        raise HTTPException(
+            status_code=402,
+            detail="Insufficient credits. Please purchase more credits to continue."
+        )
 
     # Check if this is the first message
     is_first_message = len(conversation["messages"]) == 0
@@ -650,12 +969,17 @@ async def send_message_stream(
             # Client disconnected - cancel any running tasks and stop
             if title_task and not title_task.done():
                 title_task.cancel()
-            # No need to yield anything - client is gone
+            # RECOMMENDATION: Refund credit when client disconnects before completion
+            await storage.add_credits(user_id, 1, "refund", "Refund - client disconnected")
+            logger.info(f"Refunded credit for user {user_id} - client disconnected")
             return
 
         except Exception as e:
+            # RECOMMENDATION: Refund credit when OpenRouter query fails
+            logger.error(f"Streaming query failed for user {user_id}, refunding credit: {e}")
+            await storage.add_credits(user_id, 1, "refund", f"Refund - query failed: {str(e)[:100]}")
             # Send error event
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': 'AI query failed. Your credit has been refunded.'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

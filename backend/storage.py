@@ -652,3 +652,270 @@ async def delete_user_api_key(user_id: UUID, provider: str) -> bool:
         provider
     )
     return result == "DELETE 1"
+
+
+# ============== Credit Management ==============
+
+async def get_user_credits(user_id: UUID) -> int:
+    """Get user's current credit balance."""
+    row = await db.fetchrow(
+        "SELECT credits FROM users WHERE id = $1",
+        user_id
+    )
+    return row["credits"] if row else 0
+
+
+async def add_credits(
+    user_id: UUID,
+    amount: int,
+    transaction_type: str,
+    description: str = None,
+    stripe_session_id: str = None,
+    stripe_payment_intent_id: str = None
+) -> int:
+    """Add credits to user and record transaction.
+
+    Args:
+        user_id: User's ID
+        amount: Credits to add (positive for purchases, negative for usage)
+        transaction_type: Type of transaction ('purchase', 'usage', 'refund', 'bonus')
+        description: Optional description
+        stripe_session_id: Stripe session ID for purchases
+        stripe_payment_intent_id: Stripe payment intent ID
+
+    Returns:
+        New credit balance
+    """
+    async with db.transaction() as conn:
+        # Update credits with FOR UPDATE to prevent race conditions
+        new_balance = await conn.fetchval(
+            """
+            UPDATE users
+            SET credits = credits + $2, updated_at = NOW()
+            WHERE id = $1
+            RETURNING credits
+            """,
+            user_id,
+            amount
+        )
+
+        # Record transaction
+        await conn.execute(
+            """
+            INSERT INTO credit_transactions
+            (user_id, amount, balance_after, transaction_type, description,
+             stripe_session_id, stripe_payment_intent_id)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            """,
+            user_id,
+            amount,
+            new_balance,
+            transaction_type,
+            description,
+            stripe_session_id,
+            stripe_payment_intent_id
+        )
+
+        return new_balance
+
+
+async def consume_credit(user_id: UUID, description: str = "Council query") -> bool:
+    """Consume 1 credit for a query.
+
+    Uses atomic update to prevent race conditions.
+
+    Args:
+        user_id: User's ID
+        description: Description for the transaction
+
+    Returns:
+        True if credit consumed successfully, False if insufficient credits
+    """
+    async with db.transaction() as conn:
+        # Check and decrement in one atomic operation
+        new_balance = await conn.fetchval(
+            """
+            UPDATE users
+            SET credits = credits - 1, updated_at = NOW()
+            WHERE id = $1 AND credits > 0
+            RETURNING credits
+            """,
+            user_id
+        )
+
+        if new_balance is None:
+            return False  # Insufficient credits
+
+        # Record usage transaction
+        await conn.execute(
+            """
+            INSERT INTO credit_transactions
+            (user_id, amount, balance_after, transaction_type, description)
+            VALUES ($1, -1, $2, 'usage', $3)
+            """,
+            user_id,
+            new_balance,
+            description
+        )
+
+        return True
+
+
+async def get_credit_transactions(
+    user_id: UUID,
+    limit: int = 50
+) -> List[Dict[str, Any]]:
+    """Get user's credit transaction history."""
+    rows = await db.fetch(
+        """
+        SELECT id, amount, balance_after, transaction_type, description, created_at
+        FROM credit_transactions
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2
+        """,
+        user_id,
+        limit
+    )
+    return [dict(row) for row in rows]
+
+
+async def get_active_credit_packs() -> List[Dict[str, Any]]:
+    """Get all active credit packs."""
+    rows = await db.fetch(
+        """
+        SELECT id, name, credits, price_cents, openrouter_credit_limit
+        FROM credit_packs
+        WHERE is_active = true
+        ORDER BY sort_order ASC
+        """
+    )
+    return [dict(row) for row in rows]
+
+
+async def get_credit_pack(pack_id: UUID) -> Optional[Dict[str, Any]]:
+    """Get a specific credit pack."""
+    row = await db.fetchrow(
+        "SELECT * FROM credit_packs WHERE id = $1 AND is_active = true",
+        pack_id
+    )
+    return dict(row) if row else None
+
+
+async def was_session_processed(stripe_session_id: str) -> bool:
+    """Check if a Stripe session was already processed (idempotency check)."""
+    row = await db.fetchrow(
+        "SELECT id FROM credit_transactions WHERE stripe_session_id = $1",
+        stripe_session_id
+    )
+    return row is not None
+
+
+# ============== OpenRouter Provisioned Key Management ==============
+
+async def get_user_openrouter_key(user_id: UUID) -> Optional[str]:
+    """Get user's provisioned OpenRouter API key (decrypted).
+
+    Returns:
+        Decrypted API key or None if not found
+    """
+    row = await db.fetchrow(
+        "SELECT openrouter_api_key FROM users WHERE id = $1",
+        user_id
+    )
+    if row and row["openrouter_api_key"]:
+        from .encryption import decrypt_api_key
+        return decrypt_api_key(row["openrouter_api_key"])
+    return None
+
+
+async def get_user_openrouter_key_hash(user_id: UUID) -> Optional[str]:
+    """Get user's OpenRouter key hash (for provisioning API calls)."""
+    row = await db.fetchrow(
+        "SELECT openrouter_key_hash FROM users WHERE id = $1",
+        user_id
+    )
+    return row["openrouter_key_hash"] if row else None
+
+
+async def save_user_openrouter_key(
+    user_id: UUID,
+    encrypted_key: str,
+    key_hash: str
+) -> None:
+    """Save user's provisioned OpenRouter API key.
+
+    Args:
+        user_id: User's ID
+        encrypted_key: Fernet-encrypted API key
+        key_hash: Key hash for provisioning API calls
+    """
+    await db.execute(
+        """
+        UPDATE users
+        SET openrouter_api_key = $2, openrouter_key_hash = $3, updated_at = NOW()
+        WHERE id = $1
+        """,
+        user_id,
+        encrypted_key,
+        key_hash
+    )
+
+
+async def get_user_stripe_customer_id(user_id: UUID) -> Optional[str]:
+    """Get user's Stripe customer ID."""
+    row = await db.fetchrow(
+        "SELECT stripe_customer_id FROM users WHERE id = $1",
+        user_id
+    )
+    return row["stripe_customer_id"] if row else None
+
+
+async def save_user_stripe_customer_id(user_id: UUID, stripe_customer_id: str) -> None:
+    """Save user's Stripe customer ID."""
+    await db.execute(
+        """
+        UPDATE users
+        SET stripe_customer_id = $2, updated_at = NOW()
+        WHERE id = $1
+        """,
+        user_id,
+        stripe_customer_id
+    )
+
+
+async def increment_openrouter_limit(user_id: UUID, additional_limit) -> float:
+    """Atomically increment user's OpenRouter limit and return the new total.
+
+    MEDIUM: This prevents race conditions when multiple purchases happen concurrently.
+    The database handles the atomic increment, and we set OpenRouter to the resulting total.
+
+    Args:
+        user_id: User's ID
+        additional_limit: Amount to add to the limit (in dollars) - can be Decimal or float
+
+    Returns:
+        The new total limit after increment (as float for API compatibility)
+    """
+    # Convert to float for database (NUMERIC type handles precision)
+    limit_value = float(additional_limit)
+    row = await db.fetchrow(
+        """
+        UPDATE users
+        SET openrouter_total_limit = openrouter_total_limit + $2, updated_at = NOW()
+        WHERE id = $1
+        RETURNING openrouter_total_limit
+        """,
+        user_id,
+        limit_value
+    )
+    return float(row["openrouter_total_limit"]) if row else 0.0
+
+
+async def get_openrouter_total_limit(user_id: UUID) -> float:
+    """Get user's total OpenRouter limit."""
+    row = await db.fetchrow(
+        "SELECT openrouter_total_limit FROM users WHERE id = $1",
+        user_id
+    )
+    return float(row["openrouter_total_limit"]) if row else 0.0

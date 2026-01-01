@@ -7,7 +7,9 @@ import Settings from './components/Settings';
 import NewConversationModal from './components/NewConversationModal';
 import OAuthCallback from './components/OAuthCallback';
 import ConfirmDialog from './components/ConfirmDialog';
-import { api, auth, settings, hasTokens, clearTokens } from './api';
+import PaymentSuccess from './components/PaymentSuccess';
+import PaymentCancel from './components/PaymentCancel';
+import { api, auth, credits, hasTokens, clearTokens } from './api';
 import './App.css';
 
 function App() {
@@ -28,6 +30,7 @@ function App() {
   const [modelsError, setModelsError] = useState('');
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [userCredits, setUserCredits] = useState(0);
 
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState({
@@ -39,15 +42,17 @@ function App() {
     onConfirm: null,
   });
 
-  // Check if user has an API key, auto-open Settings if not
-  const checkApiKeyAndPrompt = async () => {
+  // Load user's credit balance
+  const loadCredits = async () => {
     try {
-      const keys = await settings.listApiKeys();
-      if (!keys || keys.length === 0) {
+      const data = await credits.getBalance();
+      setUserCredits(data.credits);
+      // Auto-open Settings if user has no credits
+      if (data.credits === 0) {
         setIsSettingsOpen(true);
       }
     } catch (e) {
-      console.error('Failed to check API keys:', e);
+      console.error('Failed to load credits:', e);
     }
   };
 
@@ -66,8 +71,8 @@ function App() {
           } catch (e) {
             console.error('Failed to load user info:', e);
           }
-          // Check if user has API key, prompt if not
-          await checkApiKeyAndPrompt();
+          // Load user's credit balance
+          await loadCredits();
         }
       }
       setIsCheckingAuth(false);
@@ -75,11 +80,12 @@ function App() {
     checkAuth();
   }, []);
 
-  // Load conversations and models when authenticated
+  // Load conversations, models, and credits when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       loadConversations();
       loadModelOptions();
+      loadCredits();
     }
   }, [isAuthenticated]);
 
@@ -163,14 +169,15 @@ function App() {
     } catch (e) {
       console.error('Failed to load user info:', e);
     }
-    // Check if user has API key, prompt if not
-    await checkApiKeyAndPrompt();
+    // Load user's credit balance
+    await loadCredits();
   };
 
   const handleLogout = () => {
     clearTokens();
     setIsAuthenticated(false);
     setUserEmail('');
+    setUserCredits(0);
     setConversations([]);
     setCurrentConversationId(null);
     setCurrentConversation(null);
@@ -362,6 +369,10 @@ function App() {
       console.error('Failed to create and submit:', error);
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
+      } else if (error.status === 402 || error.message?.includes('credits')) {
+        // Insufficient credits - open Settings to purchase more
+        setIsSettingsOpen(true);
+        await loadCredits(); // Refresh credit balance
       } else {
         setCreateError(error.message || 'Failed to submit inquiry.');
       }
@@ -587,6 +598,15 @@ function App() {
       console.error('Failed to send message:', error);
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
+      } else if (error.status === 402 || error.message?.includes('credits')) {
+        // Insufficient credits - open Settings to purchase more
+        setIsSettingsOpen(true);
+        await loadCredits(); // Refresh credit balance
+        // Remove optimistic messages
+        setCurrentConversation((prev) => ({
+          ...prev,
+          messages: prev.messages.slice(0, -2),
+        }));
       } else {
         // Remove optimistic messages on error
         setCurrentConversation((prev) => ({
@@ -628,6 +648,7 @@ function App() {
           createError={createError}
           // User controls
           userEmail={userEmail}
+          userCredits={userCredits}
           onOpenSettings={handleOpenSettings}
           onLogout={handleLogout}
           onNewInquiry={handleGoToComposer}
@@ -655,6 +676,8 @@ function App() {
         isOpen={isSettingsOpen}
         onClose={handleCloseSettings}
         userEmail={userEmail}
+        userCredits={userCredits}
+        onRefreshCredits={loadCredits}
       />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -685,6 +708,14 @@ function App() {
         <Route
           path="/auth/callback/:provider"
           element={<OAuthCallback onLogin={handleLogin} />}
+        />
+        <Route
+          path="/credits/success"
+          element={<PaymentSuccess onRefreshCredits={loadCredits} />}
+        />
+        <Route
+          path="/credits/cancel"
+          element={<PaymentCancel />}
         />
         <Route
           path="/*"

@@ -28,6 +28,13 @@ GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 OAUTH_REDIRECT_BASE = os.getenv("OAUTH_REDIRECT_BASE", "http://localhost:5173")
 
+# Stripe Configuration (for credit purchases)
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
+
+# OpenRouter Provisioning API key (for creating per-user API keys)
+OPENROUTER_PROVISIONING_KEY = os.getenv("OPENROUTER_PROVISIONING_KEY")
+
 # CORS origins (comma-separated list)
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
 
@@ -96,6 +103,26 @@ def validate_secrets() -> None:
         if IS_PRODUCTION:
             errors.append("DATABASE_URL must be set in production")
         # In dev, we fall back to local JSON storage - no warning needed
+
+    # Stripe validation (required for credit purchases)
+    if not STRIPE_SECRET_KEY:
+        if IS_PRODUCTION:
+            errors.append("STRIPE_SECRET_KEY must be set in production for credit purchases")
+        else:
+            warnings.append("STRIPE_SECRET_KEY not set (credit purchases disabled)")
+
+    if not STRIPE_WEBHOOK_SECRET:
+        if IS_PRODUCTION:
+            errors.append("STRIPE_WEBHOOK_SECRET must be set in production for payment webhooks")
+        else:
+            warnings.append("STRIPE_WEBHOOK_SECRET not set (Stripe webhooks disabled)")
+
+    # OpenRouter provisioning validation
+    if not OPENROUTER_PROVISIONING_KEY:
+        if IS_PRODUCTION:
+            errors.append("OPENROUTER_PROVISIONING_KEY must be set in production for per-user API keys")
+        else:
+            warnings.append("OPENROUTER_PROVISIONING_KEY not set (per-user API key provisioning disabled)")
 
     # Log warnings
     for warning in warnings:
