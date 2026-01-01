@@ -533,3 +533,24 @@ A comprehensive security review was conducted on 2025-12-28 (see `docs/ai-counci
 **Launch readiness:** All Phase 1, Phase 2, and Phase 3 items are complete.
 
 See `docs/IMPLEMENTATION_PLAN_security_fixes.md` for the detailed implementation plan.
+
+**Production Readiness Review (2025-12-31):**
+
+A follow-up production readiness review was conducted by Codex (see `docs/production_readiness_review_codex.md`).
+
+Completed fixes:
+- [x] Base schema migration (`000_create_base_schema.sql`) for new deployments
+- [x] Transaction safety for message persistence with `FOR UPDATE` locks
+- [x] Client disconnect detection in streaming (cancels API calls, saves costs)
+- [x] N+1 query optimization (batch fetch stage data: 5 queries vs 1+3*N)
+- [x] Shared OpenRouter HTTP client with retry/backoff for 429/5xx
+- [x] OAuth error sanitization (generic errors to client, full logs server-side)
+- [x] Rate limiting on auth endpoints (OAuth callback, refresh, settings)
+- [x] XSS protection via `rehype-sanitize` on all markdown rendering
+- [x] SSE keepalive pings every 15s (prevents proxy timeouts)
+
+Deferred/Accepted:
+- [ ] Redis for OAuth state/rate limiting (needed before autoscaling)
+- [x] Content-Length bypass - accepted (low risk, defense in depth)
+- [x] JWTs in localStorage - accepted (standard SPA, CSP is better mitigation)
+- [x] Blocking file I/O in local storage - accepted (dev-only)

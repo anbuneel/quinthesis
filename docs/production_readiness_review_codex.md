@@ -107,3 +107,68 @@ Codex's review is thorough and accurate. Most findings are valid. The codebase i
 2. Wrap assistant message inserts in a transaction
 3. Add `rehype-sanitize` to markdown rendering
 4. Apply rate limiting to auth endpoints
+
+---
+
+## Implementation Status
+Author: Claude Opus 4.5
+Date: 2025-12-31
+PR: [#22](https://github.com/anbuneel/ai-council/pull/22)
+
+### Critical Findings
+
+| Finding | Status | Implementation |
+|---------|--------|----------------|
+| Missing migration for core schema | ✅ **FIXED** | Added `000_create_base_schema.sql` with conversations, messages, stage1/2/3 tables. Uses `IF NOT EXISTS` for idempotency. |
+
+### High Priority Findings
+
+| Finding | Status | Implementation |
+|---------|--------|----------------|
+| OAuth state/rate limiting in-memory | ⏭️ **DEFERRED** | Acceptable for single-instance. Documented limitation. Redis needed before autoscaling. |
+| Assistant message not transactional | ✅ **FIXED** | Added `db.transaction()` context manager. All stage inserts now atomic with rollback on failure. |
+| Message ordering race condition | ✅ **FIXED** | Added `FOR UPDATE` lock to both `add_user_message()` and `add_assistant_message()`. |
+| Streaming no disconnect detection | ✅ **FIXED** | Added `check_disconnected()` helper, `ClientDisconnectedError`, and task cancellation. |
+
+### Medium Priority Findings
+
+| Finding | Status | Implementation |
+|---------|--------|----------------|
+| N+1 queries for conversation loading | ✅ **FIXED** | Batch fetch using `ANY($1)` - now 5 queries total vs 1+3*N. |
+| OpenRouter client per-request, no retry | ✅ **FIXED** | Shared `httpx.AsyncClient` with connection pooling. Retry with exponential backoff for 429/5xx. Respects `Retry-After` header. |
+| OAuth callback leaks exception details | ✅ **FIXED** | Returns generic error, logs full exception with `logger.exception()`. |
+| Content-Length only size limit | ⏭️ **ACCEPTED** | Low risk. Uvicorn and reverse proxy provide defense in depth. |
+| JWTs in localStorage | ⏭️ **ACCEPTED** | Standard SPA pattern. CSP headers are higher priority mitigation. |
+| LLM markdown sanitization | ✅ **FIXED** | Added `rehype-sanitize` to all 4 ReactMarkdown components. |
+
+### Low Priority Findings
+
+| Finding | Status | Implementation |
+|---------|--------|----------------|
+| `api_rate_limiter` unused | ✅ **FIXED** | Applied to OAuth callback (IP-based), refresh (IP-based), and settings endpoints (user_id-based). |
+| No SSE keepalive/ping | ✅ **FIXED** | Added `run_with_keepalive()` helper. Sends `:\n\n` comment every 15s during long operations. |
+| Blocking file I/O in local storage | ⏭️ **ACCEPTED** | Dev-only fallback, not used in production. |
+
+### Files Changed
+
+**Backend:**
+- `backend/migrations/000_create_base_schema.sql` - New base schema migration
+- `backend/database.py` - Added `transaction()` context manager
+- `backend/storage.py` - Transactions, FOR UPDATE locks, batch queries
+- `backend/main.py` - Rate limiting, disconnect detection, SSE keepalive, error sanitization
+- `backend/openrouter.py` - Shared client, retry logic with exponential backoff
+
+**Frontend:**
+- `frontend/src/components/ChatInterface.jsx` - rehype-sanitize
+- `frontend/src/components/Stage1.jsx` - rehype-sanitize
+- `frontend/src/components/Stage2.jsx` - rehype-sanitize
+- `frontend/src/components/Stage3.jsx` - rehype-sanitize
+- `frontend/package.json` - Added rehype-sanitize dependency
+
+### Remaining Items (Future Work)
+
+1. **Redis for shared state** - Required before autoscaling (OAuth state, rate limiting)
+2. **CSP headers** - Security hardening for XSS protection
+3. **Observability** - Structured logging, error tracking (Sentry), metrics
+4. **Automated tests** - Unit tests for parsing, integration tests for SSE
+5. **Per-user quotas** - Cost control beyond rate limiting
