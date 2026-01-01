@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import Stage1 from './Stage1';
 import Stage2 from './Stage2';
 import Stage3 from './Stage3';
@@ -29,7 +30,7 @@ function QuestionDisplay({ questionText, status, lastUpdated }) {
                 style={!isExpanded && needsExpansion ? { maxHeight: MAX_COLLAPSED_HEIGHT } : {}}
             >
                 <div className="markdown-content">
-                    <ReactMarkdown>{questionText}</ReactMarkdown>
+                    <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{questionText}</ReactMarkdown>
                 </div>
             </div>
             <div className="question-meta">

@@ -1,6 +1,9 @@
 """FastAPI backend for LLM Council."""
 
+import logging
 from fastapi import FastAPI, HTTPException, Depends, Request
+
+logger = logging.getLogger(__name__)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
@@ -48,6 +51,7 @@ from .council import (
     stage3_synthesize_final,
     calculate_aggregate_rankings
 )
+from .openrouter import close_client as close_openrouter_client
 
 # Use local JSON storage if DATABASE_URL is not set
 if DATABASE_URL:
@@ -60,6 +64,15 @@ else:
     print("[WARNING] DATABASE_URL not set - using local JSON storage")
 
 
+def get_client_ip(request: Request) -> str:
+    """Get client IP address, handling proxies via X-Forwarded-For header."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        # Take the first IP in the chain (original client)
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle - startup and shutdown events."""
@@ -70,8 +83,9 @@ async def lifespan(app: FastAPI):
         # Startup: initialize database pool
         await get_pool()
     yield
+    # Shutdown: close all clients
+    await close_openrouter_client()
     if not USE_LOCAL_STORAGE:
-        # Shutdown: close database pool
         await close_pool()
 
 
@@ -225,12 +239,17 @@ async def get_oauth_url(provider: str):
 
 
 @app.post("/api/auth/oauth/{provider}/callback", response_model=TokenResponse)
-async def oauth_callback(provider: str, data: OAuthCallbackRequest):
+async def oauth_callback(provider: str, data: OAuthCallbackRequest, request: Request):
     """Complete OAuth flow and return JWT tokens.
 
     Validates the state token server-side and uses the stored PKCE
     code_verifier for token exchange.
+
+    Rate limited to 30 requests/minute per IP to prevent brute-force attacks.
     """
+    # Rate limit by client IP (user not authenticated yet)
+    await api_rate_limiter.check(get_client_ip(request))
+
     # Validate state and get PKCE code_verifier
     code_verifier = await validate_and_consume_state(data.state)
     if code_verifier is None:
@@ -271,12 +290,20 @@ async def oauth_callback(provider: str, data: OAuthCallbackRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"OAuth authentication failed: {str(e)}")
+        # Log full error details server-side, return generic message to client
+        logger.exception(f"OAuth authentication failed for provider {provider}")
+        raise HTTPException(status_code=400, detail="OAuth authentication failed. Please try again.")
 
 
 @app.post("/api/auth/refresh", response_model=TokenResponse)
-async def refresh_tokens(data: RefreshTokenRequest):
-    """Refresh access token using refresh token."""
+async def refresh_tokens(data: RefreshTokenRequest, request: Request):
+    """Refresh access token using refresh token.
+
+    Rate limited to 30 requests/minute per IP.
+    """
+    # Rate limit by client IP
+    await api_rate_limiter.check(get_client_ip(request))
+
     user_id = verify_token(data.refresh_token, "refresh")
 
     # Generate new tokens
@@ -310,7 +337,12 @@ async def get_current_user_info(user_id: UUID = Depends(get_current_user)):
 
 @app.post("/api/settings/api-key", response_model=ApiKeyResponse)
 async def save_api_key(data: ApiKeyCreate, user_id: UUID = Depends(get_current_user)):
-    """Save or update user's API key."""
+    """Save or update user's API key.
+
+    Rate limited to 30 requests/minute per user.
+    """
+    await api_rate_limiter.check(str(user_id))
+
     encrypted = encrypt_api_key(data.api_key)
     hint = get_key_hint(data.api_key)
 
@@ -325,13 +357,22 @@ async def save_api_key(data: ApiKeyCreate, user_id: UUID = Depends(get_current_u
 
 @app.get("/api/settings/api-keys")
 async def list_api_keys(user_id: UUID = Depends(get_current_user)):
-    """List user's API keys (metadata only)."""
+    """List user's API keys (metadata only).
+
+    Rate limited to 30 requests/minute per user.
+    """
+    await api_rate_limiter.check(str(user_id))
     return await storage.get_user_api_keys(user_id)
 
 
 @app.delete("/api/settings/api-key/{provider}")
 async def delete_api_key(provider: str, user_id: UUID = Depends(get_current_user)):
-    """Delete user's API key."""
+    """Delete user's API key.
+
+    Rate limited to 30 requests/minute per user.
+    """
+    await api_rate_limiter.check(str(user_id))
+
     deleted = await storage.delete_user_api_key(user_id, provider)
     if not deleted:
         raise HTTPException(status_code=404, detail="API key not found")
@@ -468,10 +509,16 @@ async def send_message(
     }
 
 
+class ClientDisconnectedError(Exception):
+    """Raised when client disconnects during streaming."""
+    pass
+
+
 @app.post("/api/conversations/{conversation_id}/message/stream")
 async def send_message_stream(
     conversation_id: str,
-    request: SendMessageRequest,
+    message_request: SendMessageRequest,
+    http_request: Request,
     user_id: UUID = Depends(get_current_user)
 ):
     """
@@ -479,6 +526,7 @@ async def send_message_stream(
     Returns Server-Sent Events as each stage completes.
 
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
+    Detects client disconnection and cancels in-flight API calls to save costs.
     """
     # Rate limit check (streaming is expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
@@ -503,47 +551,82 @@ async def send_message_stream(
         conversation.get("lead_model")
     )
 
+    async def check_disconnected():
+        """Check if client has disconnected and raise if so."""
+        if await http_request.is_disconnected():
+            raise ClientDisconnectedError("Client disconnected")
+
     async def event_generator():
+        title_task = None
+        keepalive_event = ":\n\n"  # Standard SSE comment for keepalive
+
+        async def run_with_keepalive(coro, interval=15):
+            """Run a coroutine while yielding keepalive pings every interval seconds."""
+            task = asyncio.create_task(coro)
+            pings = []
+            while not task.done():
+                try:
+                    # Wait for task with timeout
+                    await asyncio.wait_for(asyncio.shield(task), timeout=interval)
+                except asyncio.TimeoutError:
+                    # Task still running, queue a keepalive ping
+                    pings.append(keepalive_event)
+            return task.result(), pings
+
         try:
             # Add user message
-            await storage.add_user_message(conversation_id, request.content)
+            await storage.add_user_message(conversation_id, message_request.content)
 
             # Start title generation in parallel (don't await yet)
-            title_task = None
             if is_first_message:
                 title_task = asyncio.create_task(
-                    generate_conversation_title(request.content, api_key=api_key)
+                    generate_conversation_title(message_request.content, api_key=api_key)
                 )
 
             # Stage 1: Collect responses
+            await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage1_start'})}\n\n"
-            stage1_results = await stage1_collect_responses(
-                request.content,
-                models=selected_models,
-                api_key=api_key
+            stage1_results, pings = await run_with_keepalive(
+                stage1_collect_responses(
+                    message_request.content,
+                    models=selected_models,
+                    api_key=api_key
+                )
             )
+            for ping in pings:
+                yield ping
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
 
             # Stage 2: Collect rankings
+            await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage2_start'})}\n\n"
-            stage2_results, label_to_model = await stage2_collect_rankings(
-                request.content,
-                stage1_results,
-                models=selected_models,
-                api_key=api_key
+            (stage2_results, label_to_model), pings = await run_with_keepalive(
+                stage2_collect_rankings(
+                    message_request.content,
+                    stage1_results,
+                    models=selected_models,
+                    api_key=api_key
+                )
             )
+            for ping in pings:
+                yield ping
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_model)
             yield f"data: {json.dumps({'type': 'stage2_complete', 'data': stage2_results, 'metadata': {'label_to_model': label_to_model, 'aggregate_rankings': aggregate_rankings}})}\n\n"
 
             # Stage 3: Synthesize final answer
+            await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage3_start'})}\n\n"
-            stage3_result = await stage3_synthesize_final(
-                request.content,
-                stage1_results,
-                stage2_results,
-                lead_model=selected_lead,
-                api_key=api_key
+            stage3_result, pings = await run_with_keepalive(
+                stage3_synthesize_final(
+                    message_request.content,
+                    stage1_results,
+                    stage2_results,
+                    lead_model=selected_lead,
+                    api_key=api_key
+                )
             )
+            for ping in pings:
+                yield ping
             yield f"data: {json.dumps({'type': 'stage3_complete', 'data': stage3_result})}\n\n"
 
             # Wait for title generation if it was started
@@ -562,6 +645,13 @@ async def send_message_stream(
 
             # Send completion event
             yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+
+        except ClientDisconnectedError:
+            # Client disconnected - cancel any running tasks and stop
+            if title_task and not title_task.done():
+                title_task.cancel()
+            # No need to yield anything - client is gone
+            return
 
         except Exception as e:
             # Send error event

@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import './Stage2.css';
 
 // Convert index to councilor letter (A, B, C, etc.)
@@ -161,7 +162,7 @@ export default function Stage2({ rankings, labelToModel, aggregateRankings }) {
           </div>
 
           <div className="evaluation-text markdown-content">
-            <ReactMarkdown>{evaluationText}</ReactMarkdown>
+            <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{evaluationText}</ReactMarkdown>
           </div>
 
           {activeRanking.parsed_ranking && activeRanking.parsed_ranking.length > 0 && (

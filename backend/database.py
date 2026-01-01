@@ -1,6 +1,7 @@
 """Async PostgreSQL database connection pool."""
 
 import asyncpg
+from contextlib import asynccontextmanager
 from typing import Optional
 from .config import DATABASE_URL
 
@@ -52,3 +53,21 @@ async def fetchval(query: str, *args):
     """Execute a query and return the first value of the first result."""
     pool = await get_pool()
     return await pool.fetchval(query, *args)
+
+
+@asynccontextmanager
+async def transaction():
+    """Context manager for database transactions.
+
+    Usage:
+        async with transaction() as conn:
+            await conn.execute("INSERT INTO ...")
+            await conn.execute("INSERT INTO ...")
+
+    All operations within the context will be committed together,
+    or rolled back if an exception occurs.
+    """
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            yield conn

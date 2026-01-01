@@ -1,4 +1,5 @@
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import './Stage3.css';
 
 export default function Stage3({ finalResponse }) {
@@ -21,7 +22,7 @@ export default function Stage3({ finalResponse }) {
 
       <div className="verdict-content">
         <div className="verdict-text markdown-content">
-          <ReactMarkdown>{finalResponse.response}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{finalResponse.response}</ReactMarkdown>
         </div>
       </div>
 

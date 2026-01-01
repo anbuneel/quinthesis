@@ -145,6 +145,65 @@ async def get_conversation(
         conversation_id
     )
 
+    # Collect assistant message IDs for batch fetching
+    assistant_msg_ids = [
+        msg_row["id"] for msg_row in message_rows if msg_row["role"] == "assistant"
+    ]
+
+    # Batch fetch all stage data in 3 queries instead of 3*N queries
+    stage1_data = {}
+    stage2_data = {}
+    stage3_data = {}
+
+    if assistant_msg_ids:
+        # Fetch all stage1 responses for all assistant messages
+        stage1_rows = await db.fetch(
+            """
+            SELECT message_id, model, response
+            FROM stage1_responses
+            WHERE message_id = ANY($1)
+            ORDER BY message_id, model ASC
+            """,
+            assistant_msg_ids
+        )
+        for r in stage1_rows:
+            mid = r["message_id"]
+            if mid not in stage1_data:
+                stage1_data[mid] = []
+            stage1_data[mid].append({"model": r["model"], "response": r["response"]})
+
+        # Fetch all stage2 rankings for all assistant messages
+        stage2_rows = await db.fetch(
+            """
+            SELECT message_id, model, ranking, parsed_ranking
+            FROM stage2_rankings
+            WHERE message_id = ANY($1)
+            ORDER BY message_id, model ASC
+            """,
+            assistant_msg_ids
+        )
+        for r in stage2_rows:
+            mid = r["message_id"]
+            if mid not in stage2_data:
+                stage2_data[mid] = []
+            item = {"model": r["model"], "ranking": r["ranking"]}
+            if r["parsed_ranking"]:
+                item["parsed_ranking"] = json.loads(r["parsed_ranking"])
+            stage2_data[mid].append(item)
+
+        # Fetch all stage3 synthesis for all assistant messages
+        stage3_rows = await db.fetch(
+            """
+            SELECT message_id, model, response
+            FROM stage3_synthesis
+            WHERE message_id = ANY($1)
+            """,
+            assistant_msg_ids
+        )
+        for r in stage3_rows:
+            stage3_data[r["message_id"]] = {"model": r["model"], "response": r["response"]}
+
+    # Assemble messages with pre-fetched stage data
     messages = []
     for msg_row in message_rows:
         if msg_row["role"] == "user":
@@ -153,54 +212,12 @@ async def get_conversation(
                 "content": msg_row["content"]
             })
         else:
-            # Assistant message - fetch stage data
             message_id = msg_row["id"]
-
-            # Stage 1 responses
-            stage1_rows = await db.fetch(
-                """
-                SELECT model, response
-                FROM stage1_responses
-                WHERE message_id = $1
-                ORDER BY model ASC
-                """,
-                message_id
-            )
-            stage1 = [{"model": r["model"], "response": r["response"]} for r in stage1_rows]
-
-            # Stage 2 rankings
-            stage2_rows = await db.fetch(
-                """
-                SELECT model, ranking, parsed_ranking
-                FROM stage2_rankings
-                WHERE message_id = $1
-                ORDER BY model ASC
-                """,
-                message_id
-            )
-            stage2 = []
-            for r in stage2_rows:
-                item = {"model": r["model"], "ranking": r["ranking"]}
-                if r["parsed_ranking"]:
-                    item["parsed_ranking"] = json.loads(r["parsed_ranking"])
-                stage2.append(item)
-
-            # Stage 3 synthesis
-            stage3_row = await db.fetchrow(
-                """
-                SELECT model, response
-                FROM stage3_synthesis
-                WHERE message_id = $1
-                """,
-                message_id
-            )
-            stage3 = {"model": stage3_row["model"], "response": stage3_row["response"]} if stage3_row else {}
-
             messages.append({
                 "role": "assistant",
-                "stage1": stage1,
-                "stage2": stage2,
-                "stage3": stage3
+                "stage1": stage1_data.get(message_id, []),
+                "stage2": stage2_data.get(message_id, []),
+                "stage3": stage3_data.get(message_id, {})
             })
 
     return {
@@ -263,6 +280,9 @@ async def add_user_message(conversation_id: str, content: str) -> int:
     """
     Add a user message to a conversation.
 
+    Uses a transaction with FOR UPDATE to prevent race conditions
+    when calculating message order.
+
     Args:
         conversation_id: Conversation identifier
         content: User message content
@@ -270,27 +290,29 @@ async def add_user_message(conversation_id: str, content: str) -> int:
     Returns:
         The message_order of the new message
     """
-    # Get the next message order
-    next_order = await db.fetchval(
-        """
-        SELECT COALESCE(MAX(message_order), -1) + 1
-        FROM messages
-        WHERE conversation_id = $1
-        """,
-        conversation_id
-    )
+    async with db.transaction() as conn:
+        # Get the next message order (with FOR UPDATE to prevent race conditions)
+        next_order = await conn.fetchval(
+            """
+            SELECT COALESCE(MAX(message_order), -1) + 1
+            FROM messages
+            WHERE conversation_id = $1
+            FOR UPDATE
+            """,
+            conversation_id
+        )
 
-    await db.execute(
-        """
-        INSERT INTO messages (conversation_id, role, content, message_order)
-        VALUES ($1, 'user', $2, $3)
-        """,
-        conversation_id,
-        content,
-        next_order
-    )
+        await conn.execute(
+            """
+            INSERT INTO messages (conversation_id, role, content, message_order)
+            VALUES ($1, 'user', $2, $3)
+            """,
+            conversation_id,
+            content,
+            next_order
+        )
 
-    return next_order
+        return next_order
 
 
 async def add_assistant_message(
@@ -302,70 +324,75 @@ async def add_assistant_message(
     """
     Add an assistant message with all 3 stages to a conversation.
 
+    All inserts are wrapped in a transaction to ensure atomicity.
+    If any insert fails, all changes are rolled back.
+
     Args:
         conversation_id: Conversation identifier
         stage1: List of individual model responses
         stage2: List of model rankings
         stage3: Final synthesized response
     """
-    # Get the next message order
-    next_order = await db.fetchval(
-        """
-        SELECT COALESCE(MAX(message_order), -1) + 1
-        FROM messages
-        WHERE conversation_id = $1
-        """,
-        conversation_id
-    )
-
-    # Insert the assistant message
-    message_id = await db.fetchval(
-        """
-        INSERT INTO messages (conversation_id, role, message_order)
-        VALUES ($1, 'assistant', $2)
-        RETURNING id
-        """,
-        conversation_id,
-        next_order
-    )
-
-    # Insert stage 1 responses
-    for item in stage1:
-        await db.execute(
+    async with db.transaction() as conn:
+        # Get the next message order (with FOR UPDATE to prevent race conditions)
+        next_order = await conn.fetchval(
             """
-            INSERT INTO stage1_responses (message_id, model, response)
-            VALUES ($1, $2, $3)
+            SELECT COALESCE(MAX(message_order), -1) + 1
+            FROM messages
+            WHERE conversation_id = $1
+            FOR UPDATE
             """,
-            message_id,
-            item["model"],
-            item["response"]
+            conversation_id
         )
 
-    # Insert stage 2 rankings
-    for item in stage2:
-        parsed = json.dumps(item.get("parsed_ranking")) if item.get("parsed_ranking") else None
-        await db.execute(
+        # Insert the assistant message
+        message_id = await conn.fetchval(
             """
-            INSERT INTO stage2_rankings (message_id, model, ranking, parsed_ranking)
-            VALUES ($1, $2, $3, $4)
+            INSERT INTO messages (conversation_id, role, message_order)
+            VALUES ($1, 'assistant', $2)
+            RETURNING id
             """,
-            message_id,
-            item["model"],
-            item["ranking"],
-            parsed
+            conversation_id,
+            next_order
         )
 
-    # Insert stage 3 synthesis
-    if stage3:
-        await db.execute(
-            """
-            INSERT INTO stage3_synthesis (message_id, model, response)
-            VALUES ($1, $2, $3)
-            """,
-            message_id,
-            stage3.get("model", ""),
-            stage3.get("response", "")
-        )
+        # Insert stage 1 responses
+        for item in stage1:
+            await conn.execute(
+                """
+                INSERT INTO stage1_responses (message_id, model, response)
+                VALUES ($1, $2, $3)
+                """,
+                message_id,
+                item["model"],
+                item["response"]
+            )
+
+        # Insert stage 2 rankings
+        for item in stage2:
+            parsed = json.dumps(item.get("parsed_ranking")) if item.get("parsed_ranking") else None
+            await conn.execute(
+                """
+                INSERT INTO stage2_rankings (message_id, model, ranking, parsed_ranking)
+                VALUES ($1, $2, $3, $4)
+                """,
+                message_id,
+                item["model"],
+                item["ranking"],
+                parsed
+            )
+
+        # Insert stage 3 synthesis
+        if stage3:
+            await conn.execute(
+                """
+                INSERT INTO stage3_synthesis (message_id, model, response)
+                VALUES ($1, $2, $3)
+                """,
+                message_id,
+                stage3.get("model", ""),
+                stage3.get("response", "")
+            )
 
 
 async def update_conversation_title(conversation_id: str, title: str):

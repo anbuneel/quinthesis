@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
 import './Stage1.css';
 
 // Convert index to councilor letter (A, B, C, etc.)
@@ -82,7 +83,7 @@ export default function Stage1({ responses }) {
         </div>
 
         <div className="response-text markdown-content">
-          <ReactMarkdown>{activeResponse.response}</ReactMarkdown>
+          <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{activeResponse.response}</ReactMarkdown>
         </div>
       </div>
     </div>
