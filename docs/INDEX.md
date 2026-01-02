@@ -13,6 +13,7 @@ Security reviews and implementation plans.
 | [codex-review-2025-12-28.md](security/codex-review-2025-12-28.md) | Comprehensive security review by Codex | 2025-12-28 |
 | [security-fixes-plan.md](security/security-fixes-plan.md) | Security fixes implementation (Phase 1-3) | 2025-12-28 |
 | [production-readiness-2025-12-31.md](security/production-readiness-2025-12-31.md) | Production readiness review by Codex | 2025-12-31 |
+| [codex-review-2026-01-01.md](security/codex-review-2026-01-01.md) | Billing security review - checkout rate limiting pending | 2026-01-01 |
 
 ---
 
@@ -72,7 +73,7 @@ Superseded documentation (kept for reference).
 **Current Status:**
 - Production app deployed (Vercel + Fly.io + Supabase)
 - Usage-based billing implemented ($5/$10/$20 deposits + BYOK)
-- All security fixes complete (Phase 1-3)
+- Security fixes Phase 1-3 complete; checkout rate limiting pending
 
 **Key Docs:**
 - Security: [production-readiness-2025-12-31.md](security/production-readiness-2025-12-31.md)

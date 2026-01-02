@@ -725,3 +725,16 @@ Converted from credit-based (1 credit = 1 query) to usage-based billing:
 - [x] Transparent cost breakdown shown to users
 - [x] Per-query usage history with model breakdowns
 - [x] Minimum $0.50 balance required (no upfront charge)
+
+**Security Review (2026-01-01):**
+
+Follow-up review by Codex (see `docs/security/codex-review-2026-01-01.md`).
+
+Repeat findings (already accepted/deferred):
+- [x] JWTs in localStorage - accepted (standard SPA pattern, CSP is better mitigation)
+- [x] In-memory rate limiting - deferred (single-instance, Redis needed before autoscaling)
+- [x] Webhook metadata trust - already addressed (verifies session from Stripe API)
+- [x] CORS_ORIGINS for redirect allowlist - acceptable (scheme validated)
+
+Pending:
+- [ ] Rate limiting on checkout/provisioning endpoints (`/api/deposits/checkout`, `/api/credits/provision-key`)
