@@ -97,6 +97,9 @@
 
   --container-padding: 1rem;
   --content-max-width: 100%;
+  --content-max-width-card: 400px;
+  --content-max-width-narrow: 520px;
+  --content-max-width-reading: 720px;
 
   /* ==========================================================================
      Transitions

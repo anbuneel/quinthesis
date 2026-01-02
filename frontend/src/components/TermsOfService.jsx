@@ -1,20 +1,13 @@
-import { useNavigate } from 'react-router-dom';
 import { LEGAL_CONFIG } from '../legalConfig';
+import Masthead from './Masthead';
 import './LegalPage.css';
 
 function TermsOfService() {
-  const navigate = useNavigate();
-
   return (
     <div className="legal-page">
+      <Masthead variant="minimal" backTo="/" backLabel="Back" />
       <div className="legal-content">
         <header className="legal-header">
-          <button type="button" className="back-link" onClick={() => navigate(-1)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
           <h1 className="legal-title">Terms of Service</h1>
           <p className="legal-date">Last updated: {LEGAL_CONFIG.termsOfServiceLastUpdated}</p>
         </header>

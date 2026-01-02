@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { billing, auth } from '../api';
 import ConfirmDialog from './ConfirmDialog';
-import AvatarMenu from './AvatarMenu';
-import CreditBalance from './CreditBalance';
+import Masthead from './Masthead';
 import './Account.css';
 
 function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleSidebar, isSidebarOpen }) {
@@ -149,8 +148,6 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
     navigate('/');
   };
 
-  const handleOpenAccount = () => navigate('/account');
-
   const formatBalance = (amount) => {
     if (amount === null || amount === undefined) return '$0.00';
     return `$${parseFloat(amount).toFixed(2)}`;
@@ -182,48 +179,34 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
     });
   };
 
-  // Masthead component (shared across pages)
-  const renderMasthead = () => (
-    <header className="masthead">
-      <div className="masthead-row">
-        <button
-          type="button"
-          className="sidebar-toggle"
-          onClick={onToggleSidebar}
-          aria-label="Open archive (Ctrl+K)"
-          aria-expanded={isSidebarOpen}
-          aria-controls="sidebar"
-          title="Open archive (Ctrl+K)"
-        >
-          Archive
-        </button>
-        <div className="masthead-center">
-          <h1 className="masthead-title">The AI Council</h1>
-          <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
-        </div>
-        <div className="masthead-actions">
-          <button
-            type="button"
-            className="masthead-btn masthead-btn-new"
-            onClick={handleBack}
-            title="Back to Home"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            <span className="masthead-btn-label">Home</span>
-          </button>
-          <CreditBalance balance={userBalance} onClick={handleOpenAccount} />
-          <AvatarMenu userEmail={userEmail} onLogout={onLogout} />
-        </div>
-      </div>
-    </header>
+  // Custom Home button for Account masthead
+  const HomeButton = () => (
+    <button
+      type="button"
+      className="masthead-btn masthead-btn-new"
+      onClick={handleBack}
+      title="Back to Home"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7" />
+      </svg>
+      <span className="masthead-btn-label">Home</span>
+    </button>
   );
 
   if (isLoading) {
     return (
       <div className="account-page">
-        {renderMasthead()}
+        <Masthead
+          variant="full"
+          onToggleSidebar={onToggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+          userEmail={userEmail}
+          userBalance={userBalance}
+          onLogout={onLogout}
+        >
+          <HomeButton />
+        </Masthead>
         <div className="account-content">
           <div className="account-loading">
             <div className="loading-spinner"></div>
@@ -236,7 +219,16 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
 
   return (
     <div className="account-page">
-      {renderMasthead()}
+      <Masthead
+        variant="full"
+        onToggleSidebar={onToggleSidebar}
+        isSidebarOpen={isSidebarOpen}
+        userEmail={userEmail}
+        userBalance={userBalance}
+        onLogout={onLogout}
+      >
+        <HomeButton />
+      </Masthead>
 
       <div className="account-content">
         <div className="account-inner">

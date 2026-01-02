@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { billing } from '../api';
+import Masthead from './Masthead';
 import './PaymentResult.css';
 
 function PaymentSuccess({ onRefreshBalance }) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [newBalance, setNewBalance] = useState(null);
 
@@ -41,6 +41,7 @@ function PaymentSuccess({ onRefreshBalance }) {
 
   return (
     <div className="payment-result">
+      <Masthead variant="minimal" />
       <div className="payment-result-card success">
         <div className="payment-icon-wrapper success">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

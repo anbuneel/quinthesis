@@ -6,7 +6,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   background: var(--paper-cream);
   padding: 1.5rem;
 }
@@ -15,7 +16,7 @@
   background: var(--paper-cream);
   padding: 3rem 2.5rem;
   width: 100%;
-  max-width: 400px;
+  max-width: var(--content-max-width-card);
   text-align: center;
   border: 3px solid var(--ink-black);
   box-shadow:

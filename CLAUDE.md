@@ -151,6 +151,7 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/PaymentSuccess.jsx` - Post-checkout success page
 - `components/PaymentCancel.jsx` - Checkout cancelled page
 - `components/AvatarMenu.jsx` - User avatar dropdown with account/logout
+- `components/Masthead.jsx` - Shared header component with variants (full, centered, minimal)
 - `components/ConfirmDialog.jsx` - Custom styled confirmation/alert dialogs
 - `components/DemoView.jsx` - Public demo page showing precomputed deliberations (no auth required)
 - `demoData/demos.json` - Static demo data with 3 example deliberations
