@@ -56,7 +56,13 @@ Chronological reference to all project documentation.
 | [IMPLEMENTATION_PLAN_stripe_credits.md](IMPLEMENTATION_PLAN_stripe_credits.md) | Credit-based monetization with Stripe (superseded by usage-based billing) |
 | [byok_friction_recommendations_codex.md](byok_friction_recommendations_codex.md) | BYOK friction reduction recommendations |
 | [IMPLEMENTATION_PLAN_usage_based_billing.md](IMPLEMENTATION_PLAN_usage_based_billing.md) | Usage-based billing plan (implemented) |
-| [DESIGN_account_page.md](DESIGN_account_page.md) | **[PENDING]** Account page design - replaces Settings modal |
+| [DESIGN_account_page.md](DESIGN_account_page.md) | **[IMPLEMENTED]** Account page design - replaces Settings modal |
+
+## 2026-01-02
+
+| Document | Description |
+|----------|-------------|
+| Account Page implementation | Dedicated `/account` page with "Financial Gazette" editorial styling |
 
 ### Claude Sessions
 | Document | Description |
@@ -73,9 +79,15 @@ Chronological reference to all project documentation.
 
 ## Current Focus
 
+**Account Page** - Implemented! A dedicated Account page at `/account` with "Financial Gazette" editorial styling:
+- Balance card with stats
+- Deposit options ($5/$20/$50)
+- Transaction ledger with expandable cost breakdowns
+- Member info section
+
 **Usage-Based Billing** - Implemented! Users now pay actual OpenRouter cost + 10% margin per query. The system tracks costs transparently with breakdown shown after each query.
 
-**Next Steps:**
-1. Run database migration on production: `006_usage_based_billing.sql`
-2. Test complete flow: deposit → query → cost deduction → usage history
-3. Consider Account Page redesign (replace Settings modal with dedicated page)
+**Completed:**
+1. [x] Database migration on production: `006_usage_based_billing.sql`
+2. [x] Account page replaces Settings modal
+3. [ ] Test complete flow: deposit → query → cost deduction → usage history

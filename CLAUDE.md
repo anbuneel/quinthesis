@@ -140,11 +140,13 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/Sidebar.jsx` - Inquiry list, mobile drawer
 - `components/OAuthCallback.jsx` - Handles OAuth provider redirects
 - `components/Login.jsx` - OAuth login UI (Google and GitHub buttons)
-- `components/Settings.jsx` - Balance display, deposit options, usage history
-- `components/CreditBalance.jsx` - Header dollar balance indicator
+- `components/Account.jsx` - Account page: balance, deposits, usage history, member info
+- `components/BalanceCard.jsx` - Balance card with stats (used in Account page)
+- `components/TransactionLedger.jsx` - Transaction history with expandable details
+- `components/CreditBalance.jsx` - Header dollar balance indicator (links to Account page)
 - `components/PaymentSuccess.jsx` - Post-checkout success page
 - `components/PaymentCancel.jsx` - Checkout cancelled page
-- `components/AvatarMenu.jsx` - User avatar dropdown with settings/logout
+- `components/AvatarMenu.jsx` - User avatar dropdown with account/logout
 - `components/ConfirmDialog.jsx` - Custom styled confirmation/alert dialogs
 - `api.js` - Backend communication with OAuth auth, JWT tokens, billing API, SSE streaming
 
@@ -639,7 +641,7 @@ A comprehensive security review was conducted on 2025-12-28 (see `docs/ai-counci
 
 **Completed accessibility/polish fixes (Phase 3 - Low):**
 - [x] Archive items keyboard accessibility - `frontend/src/components/Sidebar.jsx`
-- [x] Settings modal dialog semantics with focus trap - `frontend/src/components/Settings.jsx`
+- [x] Settings modal replaced with Account page - `frontend/src/components/Account.jsx`
 - [x] Local storage API key ID fix - `backend/storage_local.py`
 - [x] Documentation field name corrections - `CLAUDE.md`, `AGENTS.md`
 
