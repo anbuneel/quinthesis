@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import ChatInterface from './components/ChatInterface';
 import Login from './components/Login';
-import Settings from './components/Settings';
+import Account from './components/Account';
 import NewConversationModal from './components/NewConversationModal';
 import OAuthCallback from './components/OAuthCallback';
 import ConfirmDialog from './components/ConfirmDialog';
@@ -22,7 +22,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isNewConversationOpen, setIsNewConversationOpen] = useState(false);
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [availableModels, setAvailableModels] = useState([]);
   const [defaultModels, setDefaultModels] = useState([]);
   const [defaultLeadModel, setDefaultLeadModel] = useState('');
@@ -47,9 +46,9 @@ function App() {
     try {
       const data = await billing.getBalance();
       setUserBalance(data.balance);
-      // Auto-open Settings if user has no balance
-      if (data.balance === 0) {
-        setIsSettingsOpen(true);
+      // Auto-redirect to Account if user has no balance
+      if (data.balance === 0 && window.location.pathname !== '/account') {
+        window.location.href = '/account';
       }
     } catch (e) {
       console.error('Failed to load balance:', e);
@@ -183,15 +182,6 @@ function App() {
     setCurrentConversation(null);
     setIsSidebarOpen(false);
     setIsNewConversationOpen(false);
-    setIsSettingsOpen(false);
-  };
-
-  const handleOpenSettings = () => {
-    setIsSettingsOpen(true);
-  };
-
-  const handleCloseSettings = () => {
-    setIsSettingsOpen(false);
   };
 
   const loadModelOptions = async () => {
@@ -370,9 +360,8 @@ function App() {
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
       } else if (error.status === 402 || error.message?.includes('balance') || error.message?.includes('Insufficient')) {
-        // Insufficient balance - open Settings to add funds
-        setIsSettingsOpen(true);
-        await loadBalance(); // Refresh balance
+        // Insufficient balance - redirect to Account to add funds
+        window.location.href = '/account';
       } else {
         setCreateError(error.message || 'Failed to submit inquiry.');
       }
@@ -599,9 +588,8 @@ function App() {
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
       } else if (error.status === 402 || error.message?.includes('balance') || error.message?.includes('Insufficient')) {
-        // Insufficient balance - open Settings to add funds
-        setIsSettingsOpen(true);
-        await loadBalance(); // Refresh balance
+        // Insufficient balance - redirect to Account to add funds
+        window.location.href = '/account';
         // Remove optimistic messages
         setCurrentConversation((prev) => ({
           ...prev,
@@ -649,7 +637,6 @@ function App() {
           // User controls
           userEmail={userEmail}
           userBalance={userBalance}
-          onOpenSettings={handleOpenSettings}
           onLogout={handleLogout}
           onNewInquiry={handleGoToComposer}
         />
@@ -671,13 +658,6 @@ function App() {
         loadError={modelsError}
         submitError={createError}
         isSubmitting={isCreatingConversation}
-      />
-      <Settings
-        isOpen={isSettingsOpen}
-        onClose={handleCloseSettings}
-        userEmail={userEmail}
-        userBalance={userBalance}
-        onRefreshBalance={loadBalance}
       />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -716,6 +696,10 @@ function App() {
         <Route
           path="/credits/cancel"
           element={<PaymentCancel />}
+        />
+        <Route
+          path="/account"
+          element={isAuthenticated ? <Account onRefreshBalance={loadBalance} /> : <Login onLogin={handleLogin} />}
         />
         <Route
           path="/*"

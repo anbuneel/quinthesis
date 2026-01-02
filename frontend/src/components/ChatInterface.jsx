@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import Stage1 from './Stage1';
@@ -74,10 +75,11 @@ export default function ChatInterface({
     // User controls
     userEmail,
     userBalance,
-    onOpenSettings,
     onLogout,
     onNewInquiry,
 }) {
+    const navigate = useNavigate();
+    const handleOpenAccount = () => navigate('/account');
     const [input, setInput] = useState('');
     const [activeTab, setActiveTab] = useState('final');
 
@@ -185,11 +187,10 @@ export default function ChatInterface({
                             <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
                         </div>
                         <div className="masthead-actions">
-                            <CreditBalance balance={userBalance} onClick={onOpenSettings} />
+                            <CreditBalance balance={userBalance} onClick={handleOpenAccount} />
                             <AvatarMenu
                                 userEmail={userEmail}
-                                onOpenSettings={onOpenSettings}
-                                onLogout={onLogout}
+                                                                onLogout={onLogout}
                             />
                         </div>
                     </div>
@@ -242,11 +243,10 @@ export default function ChatInterface({
                                 <span className="masthead-btn-label">New Inquiry</span>
                             </button>
                         )}
-                        <CreditBalance balance={userBalance} onClick={onOpenSettings} />
+                        <CreditBalance balance={userBalance} onClick={handleOpenAccount} />
                         <AvatarMenu
                             userEmail={userEmail}
-                            onOpenSettings={onOpenSettings}
-                            onLogout={onLogout}
+                                                        onLogout={onLogout}
                         />
                     </div>
                 </div>

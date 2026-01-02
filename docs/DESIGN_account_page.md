@@ -1,5 +1,8 @@
 # Account Page Design Recommendation
 
+> **STATUS: IMPLEMENTED** (2026-01-02)
+> The Account page is now live at `/account`, replacing the Settings modal.
+
 ## Decision: Separate Page vs Modal
 
 **Verdict: Settings should be a dedicated Account page, not a modal.**
