@@ -605,6 +605,12 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 - Login page prominently links to demos ("See example deliberations")
 - Demo data stored in `frontend/src/demoData/demos.json`
 
+**Updating Demo Data:**
+1. Edit `frontend/src/demoData/demos.json` with new deliberations
+2. Update `DEMO_VERSION` in `frontend/src/config.js` (increment version, update date)
+3. Ensure model names match current `AVAILABLE_MODELS` in `backend/config.py`
+4. Test locally: visit `/demo` and verify all tabs render correctly
+
 ### Cost Preview
 - Static "Typical cost: $0.05–0.20" shown before query submission
 - Helps users understand pricing before committing

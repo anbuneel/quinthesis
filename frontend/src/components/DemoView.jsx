@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
@@ -12,6 +12,16 @@ export default function DemoView() {
     const navigate = useNavigate();
     const [selectedDemoId, setSelectedDemoId] = useState(null);
     const [activeTab, setActiveTab] = useState('final');
+    const questionRef = useRef(null);
+
+    const selectedDemo = demos.demos.find(d => d.id === selectedDemoId);
+
+    // Focus management: move focus to question when demo is selected
+    useEffect(() => {
+        if (selectedDemo && questionRef.current) {
+            questionRef.current.focus();
+        }
+    }, [selectedDemo]);
 
     // SEO meta tags for social sharing
     useEffect(() => {
@@ -37,8 +47,6 @@ export default function DemoView() {
             document.title = originalTitle;
         };
     }, []);
-
-    const selectedDemo = demos.demos.find(d => d.id === selectedDemoId);
 
     // Transform demo data to match Stage component expectations
     const getStage1Data = (demo) => {
@@ -77,6 +85,34 @@ export default function DemoView() {
     const handleSignUp = () => {
         navigate('/');
     };
+
+    // Error handling: invalid demo ID selected
+    if (selectedDemoId && !selectedDemo) {
+        return (
+            <div className="demo-view">
+                <header className="demo-masthead">
+                    <div className="masthead-row">
+                        <div className="masthead-center">
+                            <h1 className="masthead-title">The AI Council</h1>
+                        </div>
+                    </div>
+                </header>
+                <div className="demo-content">
+                    <div className="demo-error">
+                        <h2>Demo Not Found</h2>
+                        <p>The requested demo could not be found.</p>
+                        <button
+                            type="button"
+                            className="demo-cta-btn"
+                            onClick={handleBack}
+                        >
+                            View All Examples
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Demo list view
     if (!selectedDemo) {
@@ -180,7 +216,11 @@ export default function DemoView() {
             <div className="demo-question-panel">
                 <div className="panel-inner">
                     <div className="demo-question-display">
-                        <div className="demo-question-text">
+                        <div
+                            ref={questionRef}
+                            tabIndex="-1"
+                            className="demo-question-text"
+                        >
                             <div className="markdown-content">
                                 <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
                                     {selectedDemo.question}

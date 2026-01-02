@@ -406,3 +406,24 @@
         display: none;
     }
 }
+
+/* ==========================================================================
+   Error State
+   ========================================================================== */
+.demo-error {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.demo-error h2 {
+    font-family: var(--font-display);
+    font-size: 1.75rem;
+    color: var(--ink-black);
+    margin-bottom: 0.5rem;
+}
+
+.demo-error p {
+    font-family: var(--font-body);
+    color: var(--ink-muted);
+    margin-bottom: 1.5rem;
+}
