@@ -72,8 +72,8 @@ Notice in InquiryComposer informing users:
 | `frontend/src/components/Account.css` | Added danger zone and legal link styles |
 | `frontend/src/components/InquiryComposer.jsx` | Added data disclosure notice |
 | `frontend/src/components/InquiryComposer.css` | Added disclosure styles |
-| `frontend/src/components/Login.jsx` | Added legal links to footer |
-| `frontend/src/components/Login.css` | Added legal link styles |
+| `frontend/src/components/Login.jsx` | Added legal links to footer, updated pricing options |
+| `frontend/src/components/Login.css` | Added legal link and pricing option styles |
 
 ### Documentation
 | File | Changes |
