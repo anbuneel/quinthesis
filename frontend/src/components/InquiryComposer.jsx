@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { COST_ESTIMATE } from '../config';
 import './InquiryComposer.css';
 
 const MIN_MODELS = 2;
@@ -180,7 +181,7 @@ export default function InquiryComposer({
               )}
             </button>
             <div className="cost-estimate">
-              Typical cost: $0.05–0.20 depending on response length
+              {COST_ESTIMATE.text}
             </div>
           </div>
 

@@ -153,6 +153,7 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/DemoView.jsx` - Public demo page showing precomputed deliberations (no auth required)
 - `demoData/demos.json` - Static demo data with 3 example deliberations
 - `api.js` - Backend communication with OAuth auth, JWT tokens, billing API, SSE streaming
+- `config.js` - Frontend constants (cost estimate, demo version) with review dates
 
 ---
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
@@ -12,6 +12,31 @@ export default function DemoView() {
     const navigate = useNavigate();
     const [selectedDemoId, setSelectedDemoId] = useState(null);
     const [activeTab, setActiveTab] = useState('final');
+
+    // SEO meta tags for social sharing
+    useEffect(() => {
+        const originalTitle = document.title;
+        document.title = 'Example Deliberations | AI Council';
+
+        // Set Open Graph meta tags
+        const setMetaTag = (property, content) => {
+            let meta = document.querySelector(`meta[property="${property}"]`);
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.setAttribute('property', property);
+                document.head.appendChild(meta);
+            }
+            meta.setAttribute('content', content);
+        };
+
+        setMetaTag('og:title', 'AI Council - Example Deliberations');
+        setMetaTag('og:description', 'See how multiple AI models collaborate to answer complex questions through structured deliberation.');
+        setMetaTag('og:type', 'website');
+
+        return () => {
+            document.title = originalTitle;
+        };
+    }, []);
 
     const selectedDemo = demos.demos.find(d => d.id === selectedDemoId);
 
