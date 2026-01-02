@@ -38,7 +38,7 @@ A dedicated **Account page** aligns with the "Paper of Record" theme. Think of i
 │  ║  ┌─────────────┐    BALANCE                   ║  │
 │  ║  │             │    ─────────────────         ║  │
 │  ║  │   $4.97     │    Add Funds                 ║  │
-│  ║  │             │    [$5] [$20] [$50]          ║  │
+│  ║  │             │    [$5] [$10] [$20]          ║  │
 │  ║  └─────────────┘                              ║  │
 │  ║                                               ║  │
 │  ║  ═══════════════════════════════════════════  ║  │
@@ -81,11 +81,17 @@ Using existing project fonts:
 - Last updated timestamp
 
 ### 2. Add Funds
-- Three deposit options: $5 / $20 / $50
-- Styled as elegant "subscription" cards
+- Three deposit options: $5 / $10 / $20
+- Styled as elegant stacked buttons
 - Clear CTAs with Stripe integration
 
-### 3. Transaction Ledger
+### 3. API Settings
+- Mode indicator badge (Using Your Key / Using Credits)
+- BYOK (Bring Your Own Key) option to use own OpenRouter API key
+- Input field to add/remove API key
+- Link to OpenRouter key management
+
+### 4. Transaction Ledger
 - Chronological list (newest first)
 - Each entry shows:
   - Date
@@ -94,7 +100,7 @@ Using existing project fonts:
   - Expandable: OpenRouter cost, margin breakdown, models used
 - Pagination or infinite scroll for long history
 
-### 4. Account Details (optional section)
+### 5. Account Details (footer section)
 - Email address
 - OAuth provider (Google/GitHub icon)
 - Member since date

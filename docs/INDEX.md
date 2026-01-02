@@ -79,15 +79,19 @@ Chronological reference to all project documentation.
 
 ## Current Focus
 
-**Account Page** - Implemented! A dedicated Account page at `/account` with "Financial Gazette" editorial styling:
-- Balance card with stats
-- Deposit options ($5/$20/$50)
+**Account Page** - Implemented! A dedicated Account page at `/account` with editorial styling:
+- Balance card with deposit/spent stats
+- Deposit options ($5/$10/$20)
+- API Settings section with BYOK support
 - Transaction ledger with expandable cost breakdowns
 - Member info section
 
-**Usage-Based Billing** - Implemented! Users now pay actual OpenRouter cost + 10% margin per query. The system tracks costs transparently with breakdown shown after each query.
+**Usage-Based Billing** - Implemented! Two options:
+1. **Credits Mode:** Pay actual OpenRouter cost + 10% margin per query
+2. **BYOK Mode:** Use your own OpenRouter API key, pay OpenRouter directly
 
 **Completed:**
-1. [x] Database migration on production: `006_usage_based_billing.sql`
+1. [x] Database migrations: `006_usage_based_billing.sql`, `007_byok_support.sql`, `008_update_deposit_options.sql`
 2. [x] Account page replaces Settings modal
-3. [ ] Test complete flow: deposit → query → cost deduction → usage history
+3. [x] BYOK (Bring Your Own Key) support
+4. [x] Deposit options updated to $5/$10/$20

@@ -77,7 +77,9 @@ OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
 
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email to preserve their data.
 
-**Usage-Based Billing:** Users deposit funds via Stripe ($5/$20/$50 options). Each query is charged at actual OpenRouter cost + 10% margin. Costs are calculated after query completion, providing transparent billing with per-query cost breakdowns.
+**Usage-Based Billing:** Users have two options:
+- **Credits Mode:** Deposit funds via Stripe ($5/$10/$20). Each query is charged at actual OpenRouter cost + 10% margin with transparent per-query cost breakdowns.
+- **BYOK Mode:** Use your own OpenRouter API key to bypass the credit system entirely and pay OpenRouter directly.
 
 **Database Migrations:** Run migrations before first use:
 ```bash
