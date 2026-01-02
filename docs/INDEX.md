@@ -50,7 +50,7 @@ Claude conversation transcripts.
 
 | Document | Description | Date |
 |----------|-------------|------|
-| [2026-01-01-how-can-i-enhance-this-to-make-it-open-for-public.txt](sessions/2026-01-01-how-can-i-enhance-this-to-make-it-open-for-public.txt) | Public launch planning conversation | 2026-01-01 |
+| *(none currently)* | Session transcripts removed - contained secrets | - |
 
 ---
 
