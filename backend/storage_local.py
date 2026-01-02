@@ -597,12 +597,13 @@ async def get_credit_pack(pack_id: UUID) -> Optional[Dict]:
 
 async def get_deposit_options() -> List[Dict]:
     """List available deposit options (hardcoded for local dev)."""
+    # Use stable UUIDs for local dev to match Pydantic UUID schema
     return [
-        {"id": "deposit-1", "name": "$1 Try It", "amount_cents": 100},
-        {"id": "deposit-2", "name": "$2 Starter", "amount_cents": 200},
-        {"id": "deposit-5", "name": "$5 Deposit", "amount_cents": 500},
-        {"id": "deposit-10", "name": "$10 Deposit", "amount_cents": 1000},
-        {"id": "deposit-20", "name": "$20 Deposit", "amount_cents": 2000},
+        {"id": "00000000-0000-0000-0000-000000000001", "name": "$1 Try It", "amount_cents": 100},
+        {"id": "00000000-0000-0000-0000-000000000002", "name": "$2 Starter", "amount_cents": 200},
+        {"id": "00000000-0000-0000-0000-000000000005", "name": "$5 Deposit", "amount_cents": 500},
+        {"id": "00000000-0000-0000-0000-000000000010", "name": "$10 Deposit", "amount_cents": 1000},
+        {"id": "00000000-0000-0000-0000-000000000020", "name": "$20 Deposit", "amount_cents": 2000},
     ]
 
 

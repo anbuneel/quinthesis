@@ -52,7 +52,7 @@ export default function DemoView() {
     const getStage1Data = (demo) => {
         return demo.stage1.map(item => ({
             role: 'councilor',
-            content: item.response,
+            response: item.response,
             model: item.model
         }));
     };
@@ -68,7 +68,7 @@ export default function DemoView() {
     const getStage3Data = (demo) => {
         return {
             role: 'chairman',
-            content: demo.stage3.response,
+            response: demo.stage3.response,
             model: demo.stage3.model
         };
     };

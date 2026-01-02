@@ -42,6 +42,7 @@ Feature implementation plans and roadmaps.
 | [usage-based-billing.md](implementation/usage-based-billing.md) | Usage-based billing (implemented) | 2026-01-01 |
 | [byok-recommendations.md](implementation/byok-recommendations.md) | BYOK friction reduction recommendations | 2026-01-01 |
 | [privacy-compliance.md](implementation/privacy-compliance.md) | Privacy compliance (Privacy Policy, ToS, account deletion) | 2026-01-02 |
+| [pr-27-review-codex.md](implementation/pr-27-review-codex.md) | PR #27 launch readiness review (all items fixed) | 2026-01-02 |
 
 ---
 
