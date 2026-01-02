@@ -1323,6 +1323,7 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
     - account: User account information
     - conversations: All conversations with full message content
     - transactions: All financial transactions
+    - usage_history: Per-query cost breakdown with model details
 
     Does NOT include:
     - Decrypted API keys (security)
@@ -1502,37 +1503,69 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
             tx_data["model_breakdown"] = tx["model_breakdown"]
         transactions.append(tx_data)
 
+    # Get usage history (query costs with model breakdowns)
+    usage_rows = await db.fetch(
+        """
+        SELECT conversation_id, openrouter_cost, margin_cost, total_cost,
+               model_breakdown, created_at
+        FROM query_costs
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        """,
+        user_id
+    )
+
+    usage_history = []
+    for row in usage_rows:
+        usage_history.append({
+            "conversation_id": str(row["conversation_id"]) if row["conversation_id"] else None,
+            "openrouter_cost": float(row["openrouter_cost"]) if row["openrouter_cost"] else 0.0,
+            "margin_cost": float(row["margin_cost"]) if row["margin_cost"] else 0.0,
+            "total_cost": float(row["total_cost"]) if row["total_cost"] else 0.0,
+            "model_breakdown": row["model_breakdown"],
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        })
+
     return {
         "export_date": datetime.now(timezone.utc).isoformat(),
         "account": account_data,
         "conversations": conversations,
         "transactions": transactions,
+        "usage_history": usage_history,
     }
 
 
-async def delete_user_account(user_id: UUID) -> bool:
+async def delete_user_account(user_id: UUID) -> tuple[bool, Optional[str]]:
     """Delete user account and all associated data.
 
     Deletes in order (respecting foreign key constraints):
-    1. Stage responses (stage1_responses, stage2_rankings, stage3_synthesis)
-    2. Messages
-    3. Conversations
-    4. Transactions
-    5. API keys
-    6. User account
+    1. Query costs
+    2. Stage responses (stage1_responses, stage2_rankings, stage3_synthesis)
+    3. Messages
+    4. Conversations
+    5. Transactions
+    6. API keys
+    7. User account
 
     Returns:
-        True if user was deleted, False if user not found
+        Tuple of (success, openrouter_key_hash):
+        - success: True if user was deleted, False if user not found
+        - openrouter_key_hash: The user's provisioned key hash (if any) for cleanup
     """
     async with db.pool.acquire() as conn:
         async with conn.transaction():
-            # Check if user exists
+            # Get user info for audit logging and key cleanup
             user = await conn.fetchrow(
-                "SELECT id FROM users WHERE id = $1",
+                "SELECT id, email, openrouter_key_hash FROM users WHERE id = $1",
                 user_id
             )
             if not user:
-                return False
+                return False, None
+
+            # Audit log before deletion (critical for irreversible action)
+            logger.info(
+                f"Account deletion initiated: user_id={user_id}, email={user['email']}"
+            )
 
             # Get all conversation IDs for this user
             conv_ids = await conn.fetch(
@@ -1540,6 +1573,12 @@ async def delete_user_account(user_id: UUID) -> bool:
                 user_id
             )
             conv_id_list = [row["id"] for row in conv_ids]
+
+            # Delete query costs (usage history)
+            await conn.execute(
+                "DELETE FROM query_costs WHERE user_id = $1",
+                user_id
+            )
 
             if conv_id_list:
                 # Delete stage responses for all user's conversations
@@ -1586,4 +1625,5 @@ async def delete_user_account(user_id: UUID) -> bool:
                 user_id
             )
 
-            return True
+            logger.info(f"Account deletion completed: user_id={user_id}")
+            return True, user["openrouter_key_hash"]

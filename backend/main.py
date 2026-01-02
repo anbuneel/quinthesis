@@ -372,9 +372,18 @@ async def delete_account(
     await checkout_rate_limiter.check(str(user_id))
     await checkout_rate_limiter.check(f"ip:{get_client_ip(request)}")
 
-    deleted = await storage.delete_user_account(user_id)
+    deleted, openrouter_key_hash = await storage.delete_user_account(user_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="User not found")
+
+    # Clean up OpenRouter provisioned key if exists
+    if openrouter_key_hash and openrouter_provisioning.is_provisioning_configured():
+        try:
+            await openrouter_provisioning.delete_key(openrouter_key_hash)
+        except Exception as e:
+            # Log but don't fail - account is already deleted
+            logger.warning(f"Failed to delete OpenRouter key {openrouter_key_hash}: {e}")
+
     return {"status": "ok", "message": "Account deleted successfully"}
 
 
@@ -492,9 +501,26 @@ async def export_data(
             "",
             f"- Total Conversations: {len(data.get('conversations', []))}",
             f"- Total Transactions: {len(data.get('transactions', []))}",
+            f"- Total Queries: {len(data.get('usage_history', []))}",
             "",
-            f"*Exported on {data.get('export_date', 'Unknown')}*",
         ]
+
+        # Add usage history section if there's data
+        usage_history = data.get("usage_history", [])
+        if usage_history:
+            account_md.append("## Recent Usage History")
+            account_md.append("")
+            account_md.append("| Date | Cost | Models |")
+            account_md.append("|------|------|--------|")
+            for usage in usage_history[:20]:  # Show last 20 entries
+                date = usage.get("created_at", "")[:10] if usage.get("created_at") else "Unknown"
+                cost = usage.get("total_cost", 0)
+                models = usage.get("model_breakdown", {})
+                model_list = ", ".join(models.keys()) if models else "N/A"
+                account_md.append(f"| {date} | ${cost:.4f} | {model_list} |")
+            account_md.append("")
+
+        account_md.append(f"*Exported on {data.get('export_date', 'Unknown')}*")
         zf.writestr("account_summary.md", "\n".join(account_md))
 
     zip_buffer.seek(0)
