@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Account Page - Matches Settings Modal Styling
+   Account Page - "The Paper of Record" Theme
+   Matches Stage3 and InquiryComposer patterns
    ========================================================================== */
 
 .account-page {
@@ -7,378 +8,467 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background: var(--paper-cream, #FAF8F5);
+  background: var(--paper-cream);
   min-width: 0;
-  position: relative;
 }
 
-.account-container {
+/* ==========================================================================
+   Content Area - Scrollable, centered
+   ========================================================================== */
+
+.account-content {
   flex: 1;
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 2rem;
-  width: 100%;
   overflow-y: auto;
+  padding: 1.5rem var(--container-padding);
 }
+
+.account-inner {
+  max-width: 640px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: fadeInUp 400ms ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   Loading State
+   ========================================================================== */
 
 .account-loading {
-  text-align: center;
-  color: var(--ink-gray, #666);
-  font-style: italic;
-  padding: 3rem;
-}
-
-/* Header */
-.account-header {
-  margin-bottom: 2rem;
-}
-
-.account-title-wrapper {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 1rem;
+  padding: 4rem 2rem;
+  color: var(--ink-medium);
+  font-family: var(--font-ui);
+  font-style: italic;
 }
 
-.account-title-rule {
-  width: 40px;
-  height: 2px;
-  background: var(--ink-black, #1A1614);
+.account-loading .loading-spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--paper-border);
+  border-top-color: var(--ink-medium);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 
-.account-header h2 {
-  margin: 0;
-  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--ink-black, #1A1614);
-  letter-spacing: 0.02em;
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-/* Error */
+/* ==========================================================================
+   Error State
+   ========================================================================== */
+
 .account-error {
   padding: 0.875rem 1rem;
-  margin-bottom: 1.5rem;
-  background: rgba(196, 61, 46, 0.08);
-  color: var(--accent-vermillion, #C43D2E);
-  border-left: 3px solid var(--accent-vermillion, #C43D2E);
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-size: 0.875rem;
+  background: var(--accent-vermillion-bg);
+  border: 1px solid var(--accent-vermillion);
+  border-radius: var(--radius-md);
+  color: var(--accent-vermillion-dark);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
 }
 
-/* Two column layout */
-.account-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+/* ==========================================================================
+   Card Component - Matches Stage3 pattern
+   ========================================================================== */
+
+.account-card {
+  background: var(--paper-cream);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
 }
 
-.account-column {
+.card-header {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--paper-aged);
+  border-bottom: 1px solid var(--paper-border);
 }
 
-/* Sections */
-.account-section {
-  margin-bottom: 0;
-}
-
-.account-section h2 {
-  margin: 0 0 0.75rem 0;
-  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
-  font-size: 1.125rem;
+.card-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-base);
   font-weight: 600;
-  font-style: italic;
-  color: var(--ink-dark, #2D2926);
+  color: var(--ink-black);
+  letter-spacing: var(--tracking-tight);
 }
 
-/* Section divider */
-.account-divider {
+.card-subtitle {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
+}
+
+.card-content {
+  padding: 1.25rem;
+}
+
+.card-content-flush {
+  padding: 0;
+}
+
+/* ==========================================================================
+   Balance Display
+   ========================================================================== */
+
+.balance-display {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: center;
-  margin: 1.5rem 0;
+  gap: 0.125rem;
+  padding: 1rem 0 1.5rem;
 }
 
-.account-divider::before,
-.account-divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: linear-gradient(
-    to var(--direction, right),
-    transparent,
-    var(--ink-black, #1A1614) 20%,
-    var(--ink-black, #1A1614) 80%,
-    transparent
-  );
-}
-
-.account-divider::before {
-  --direction: right;
-}
-
-.account-divider::after {
-  --direction: left;
-}
-
-.account-divider-ornament {
-  padding: 0 1rem;
-  font-size: 0.75rem;
-  color: var(--ink-gray, #666);
-}
-
-/* Balance card - matches .credits-balance */
-.balance-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1.5rem;
-  background: var(--paper-aged, #F5F0E8);
-  border: 2px solid var(--ink-black, #1A1614);
-  margin-bottom: 1rem;
-}
-
-.balance-value {
-  font-family: var(--font-display, 'Playfair Display', Georgia, serif);
-  font-size: 3rem;
+.balance-currency {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
   font-weight: 700;
-  color: var(--ink-black, #1A1614);
+  color: var(--accent-forest);
   line-height: 1;
 }
 
+.balance-amount {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  font-weight: 700;
+  color: var(--ink-black);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
 .balance-label {
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-size: 0.875rem;
-  color: var(--ink-gray, #666);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-top: 0.5rem;
+  letter-spacing: var(--tracking-wide);
+  color: var(--ink-light);
+  margin-left: 0.5rem;
+  align-self: flex-end;
+  padding-bottom: 0.5rem;
 }
 
 .balance-stats {
   display: flex;
-  gap: 1.5rem;
-}
-
-.balance-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.balance-stat-label {
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-size: 0.75rem;
-  color: var(--ink-gray, #666);
-}
-
-.balance-stat-value {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 0.875rem;
-  color: var(--ink-dark, #2D2926);
-}
-
-/* Deposit options - matches .credit-pack */
-.deposit-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.deposit-option {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 1rem 1.25rem;
-  background: var(--paper-aged, #F5F0E8);
-  border: 1px solid var(--border-light, #E5E0D8);
-  transition: border-color 0.2s;
+  justify-content: center;
+  gap: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--paper-border);
 }
 
-.deposit-option:hover {
-  border-color: var(--ink-black, #1A1614);
-}
-
-.deposit-info {
+.stat {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.25rem;
 }
 
-.deposit-name {
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--ink-dark, #2D2926);
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink-dark);
 }
 
-.deposit-estimate {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 0.8125rem;
-  color: var(--ink-gray, #666);
+.stat-label {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
 }
 
-.deposit-btn {
-  padding: 0.625rem 1.25rem;
-  background: var(--accent-forest, #2D5A3D);
-  color: white;
-  border: 2px solid var(--accent-forest, #2D5A3D);
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-weight: 600;
-  font-size: 0.9375rem;
+.stat-divider {
+  width: 1px;
+  height: 2rem;
+  background: var(--paper-border);
+}
+
+/* ==========================================================================
+   Deposit Grid - Add Funds
+   ========================================================================== */
+
+.deposit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+}
+
+.deposit-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 1.25rem 1rem;
+  background: var(--paper-cream);
+  border: 2px solid var(--paper-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-fast);
 }
 
-.deposit-btn:hover:not(:disabled) {
-  background: white;
-  color: var(--accent-forest, #2D5A3D);
+.deposit-card:hover:not(:disabled) {
+  border-color: var(--accent-forest);
+  background: var(--paper-aged);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
-.deposit-btn:disabled {
+.deposit-card:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.deposit-card:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.account-note {
-  margin: 0;
-  font-size: 0.875rem;
-  color: var(--ink-gray, #666);
-  line-height: 1.5;
+.deposit-amount {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--accent-forest);
 }
 
-/* Member info */
-.member-info {
-  background: var(--paper-aged, #F5F0E8);
-  border: 1px solid var(--border-light, #E5E0D8);
+.deposit-estimate {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
 }
 
-.member-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border-light, #E5E0D8);
-}
-
-.member-row:last-child {
-  border-bottom: none;
-}
-
-.member-label {
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-size: 0.875rem;
-  color: var(--ink-gray, #666);
-}
-
-.member-value {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 0.875rem;
-  color: var(--ink-dark, #2D2926);
-  text-transform: capitalize;
-}
-
-/* History - matches Settings history styles */
-.history-empty {
-  padding: 1.5rem;
-  text-align: center;
-  color: var(--ink-gray, #666);
+.deposit-loading {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
   font-style: italic;
-  background: var(--paper-aged, #F5F0E8);
-  border: 1px solid var(--border-light, #E5E0D8);
 }
 
-.history-list {
-  border: 1px solid var(--border-light, #E5E0D8);
-  max-height: 500px;
+/* ==========================================================================
+   Usage History - Ledger Style
+   ========================================================================== */
+
+.history-empty {
+  padding: 2rem 1.25rem;
+  text-align: center;
+  color: var(--ink-medium);
+  font-family: var(--font-body);
+  font-style: italic;
+}
+
+.history-empty p {
+  margin: 0;
+}
+
+.history-ledger {
+  max-height: 320px;
   overflow-y: auto;
 }
 
-.history-item {
-  border-bottom: 1px solid var(--border-light, #E5E0D8);
+.ledger-row {
+  border-bottom: 1px solid var(--paper-border);
 }
 
-.history-item:last-child {
+.ledger-row:last-child {
   border-bottom: none;
 }
 
-.history-item-main {
-  display: flex;
-  justify-content: space-between;
+.ledger-main {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
   align-items: center;
+  gap: 1rem;
   width: 100%;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 1.25rem;
   background: none;
   border: none;
   cursor: pointer;
-  transition: background 0.2s;
+  text-align: left;
+  transition: background var(--transition-fast);
 }
 
-.history-item-main:hover {
-  background: var(--paper-aged, #F5F0E8);
+.ledger-main:hover {
+  background: var(--paper-aged);
 }
 
-.history-item-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+.ledger-date {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
 }
 
-.history-amount {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-weight: 600;
-  font-size: 1rem;
-  color: var(--accent-vermillion, #C43D2E);
-}
-
-.history-type {
-  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-size: 0.75rem;
+.ledger-type {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--ink-gray, #666);
+  letter-spacing: var(--tracking-wide);
+  color: var(--ink-light);
   padding: 0.125rem 0.5rem;
-  background: var(--paper-aged, #F5F0E8);
+  background: var(--paper-aged);
+  border-radius: var(--radius-sm);
 }
 
-.history-date {
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 0.75rem;
-  color: var(--ink-gray, #888);
+.ledger-amount {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent-vermillion);
 }
 
-.history-details {
-  padding: 0.75rem 1rem;
-  background: var(--paper-aged, #F5F0E8);
-  border-top: 1px dashed var(--border-light, #E5E0D8);
+.ledger-chevron {
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  width: 1rem;
+  text-align: center;
 }
 
-.history-detail {
+.ledger-details {
+  padding: 0.75rem 1.25rem 1rem;
+  background: var(--paper-aged);
+  border-top: 1px dashed var(--paper-border);
+  animation: fadeIn 150ms ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.detail-row {
   display: flex;
   justify-content: space-between;
-  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 0.8125rem;
-  color: var(--ink-gray, #666);
+  align-items: center;
   padding: 0.25rem 0;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .account-page {
+/* ==========================================================================
+   Member Info Footer
+   ========================================================================== */
+
+.account-footer {
+  padding-top: 0.5rem;
+}
+
+.member-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.member-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  background: var(--paper-aged);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-sm);
+}
+
+.member-badge .badge-icon {
+  font-family: var(--font-display);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--accent-forest);
+}
+
+.member-badge .badge-text {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
+}
+
+.member-provider {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--ink-light);
+  text-transform: capitalize;
+}
+
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+
+@media (max-width: 639px) {
+  .account-content {
     padding: 1rem;
   }
 
-  .account-content {
-    grid-template-columns: 1fr;
+  .account-inner {
+    gap: 1rem;
   }
 
-  .balance-value {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .card-content {
+    padding: 1rem;
+  }
+
+  .balance-amount {
     font-size: 2.5rem;
   }
 
   .balance-stats {
+    gap: 1rem;
+  }
+
+  .deposit-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .deposit-card {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 1rem;
+  }
+
+  .ledger-main {
+    grid-template-columns: 1fr auto auto;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .ledger-type {
+    display: none;
+  }
+
+  .member-info {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
   }
 }
