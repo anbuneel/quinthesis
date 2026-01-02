@@ -21,4 +21,4 @@ data/
 # Frontend
 frontend/node_modules/
 frontend/dist/
-frontend/.vite/
+frontend/.vite/.claude/settings.local.json
