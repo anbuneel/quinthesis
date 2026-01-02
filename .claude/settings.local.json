@@ -30,7 +30,8 @@
       "Bash(gh run list:*)",
       "Bash(fly logs:*)",
       "Bash(gh issue create --title \"FOR UPDATE with aggregate function causes streaming failures\" --body \"$\\(cat <<''EOF''\n## Bug Description\nStreaming queries fail silently for all users, leaving blank conversations in the archive.\n\n## Error\n```\nFOR UPDATE is not allowed with aggregate functions\n```\n\n## Root Cause\nThe production-readiness fix from 2025-12-31 added `FOR UPDATE` directly to the `MAX\\(message_order\\)` query in `storage.py`. PostgreSQL doesn''t allow `FOR UPDATE` with aggregate functions.\n\n**Problematic code:**\n```python\nSELECT COALESCE\\(MAX\\(message_order\\), -1\\) + 1\nFROM messages\nWHERE conversation_id = $1\nFOR UPDATE  # <-- Not allowed with MAX\\(\\)\n```\n\n## Fix\nLock the conversation row first, then run the aggregate query:\n```python\n# Lock the conversation row\nSELECT id FROM conversations WHERE id = $1 FOR UPDATE\n\n# Then safely get the next message order\nSELECT COALESCE\\(MAX\\(message_order\\), -1\\) + 1\nFROM messages\nWHERE conversation_id = $1\n```\n\n## Affected Functions\n- `add_user_message\\(\\)` in `backend/storage.py`\n- `add_assistant_message\\(\\)` in `backend/storage.py`\n\n## Resolution\nFixed in commit d82e5fd - deployed to production 2026-01-02\n\n## Lessons Learned\n- Test database changes locally before deploying\n- PostgreSQL has restrictions on `FOR UPDATE` that aren''t obvious\nEOF\n\\)\" --label \"bug\")",
-      "Bash(gh label create:*)"
+      "Bash(gh label create:*)",
+      "Bash(ls:*)"
     ]
   }
 }

@@ -44,6 +44,16 @@ Feature implementation plans and roadmaps.
 
 ---
 
+## Reference
+
+Technical reference documentation.
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [DATA_STORAGE.md](DATA_STORAGE.md) | What user data is stored and how it's handled | 2026-01-02 |
+
+---
+
 ## Sessions
 
 Claude conversation transcripts (local only - not committed to git).
@@ -77,3 +87,4 @@ Superseded documentation (kept for reference).
 - Security: [production-readiness-2025-12-31.md](security/production-readiness-2025-12-31.md)
 - Design: [ui-redesign-proposal.md](design/ui-redesign-proposal.md)
 - Billing: [usage-based-billing.md](implementation/usage-based-billing.md)
+- Data: [DATA_STORAGE.md](DATA_STORAGE.md)
