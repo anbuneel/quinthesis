@@ -9,6 +9,8 @@ import OAuthCallback from './components/OAuthCallback';
 import ConfirmDialog from './components/ConfirmDialog';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancel from './components/PaymentCancel';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsOfService from './components/TermsOfService';
 import { api, auth, billing, hasTokens, clearTokens } from './api';
 import './App.css';
 
@@ -696,6 +698,14 @@ function App() {
         <Route
           path="/credits/cancel"
           element={<PaymentCancel />}
+        />
+        <Route
+          path="/privacy"
+          element={<PrivacyPolicy />}
+        />
+        <Route
+          path="/terms"
+          element={<TermsOfService />}
         />
         <Route
           path="/account"

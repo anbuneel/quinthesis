@@ -178,6 +178,12 @@ export default function InquiryComposer({
               'Ask the Council'
             )}
           </button>
+
+          <p className="composer-disclosure">
+            Your query will be processed by third-party AI models via{' '}
+            <a href="https://openrouter.ai" target="_blank" rel="noopener noreferrer">OpenRouter</a>.
+            See our <a href="/privacy">Privacy Policy</a>.
+          </p>
         </form>
       </div>
     </div>

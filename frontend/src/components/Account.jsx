@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { billing, auth } from '../api';
+import ConfirmDialog from './ConfirmDialog';
 import AvatarMenu from './AvatarMenu';
 import CreditBalance from './CreditBalance';
 import './Account.css';
@@ -22,6 +23,10 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
   const [isSavingKey, setIsSavingKey] = useState(false);
   const [isDeletingKey, setIsDeletingKey] = useState(false);
   const [keyError, setKeyError] = useState('');
+
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     loadAllData();
@@ -98,6 +103,21 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
       setKeyError(err.message || 'Failed to remove API key');
     } finally {
       setIsDeletingKey(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await auth.deleteAccount();
+      // Account deleted, redirect to login
+      onLogout();
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Failed to delete account');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeletingAccount(false);
     }
   };
 
@@ -375,6 +395,36 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
             </div>
           </section>
 
+          {/* Account Management Section */}
+          <section className="account-card account-card-danger">
+            <div className="card-header">
+              <h2 className="card-title">Account Management</h2>
+            </div>
+            <div className="card-content">
+              <div className="danger-zone">
+                <div className="danger-info">
+                  <h3 className="danger-title">Delete Account</h3>
+                  <p className="danger-description">
+                    Permanently delete your account and all associated data including conversations,
+                    transactions, and API keys. This action cannot be undone.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  Delete Account
+                </button>
+              </div>
+              <div className="legal-links-footer">
+                <a href="/privacy" className="legal-link">Privacy Policy</a>
+                <span className="legal-divider">|</span>
+                <a href="/terms" className="legal-link">Terms of Service</a>
+              </div>
+            </div>
+          </section>
+
           {/* Member Info Footer */}
           {userInfo && (
             <footer className="account-footer">
@@ -389,6 +439,20 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
           )}
         </div>
       </div>
+
+      {/* Delete Account Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Account"
+        message="Are you sure you want to delete your account? This will permanently remove all your conversations, transaction history, and account data. This action cannot be undone."
+        variant="danger"
+        icon="warning"
+        confirmLabel={isDeletingAccount ? 'Deleting...' : 'Delete My Account'}
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setShowDeleteConfirm(false)}
+        confirmDisabled={isDeletingAccount}
+      />
     </div>
   );
 }

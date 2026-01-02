@@ -182,6 +182,28 @@ export const auth = {
     }
     return response.json();
   },
+
+  /**
+   * Delete user account and all data.
+   * This action is irreversible.
+   */
+  async deleteAccount() {
+    const response = await fetchWithAuth(`${API_BASE}/api/auth/account`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      let message = 'Failed to delete account';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+    clearTokens();
+    return response.json();
+  },
 };
 
 // ============== Settings API ==============

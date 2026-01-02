@@ -1314,3 +1314,82 @@ async def get_effective_api_key(user_id: UUID) -> tuple[Optional[str], str]:
         return provisioned_key, "credits"
 
     return None, "none"
+
+
+async def delete_user_account(user_id: UUID) -> bool:
+    """Delete user account and all associated data.
+
+    Deletes in order (respecting foreign key constraints):
+    1. Stage responses (stage1_responses, stage2_rankings, stage3_synthesis)
+    2. Messages
+    3. Conversations
+    4. Transactions
+    5. API keys
+    6. User account
+
+    Returns:
+        True if user was deleted, False if user not found
+    """
+    async with db.pool.acquire() as conn:
+        async with conn.transaction():
+            # Check if user exists
+            user = await conn.fetchrow(
+                "SELECT id FROM users WHERE id = $1",
+                user_id
+            )
+            if not user:
+                return False
+
+            # Get all conversation IDs for this user
+            conv_ids = await conn.fetch(
+                "SELECT id FROM conversations WHERE user_id = $1",
+                user_id
+            )
+            conv_id_list = [row["id"] for row in conv_ids]
+
+            if conv_id_list:
+                # Delete stage responses for all user's conversations
+                await conn.execute(
+                    "DELETE FROM stage1_responses WHERE conversation_id = ANY($1)",
+                    conv_id_list
+                )
+                await conn.execute(
+                    "DELETE FROM stage2_rankings WHERE conversation_id = ANY($1)",
+                    conv_id_list
+                )
+                await conn.execute(
+                    "DELETE FROM stage3_synthesis WHERE conversation_id = ANY($1)",
+                    conv_id_list
+                )
+
+                # Delete messages
+                await conn.execute(
+                    "DELETE FROM messages WHERE conversation_id = ANY($1)",
+                    conv_id_list
+                )
+
+                # Delete conversations
+                await conn.execute(
+                    "DELETE FROM conversations WHERE user_id = $1",
+                    user_id
+                )
+
+            # Delete transactions
+            await conn.execute(
+                "DELETE FROM transactions WHERE user_id = $1",
+                user_id
+            )
+
+            # Delete API keys
+            await conn.execute(
+                "DELETE FROM user_api_keys WHERE user_id = $1",
+                user_id
+            )
+
+            # Delete user
+            await conn.execute(
+                "DELETE FROM users WHERE id = $1",
+                user_id
+            )
+
+            return True

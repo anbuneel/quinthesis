@@ -129,6 +129,11 @@ function Login({ onLogin }) {
               Andrej Karpathy's LLM Council
             </a>
           </div>
+          <div className="legal-links">
+            <a href="/privacy" className="legal-link">Privacy Policy</a>
+            <span className="legal-divider">|</span>
+            <a href="/terms" className="legal-link">Terms of Service</a>
+          </div>
         </footer>
       </div>
     </div>

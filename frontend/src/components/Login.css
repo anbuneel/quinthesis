@@ -319,8 +319,10 @@
    ========================================================================== */
 .login-footer {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
   width: 100%;
 }
 
@@ -358,6 +360,30 @@
 
 .attribution-link:hover {
   color: var(--accent-vermillion);
+}
+
+/* Legal Links */
+.legal-links {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legal-link {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
+}
+
+.legal-link:hover {
+  color: var(--ink-dark);
+}
+
+.legal-divider {
+  color: var(--paper-border);
 }
 
 /* ==========================================================================

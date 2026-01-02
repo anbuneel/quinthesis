@@ -352,6 +352,22 @@ async def get_current_user_info(user_id: UUID = Depends(get_current_user)):
     )
 
 
+@app.delete("/api/auth/account")
+async def delete_account(user_id: UUID = Depends(get_current_user)):
+    """Delete user account and all associated data.
+
+    This action is irreversible. Deletes:
+    - All conversations and messages
+    - All transactions
+    - API keys
+    - User account
+    """
+    deleted = await storage.delete_user_account(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"status": "ok", "message": "Account deleted successfully"}
+
+
 # ============== API Key Settings Endpoints ==============
 
 @app.post("/api/settings/api-key", response_model=ApiKeyResponse)

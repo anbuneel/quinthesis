@@ -267,6 +267,16 @@ Get current user info (requires auth):
 }
 ```
 
+#### DELETE `/api/auth/account`
+Delete user account and all associated data (requires auth). Irreversible.
+Returns:
+```json
+{
+  "status": "ok",
+  "message": "Account deleted successfully"
+}
+```
+
 ### GET `/api/models`
 Returns available models and defaults:
 ```json
