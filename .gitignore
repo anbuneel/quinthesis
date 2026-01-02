@@ -12,6 +12,9 @@ wheels/
 # Keys and secrets
 .env
 
+# Session transcripts (may contain secrets)
+docs/sessions/
+
 # Data files
 data/
 

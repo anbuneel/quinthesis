@@ -46,11 +46,9 @@ Feature implementation plans and roadmaps.
 
 ## Sessions
 
-Claude conversation transcripts.
+Claude conversation transcripts (local only - not committed to git).
 
-| Document | Description | Date |
-|----------|-------------|------|
-| [2026-01-01-how-can-i-enhance-this-to-make-it-open-for-public.txt](sessions/2026-01-01-how-can-i-enhance-this-to-make-it-open-for-public.txt) | Public launch planning conversation | 2026-01-01 |
+*Session files are stored locally in `docs/sessions/` but excluded from git to prevent accidental secret exposure.*
 
 ---
 
