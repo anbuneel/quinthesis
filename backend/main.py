@@ -27,6 +27,8 @@ from .config import (
     AVAILABLE_MODELS,
     DEFAULT_MODELS,
     DEFAULT_LEAD_MODEL,
+    MODEL_COST_ESTIMATES,
+    COST_MARGIN_PERCENT,
     validate_secrets
 )
 from .auth_jwt import (
@@ -1060,6 +1062,63 @@ async def list_models(user_id: UUID = Depends(get_current_user)):
         "models": AVAILABLE_MODELS,
         "default_models": DEFAULT_MODELS,
         "default_lead_model": DEFAULT_LEAD_MODEL
+    }
+
+
+@app.post("/api/cost-estimate")
+async def estimate_cost(
+    request: Request,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Estimate cost for a council query based on selected models.
+
+    Cost breakdown:
+    - Stage 1: Each model responds once (N queries)
+    - Stage 2: Each model ranks all responses (N queries)
+    - Stage 3: Lead model synthesizes (1 query)
+    - Title generation: 1 query (uses cheap model)
+
+    Total: 2N + 2 queries for N models.
+    """
+    body = await request.json()
+    models = body.get("models", DEFAULT_MODELS)
+    lead_model = body.get("lead_model", DEFAULT_LEAD_MODEL)
+
+    # Calculate estimated cost
+    total_cost = 0.0
+    model_costs = {}
+
+    for model in models:
+        # Each model is used twice: Stage 1 (response) + Stage 2 (ranking)
+        cost_per_query = MODEL_COST_ESTIMATES.get(model, MODEL_COST_ESTIMATES["_default"])
+        model_total = cost_per_query * 2
+        model_costs[model] = model_total
+        total_cost += model_total
+
+    # Stage 3: Lead model synthesis
+    lead_cost = MODEL_COST_ESTIMATES.get(lead_model, MODEL_COST_ESTIMATES["_default"])
+    total_cost += lead_cost
+
+    # Title generation (cheap model, ~$0.001)
+    title_cost = 0.001
+    total_cost += title_cost
+
+    # Apply margin
+    margin = total_cost * (COST_MARGIN_PERCENT / 100.0)
+    total_with_margin = total_cost + margin
+
+    return {
+        "estimated_cost": round(total_with_margin, 4),
+        "base_cost": round(total_cost, 4),
+        "margin_percent": COST_MARGIN_PERCENT,
+        "model_count": len(models),
+        "query_count": len(models) * 2 + 2,
+        "breakdown": {
+            "stage1_stage2": round(sum(model_costs.values()), 4),
+            "stage3": round(lead_cost, 4),
+            "title": round(title_cost, 4),
+        },
+        "disclaimer": "Actual cost depends on response length and may vary."
     }
 
 

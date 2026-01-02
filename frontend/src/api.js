@@ -583,6 +583,22 @@ export const api = {
   },
 
   /**
+   * Get cost estimate for a query with selected models.
+   */
+  async getCostEstimate(models, leadModel) {
+    const response = await fetchWithAuth(`${API_BASE}/api/cost-estimate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ models, lead_model: leadModel }),
+    });
+    if (!response.ok) {
+      // Return null on error - cost estimate is non-critical
+      return null;
+    }
+    return response.json();
+  },
+
+  /**
    * Get a specific conversation.
    */
   async getConversation(conversationId) {

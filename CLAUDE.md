@@ -604,6 +604,16 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 - Login page prominently links to demos ("See example deliberations")
 - Demo data stored in `frontend/src/demoData/demos.json`
 
+### Cost Preview
+- Estimated cost shown before query submission
+- Updates dynamically as user changes model selection
+- Displays query count and approximate cost with 10% margin
+- Helps users understand pricing before committing
+
+### Deposit Options
+- $1, $2, $5, $10, $20 tiers (lower barrier to entry)
+- Stored in `deposit_options` database table
+
 ---
 
 ## Quick Links

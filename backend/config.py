@@ -51,6 +51,21 @@ DEFAULT_MODELS = list(AVAILABLE_MODELS)
 # Lead model - synthesizes final response
 DEFAULT_LEAD_MODEL = "google/gemini-3-pro-preview"
 
+# Estimated cost per query per model (in USD)
+# Based on typical ~1000 input tokens + ~500 output tokens per stage
+# These are rough estimates for cost preview purposes
+MODEL_COST_ESTIMATES = {
+    "openai/gpt-5.1": 0.012,
+    "google/gemini-3-pro-preview": 0.004,
+    "anthropic/claude-sonnet-4.5": 0.010,
+    "x-ai/grok-4": 0.008,
+    # Default for unknown models
+    "_default": 0.010,
+}
+
+# Margin percentage applied to OpenRouter costs
+COST_MARGIN_PERCENT = 10
+
 # OpenRouter API endpoint
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 

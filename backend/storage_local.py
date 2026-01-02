@@ -595,6 +595,26 @@ async def get_credit_pack(pack_id: UUID) -> Optional[Dict]:
     return None
 
 
+async def get_deposit_options() -> List[Dict]:
+    """List available deposit options (hardcoded for local dev)."""
+    return [
+        {"id": "deposit-1", "name": "$1 Try It", "amount_cents": 100},
+        {"id": "deposit-2", "name": "$2 Starter", "amount_cents": 200},
+        {"id": "deposit-5", "name": "$5 Deposit", "amount_cents": 500},
+        {"id": "deposit-10", "name": "$10 Deposit", "amount_cents": 1000},
+        {"id": "deposit-20", "name": "$20 Deposit", "amount_cents": 2000},
+    ]
+
+
+async def get_deposit_option(option_id: UUID) -> Optional[Dict]:
+    """Get a specific deposit option by ID."""
+    options = await get_deposit_options()
+    for option in options:
+        if option["id"] == str(option_id):
+            return option
+    return None
+
+
 async def was_session_processed(stripe_session_id: str) -> bool:
     """Check if a Stripe session was already processed."""
     # For local dev, check all user credit files
