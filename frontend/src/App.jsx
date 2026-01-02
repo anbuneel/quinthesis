@@ -9,7 +9,7 @@ import OAuthCallback from './components/OAuthCallback';
 import ConfirmDialog from './components/ConfirmDialog';
 import PaymentSuccess from './components/PaymentSuccess';
 import PaymentCancel from './components/PaymentCancel';
-import { api, auth, credits, hasTokens, clearTokens } from './api';
+import { api, auth, billing, hasTokens, clearTokens } from './api';
 import './App.css';
 
 function App() {
@@ -30,7 +30,7 @@ function App() {
   const [modelsError, setModelsError] = useState('');
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [createError, setCreateError] = useState('');
-  const [userCredits, setUserCredits] = useState(0);
+  const [userBalance, setUserBalance] = useState(0);
 
   // Confirm dialog state
   const [confirmDialog, setConfirmDialog] = useState({
@@ -42,17 +42,17 @@ function App() {
     onConfirm: null,
   });
 
-  // Load user's credit balance
-  const loadCredits = async () => {
+  // Load user's balance
+  const loadBalance = async () => {
     try {
-      const data = await credits.getBalance();
-      setUserCredits(data.credits);
-      // Auto-open Settings if user has no credits
-      if (data.credits === 0) {
+      const data = await billing.getBalance();
+      setUserBalance(data.balance);
+      // Auto-open Settings if user has no balance
+      if (data.balance === 0) {
         setIsSettingsOpen(true);
       }
     } catch (e) {
-      console.error('Failed to load credits:', e);
+      console.error('Failed to load balance:', e);
     }
   };
 
@@ -71,8 +71,8 @@ function App() {
           } catch (e) {
             console.error('Failed to load user info:', e);
           }
-          // Load user's credit balance
-          await loadCredits();
+          // Load user's balance
+          await loadBalance();
         }
       }
       setIsCheckingAuth(false);
@@ -80,12 +80,12 @@ function App() {
     checkAuth();
   }, []);
 
-  // Load conversations, models, and credits when authenticated
+  // Load conversations, models, and balance when authenticated
   useEffect(() => {
     if (isAuthenticated) {
       loadConversations();
       loadModelOptions();
-      loadCredits();
+      loadBalance();
     }
   }, [isAuthenticated]);
 
@@ -169,15 +169,15 @@ function App() {
     } catch (e) {
       console.error('Failed to load user info:', e);
     }
-    // Load user's credit balance
-    await loadCredits();
+    // Load user's balance
+    await loadBalance();
   };
 
   const handleLogout = () => {
     clearTokens();
     setIsAuthenticated(false);
     setUserEmail('');
-    setUserCredits(0);
+    setUserBalance(0);
     setConversations([]);
     setCurrentConversationId(null);
     setCurrentConversation(null);
@@ -369,10 +369,10 @@ function App() {
       console.error('Failed to create and submit:', error);
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
-      } else if (error.status === 402 || error.message?.includes('credits')) {
-        // Insufficient credits - open Settings to purchase more
+      } else if (error.status === 402 || error.message?.includes('balance') || error.message?.includes('Insufficient')) {
+        // Insufficient balance - open Settings to add funds
         setIsSettingsOpen(true);
-        await loadCredits(); // Refresh credit balance
+        await loadBalance(); // Refresh balance
       } else {
         setCreateError(error.message || 'Failed to submit inquiry.');
       }
@@ -598,10 +598,10 @@ function App() {
       console.error('Failed to send message:', error);
       if (error.message === 'Authentication failed') {
         setIsAuthenticated(false);
-      } else if (error.status === 402 || error.message?.includes('credits')) {
-        // Insufficient credits - open Settings to purchase more
+      } else if (error.status === 402 || error.message?.includes('balance') || error.message?.includes('Insufficient')) {
+        // Insufficient balance - open Settings to add funds
         setIsSettingsOpen(true);
-        await loadCredits(); // Refresh credit balance
+        await loadBalance(); // Refresh balance
         // Remove optimistic messages
         setCurrentConversation((prev) => ({
           ...prev,
@@ -648,7 +648,7 @@ function App() {
           createError={createError}
           // User controls
           userEmail={userEmail}
-          userCredits={userCredits}
+          userBalance={userBalance}
           onOpenSettings={handleOpenSettings}
           onLogout={handleLogout}
           onNewInquiry={handleGoToComposer}
@@ -676,8 +676,8 @@ function App() {
         isOpen={isSettingsOpen}
         onClose={handleCloseSettings}
         userEmail={userEmail}
-        userCredits={userCredits}
-        onRefreshCredits={loadCredits}
+        userBalance={userBalance}
+        onRefreshBalance={loadBalance}
       />
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
@@ -711,7 +711,7 @@ function App() {
         />
         <Route
           path="/credits/success"
-          element={<PaymentSuccess onRefreshCredits={loadCredits} />}
+          element={<PaymentSuccess onRefreshBalance={loadBalance} />}
         />
         <Route
           path="/credits/cancel"

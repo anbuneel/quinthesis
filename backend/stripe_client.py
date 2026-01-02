@@ -40,20 +40,22 @@ async def create_checkout_session(
     success_url: str,
     cancel_url: str,
     stripe_customer_id: Optional[str] = None,
+    is_deposit: bool = False,
 ) -> dict:
-    """Create a Stripe Checkout session for credit purchase.
+    """Create a Stripe Checkout session for credit or deposit purchase.
 
     Args:
         user_id: The user's ID
         user_email: User's email for Stripe customer
-        pack_id: The credit pack ID
+        pack_id: The credit pack ID (or deposit option ID)
         pack_name: Display name for the pack
-        credits: Number of credits in the pack
+        credits: Number of credits in the pack (0 for deposits)
         price_cents: Price in cents
         openrouter_limit_dollars: OpenRouter credit limit to add (in dollars)
         success_url: URL to redirect on success
         cancel_url: URL to redirect on cancel
         stripe_customer_id: Existing Stripe customer ID (optional)
+        is_deposit: True for usage-based billing deposits, False for legacy credits
 
     Returns:
         dict with "checkout_url" and "session_id"
@@ -63,6 +65,13 @@ async def create_checkout_session(
     """
     if not is_stripe_configured():
         raise RuntimeError("Stripe is not configured")
+
+    # For deposits, describe as dollar amount; for credits, describe as queries
+    if is_deposit:
+        deposit_dollars = price_cents / 100.0
+        description = f"${deposit_dollars:.2f} balance for AI Council usage"
+    else:
+        description = f"{credits} AI Council queries"
 
     session_params = {
         "payment_method_types": ["card"],
@@ -75,6 +84,7 @@ async def create_checkout_session(
             "pack_id": str(pack_id),
             "credits": str(credits),
             "openrouter_limit_dollars": str(openrouter_limit_dollars),
+            "is_deposit": str(is_deposit).lower(),
         },
         "line_items": [
             {
@@ -83,7 +93,7 @@ async def create_checkout_session(
                     "unit_amount": price_cents,
                     "product_data": {
                         "name": pack_name,
-                        "description": f"{credits} AI Council queries",
+                        "description": description,
                     },
                 },
                 "quantity": 1,

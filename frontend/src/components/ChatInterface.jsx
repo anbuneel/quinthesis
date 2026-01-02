@@ -73,7 +73,7 @@ export default function ChatInterface({
     createError,
     // User controls
     userEmail,
-    userCredits,
+    userBalance,
     onOpenSettings,
     onLogout,
     onNewInquiry,
@@ -185,7 +185,7 @@ export default function ChatInterface({
                             <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
                         </div>
                         <div className="masthead-actions">
-                            <CreditBalance credits={userCredits} onClick={onOpenSettings} />
+                            <CreditBalance balance={userBalance} onClick={onOpenSettings} />
                             <AvatarMenu
                                 userEmail={userEmail}
                                 onOpenSettings={onOpenSettings}
@@ -242,7 +242,7 @@ export default function ChatInterface({
                                 <span className="masthead-btn-label">New Inquiry</span>
                             </button>
                         )}
-                        <CreditBalance credits={userCredits} onClick={onOpenSettings} />
+                        <CreditBalance balance={userBalance} onClick={onOpenSettings} />
                         <AvatarMenu
                             userEmail={userEmail}
                             onOpenSettings={onOpenSettings}

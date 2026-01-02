@@ -23,7 +23,10 @@
       "Bash(gh pr view:*)",
       "Bash(gh pr merge:*)",
       "Bash(git pull:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(mv:*)",
+      "WebFetch(domain:openrouter.ai)",
+      "Bash(fly ssh console:*)"
     ]
   }
 }

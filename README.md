@@ -67,7 +67,7 @@ OAUTH_REDIRECT_BASE=http://localhost:5173
 # CORS origins
 CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
-# Stripe (for credit purchases)
+# Stripe (for deposits)
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 
@@ -77,7 +77,7 @@ OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
 
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email to preserve their data.
 
-**Credits System:** Users purchase credit packs via Stripe. Each query consumes 1 credit. The system provisions per-user OpenRouter API keys with spending limits.
+**Usage-Based Billing:** Users deposit funds via Stripe ($5/$20/$50 options). Each query is charged at actual OpenRouter cost + 10% margin. Costs are calculated after query completion, providing transparent billing with per-query cost breakdowns.
 
 **Database Migrations:** Run migrations before first use:
 ```bash

@@ -1,6 +1,10 @@
 # Implementation Plan: Credit-Based Monetization with Stripe + OpenRouter Provisioning
 
-## Summary
+> **SUPERSEDED**: This plan has been replaced by usage-based billing. See [IMPLEMENTATION_PLAN_usage_based_billing.md](IMPLEMENTATION_PLAN_usage_based_billing.md) for the current billing model.
+>
+> The credit-based system (1 credit = 1 query) was replaced with transparent usage-based billing (actual OpenRouter cost + 10% margin) as of 2026-01-01.
+
+## Summary (Historical)
 Remove BYOK requirement. Users purchase credit packs via Stripe. Each user gets a **dedicated OpenRouter API key** (via Provisioning API) with spending limits. Compliant with OpenRouter ToS for SaaS platforms.
 
 ---

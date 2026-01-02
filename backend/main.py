@@ -46,7 +46,13 @@ from .models import (
     UserCreditsResponse,
     CreditTransactionResponse,
     CreateCheckoutRequest,
-    CheckoutSessionResponse
+    CheckoutSessionResponse,
+    # Usage-based billing models
+    DepositOptionResponse,
+    UserBalanceResponse,
+    UsageHistoryResponse,
+    CreateDepositRequest,
+    QueryCostResponse,
 )
 from .oauth import GoogleOAuth, GitHubOAuth
 from .oauth_state import create_oauth_state, validate_and_consume_state
@@ -58,7 +64,7 @@ from .council import (
     stage3_synthesize_final,
     calculate_aggregate_rankings
 )
-from .openrouter import close_client as close_openrouter_client
+from .openrouter import close_client as close_openrouter_client, get_generation_costs_batch
 from . import stripe_client
 from . import openrouter_provisioning
 
@@ -393,9 +399,35 @@ async def delete_api_key(provider: str, user_id: UUID = Depends(get_current_user
 
 @app.get("/api/credits", response_model=UserCreditsResponse)
 async def get_credits(user_id: UUID = Depends(get_current_user)):
-    """Get current user's credit balance."""
+    """Get current user's credit balance (legacy endpoint)."""
     credits = await storage.get_user_credits(user_id)
     return UserCreditsResponse(credits=credits)
+
+
+# ============== Usage-Based Billing Endpoints ==============
+
+MINIMUM_BALANCE = 0.50  # $0.50 minimum to make a query
+
+
+@app.get("/api/balance", response_model=UserBalanceResponse)
+async def get_balance(user_id: UUID = Depends(get_current_user)):
+    """Get current user's dollar balance and billing info."""
+    billing_info = await storage.get_user_billing_info(user_id)
+    return UserBalanceResponse(**billing_info)
+
+
+@app.get("/api/deposits/options", response_model=List[DepositOptionResponse])
+async def list_deposit_options(user_id: UUID = Depends(get_current_user)):
+    """List available deposit options."""
+    options = await storage.get_deposit_options()
+    return [DepositOptionResponse(**opt) for opt in options]
+
+
+@app.get("/api/usage/history", response_model=List[UsageHistoryResponse])
+async def get_usage_history(user_id: UUID = Depends(get_current_user)):
+    """Get user's usage history with cost breakdowns."""
+    history = await storage.get_usage_history(user_id)
+    return [UsageHistoryResponse(**h) for h in history]
 
 
 @app.get("/api/credits/packs", response_model=List[CreditPackResponse])
@@ -524,6 +556,55 @@ async def create_checkout(
     return CheckoutSessionResponse(**result)
 
 
+@app.post("/api/deposits/checkout", response_model=CheckoutSessionResponse)
+async def create_deposit_checkout(
+    data: CreateDepositRequest,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Create Stripe checkout session for deposit (usage-based billing)."""
+    if not stripe_client.is_stripe_configured():
+        raise HTTPException(status_code=503, detail="Payment system not configured")
+
+    # Validate redirect URLs
+    if not _validate_redirect_url(data.success_url):
+        raise HTTPException(status_code=400, detail="Invalid success URL")
+    if not _validate_redirect_url(data.cancel_url):
+        raise HTTPException(status_code=400, detail="Invalid cancel URL")
+
+    # Get deposit option
+    option = await storage.get_deposit_option(data.option_id)
+    if not option:
+        raise HTTPException(status_code=404, detail="Deposit option not found")
+
+    # Get user info
+    user = await storage.get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get existing Stripe customer ID if any
+    stripe_customer_id = await storage.get_user_stripe_customer_id(user_id)
+
+    # For deposits, the OpenRouter limit equals the deposit amount in dollars
+    deposit_dollars = option["amount_cents"] / 100.0
+
+    # Create checkout session - reuse existing function but pass deposit info
+    result = await stripe_client.create_checkout_session(
+        user_id=user_id,
+        user_email=user["email"],
+        pack_id=data.option_id,  # Use option_id as pack_id for compatibility
+        pack_name=option["name"],
+        credits=0,  # No credits in usage-based billing
+        price_cents=option["amount_cents"],
+        openrouter_limit_dollars=deposit_dollars,
+        success_url=data.success_url,
+        cancel_url=data.cancel_url,
+        stripe_customer_id=stripe_customer_id,
+        is_deposit=True  # Flag to indicate usage-based billing
+    )
+
+    return CheckoutSessionResponse(**result)
+
+
 @app.post("/api/webhooks/stripe")
 async def stripe_webhook(request: Request):
     """Handle Stripe webhook events for credit purchases."""
@@ -559,19 +640,18 @@ async def stripe_webhook(request: Request):
 
 
 async def handle_successful_payment(session: dict):
-    """Process successful payment and add credits.
+    """Process successful payment - handles both credits (legacy) and deposits (usage-based).
 
     Creates or updates OpenRouter provisioned key for the user.
     Order of operations is critical for atomicity:
     1. Verify session from Stripe API (don't trust webhook metadata alone)
-    2. Look up pack from our database to compute credits
-    3. Add credits (uses unique constraint for idempotency)
+    2. Look up pack/option from our database
+    3. Add credits or balance (uses unique constraint for idempotency)
     4. Update/create OpenRouter key (if provisioning configured)
     """
     session_id = session["id"]
 
-    # RECOMMENDATION: Verify session details from Stripe API instead of trusting metadata
-    # This prevents attacks where someone crafts fake webhook events with inflated credits
+    # Verify session details from Stripe API
     try:
         verified_session = stripe_client.get_session_details(session_id)
     except Exception as e:
@@ -580,59 +660,85 @@ async def handle_successful_payment(session: dict):
 
     metadata = verified_session.get("metadata", {})
     user_id = UUID(metadata["user_id"])
-    pack_id = UUID(metadata["pack_id"])
+    pack_id = UUID(metadata["pack_id"])  # Can be pack_id or option_id
+    is_deposit = metadata.get("is_deposit", "false").lower() == "true"
 
-    # RECOMMENDATION: Compute credits from our database pack, not from metadata
-    pack = await storage.get_credit_pack(pack_id)
-    if not pack:
-        logger.error(f"Pack {pack_id} not found for session {session_id}")
-        raise ValueError(f"Invalid pack ID in session metadata: {pack_id}")
-
-    credits_amount = pack["credits"]
-    expected_price_cents = pack["price_cents"]
-
-    # MEDIUM: Validate amount and currency match our pack price
-    # This prevents attacks where someone modifies the checkout amount
+    # Validate amount and currency
     actual_amount = verified_session.get("amount_total", 0)
     actual_currency = verified_session.get("currency", "").lower()
-    if actual_amount != expected_price_cents:
-        logger.error(f"Amount mismatch for session {session_id}: expected {expected_price_cents}, got {actual_amount}")
-        raise ValueError(f"Payment amount mismatch: expected {expected_price_cents}, got {actual_amount}")
     if actual_currency != "usd":
         logger.error(f"Currency mismatch for session {session_id}: expected usd, got {actual_currency}")
         raise ValueError(f"Payment currency mismatch: expected usd, got {actual_currency}")
 
-    # LOW: Use Decimal for currency math to avoid floating point drift
-    # OpenRouter limit from our database (in dollars)
-    openrouter_limit_raw = pack.get("openrouter_credit_limit")
-    openrouter_limit_dollars = Decimal(str(openrouter_limit_raw)) if openrouter_limit_raw is not None else Decimal("0")
-
-    # Save Stripe customer ID if new (from verified session)
+    # Save Stripe customer ID if new
     customer_id = verified_session.get("customer")
     if customer_id:
         await storage.save_user_stripe_customer_id(user_id, customer_id)
 
-    # HIGH: Add credits FIRST with atomic idempotency
-    # The unique constraint on stripe_session_id will prevent double-crediting
-    amount_paid = verified_session.get("amount_total", 0)
-    try:
-        await storage.add_credits(
-            user_id=user_id,
-            amount=credits_amount,
-            transaction_type="purchase",
-            description=f"Purchased {credits_amount} credits for ${amount_paid/100:.2f}",
-            stripe_session_id=session_id,
-            stripe_payment_intent_id=verified_session.get("payment_intent")
-        )
-        logger.info(f"Added {credits_amount} credits to user {user_id} from session {session_id}")
-    except asyncpg.UniqueViolationError:
-        # Idempotency working correctly - session already processed
-        logger.info(f"Session {session_id} already processed (unique constraint), skipping")
-        return
-    except Exception as e:
-        # Real error - re-raise
-        logger.error(f"Failed to add credits for session {session_id}: {e}")
-        raise
+    if is_deposit:
+        # Usage-based billing: add to dollar balance
+        option = await storage.get_deposit_option(pack_id)
+        if not option:
+            logger.error(f"Deposit option {pack_id} not found for session {session_id}")
+            raise ValueError(f"Invalid option ID in session metadata: {pack_id}")
+
+        expected_price_cents = option["amount_cents"]
+        if actual_amount != expected_price_cents:
+            logger.error(f"Amount mismatch for session {session_id}: expected {expected_price_cents}, got {actual_amount}")
+            raise ValueError(f"Payment amount mismatch: expected {expected_price_cents}, got {actual_amount}")
+
+        deposit_dollars = Decimal(str(actual_amount)) / 100
+        openrouter_limit_dollars = deposit_dollars  # For deposits, limit = amount
+
+        try:
+            await storage.add_deposit(
+                user_id=user_id,
+                amount_dollars=float(deposit_dollars),
+                transaction_type="deposit",
+                description=f"Deposit ${deposit_dollars:.2f}",
+                stripe_session_id=session_id,
+                stripe_payment_intent_id=verified_session.get("payment_intent")
+            )
+            logger.info(f"Added ${deposit_dollars:.2f} deposit for user {user_id} from session {session_id}")
+        except asyncpg.UniqueViolationError:
+            logger.info(f"Session {session_id} already processed (unique constraint), skipping")
+            return
+        except Exception as e:
+            logger.error(f"Failed to add deposit for session {session_id}: {e}")
+            raise
+    else:
+        # Legacy credit-based billing
+        pack = await storage.get_credit_pack(pack_id)
+        if not pack:
+            logger.error(f"Pack {pack_id} not found for session {session_id}")
+            raise ValueError(f"Invalid pack ID in session metadata: {pack_id}")
+
+        credits_amount = pack["credits"]
+        expected_price_cents = pack["price_cents"]
+
+        if actual_amount != expected_price_cents:
+            logger.error(f"Amount mismatch for session {session_id}: expected {expected_price_cents}, got {actual_amount}")
+            raise ValueError(f"Payment amount mismatch: expected {expected_price_cents}, got {actual_amount}")
+
+        openrouter_limit_raw = pack.get("openrouter_credit_limit")
+        openrouter_limit_dollars = Decimal(str(openrouter_limit_raw)) if openrouter_limit_raw is not None else Decimal("0")
+
+        try:
+            await storage.add_credits(
+                user_id=user_id,
+                amount=credits_amount,
+                transaction_type="purchase",
+                description=f"Purchased {credits_amount} credits for ${actual_amount/100:.2f}",
+                stripe_session_id=session_id,
+                stripe_payment_intent_id=verified_session.get("payment_intent")
+            )
+            logger.info(f"Added {credits_amount} credits to user {user_id} from session {session_id}")
+        except asyncpg.UniqueViolationError:
+            logger.info(f"Session {session_id} already processed (unique constraint), skipping")
+            return
+        except Exception as e:
+            logger.error(f"Failed to add credits for session {session_id}: {e}")
+            raise
 
     # Only proceed to OpenRouter provisioning AFTER credits are successfully added
     if not openrouter_provisioning.is_provisioning_configured():
@@ -744,33 +850,32 @@ async def send_message(
 ):
     """
     Send a message and run the 3-stage council process.
-    Returns the complete response with all stages.
+    Returns the complete response with all stages and cost breakdown.
 
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
-    Requires credits - consumes 1 credit per query.
+    Uses usage-based billing: actual OpenRouter cost + 10% margin deducted after query.
     """
     # Rate limit check (council queries are expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
 
-    # HIGH: Check if conversation exists BEFORE consuming credit
-    # This prevents charging users for 404 errors
+    # Check if conversation exists first
     conversation = await storage.get_conversation(conversation_id, user_id=user_id)
     if conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    # Get user's provisioned OpenRouter API key (check before consuming credit)
+    # Get user's provisioned OpenRouter API key
     api_key = await storage.get_user_openrouter_key(user_id)
     if not api_key:
         raise HTTPException(
             status_code=402,
-            detail="No API access configured. Please purchase credits to get started."
+            detail="No API access configured. Please add funds to get started."
         )
 
-    # Now consume credit (after all preconditions are verified)
-    if not await storage.consume_credit(user_id, f"Query: {request.content[:50]}..."):
+    # Check minimum balance before query (usage-based billing)
+    if not await storage.check_minimum_balance(user_id, MINIMUM_BALANCE):
         raise HTTPException(
             status_code=402,
-            detail="Insufficient credits. Please purchase more credits to continue."
+            detail=f"Insufficient balance. Minimum ${MINIMUM_BALANCE:.2f} required to make a query."
         )
 
     # Check if this is the first message
@@ -785,17 +890,22 @@ async def send_message(
 
     try:
         # If this is the first message, generate a title
+        title_generation_id = None
         if is_first_message:
-            title = await generate_conversation_title(request.content, api_key=api_key)
+            title, title_generation_id = await generate_conversation_title(request.content, api_key=api_key)
             await storage.update_conversation_title(conversation_id, title)
 
         # Run the 3-stage council process with user's API key
-        stage1_results, stage2_results, stage3_result, metadata = await run_full_council(
+        stage1_results, stage2_results, stage3_result, metadata, generation_ids = await run_full_council(
             request.content,
             models=selected_models,
             lead_model=selected_lead,
             api_key=api_key
         )
+
+        # Include title generation in cost calculation if applicable
+        if title_generation_id:
+            generation_ids.append(title_generation_id)
 
         # Add assistant message with all stages
         await storage.add_assistant_message(
@@ -805,18 +915,48 @@ async def send_message(
             stage3_result
         )
 
-        # Return the complete response with metadata
+        # Calculate actual costs from OpenRouter
+        costs = await get_generation_costs_batch(generation_ids, api_key=api_key)
+        total_openrouter_cost = sum(c.get('total_cost', 0) for c in costs.values())
+
+        # Build model breakdown for transparency
+        model_breakdown = {}
+        for gid, cost_info in costs.items():
+            model = cost_info.get('model', 'unknown')
+            if model not in model_breakdown:
+                model_breakdown[model] = 0.0
+            model_breakdown[model] += cost_info.get('total_cost', 0)
+
+        # Deduct costs from balance (includes 10% margin)
+        success, new_balance = await storage.deduct_query_cost(
+            user_id=user_id,
+            conversation_id=conversation_id,
+            generation_ids=generation_ids,
+            openrouter_cost=total_openrouter_cost,
+            model_breakdown=model_breakdown
+        )
+
+        # Calculate margin for response
+        margin_cost = total_openrouter_cost * 0.10
+        total_cost = total_openrouter_cost + margin_cost
+
+        # Return the complete response with metadata and cost
         return {
             "stage1": stage1_results,
             "stage2": stage2_results,
             "stage3": stage3_result,
-            "metadata": metadata
+            "metadata": metadata,
+            "cost": {
+                "openrouter_cost": round(total_openrouter_cost, 6),
+                "margin_cost": round(margin_cost, 6),
+                "total_cost": round(total_cost, 6),
+                "new_balance": round(new_balance, 6)
+            }
         }
     except Exception as e:
-        # RECOMMENDATION: Refund credit when OpenRouter query fails
-        logger.error(f"Council query failed for user {user_id}, refunding credit: {e}")
-        await storage.add_credits(user_id, 1, "refund", f"Refund - query failed: {str(e)[:100]}")
-        raise HTTPException(status_code=502, detail="AI query failed. Your credit has been refunded.")
+        # No refund needed - we didn't charge upfront
+        logger.error(f"Council query failed for user {user_id}: {e}")
+        raise HTTPException(status_code=502, detail="AI query failed. No charge was made.")
 
 
 class ClientDisconnectedError(Exception):
@@ -836,31 +976,30 @@ async def send_message_stream(
     Returns Server-Sent Events as each stage completes.
 
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
-    Requires credits - consumes 1 credit per query.
+    Uses usage-based billing: actual OpenRouter cost + 10% margin deducted after query.
     Detects client disconnection and cancels in-flight API calls to save costs.
     """
     # Rate limit check (streaming is expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
 
-    # HIGH: Check if conversation exists BEFORE consuming credit
-    # This prevents charging users for 404 errors
+    # Check if conversation exists first
     conversation = await storage.get_conversation(conversation_id, user_id=user_id)
     if conversation is None:
         raise HTTPException(status_code=404, detail="Conversation not found")
 
-    # Get user's provisioned OpenRouter API key (check before consuming credit)
+    # Get user's provisioned OpenRouter API key
     api_key = await storage.get_user_openrouter_key(user_id)
     if not api_key:
         raise HTTPException(
             status_code=402,
-            detail="No API access configured. Please purchase credits to get started."
+            detail="No API access configured. Please add funds to get started."
         )
 
-    # Now consume credit (after all preconditions are verified)
-    if not await storage.consume_credit(user_id, f"Query: {message_request.content[:50]}..."):
+    # Check minimum balance before query (usage-based billing)
+    if not await storage.check_minimum_balance(user_id, MINIMUM_BALANCE):
         raise HTTPException(
             status_code=402,
-            detail="Insufficient credits. Please purchase more credits to continue."
+            detail=f"Insufficient balance. Minimum ${MINIMUM_BALANCE:.2f} required to make a query."
         )
 
     # Check if this is the first message
@@ -878,6 +1017,7 @@ async def send_message_stream(
     async def event_generator():
         title_task = None
         keepalive_event = ":\n\n"  # Standard SSE comment for keepalive
+        all_generation_ids = []  # Collect generation IDs for cost calculation
 
         async def run_with_keepalive(coro, interval=15):
             """Run a coroutine while yielding keepalive pings every interval seconds."""
@@ -905,13 +1045,14 @@ async def send_message_stream(
             # Stage 1: Collect responses
             await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage1_start'})}\n\n"
-            stage1_results, pings = await run_with_keepalive(
+            (stage1_results, stage1_ids), pings = await run_with_keepalive(
                 stage1_collect_responses(
                     message_request.content,
                     models=selected_models,
                     api_key=api_key
                 )
             )
+            all_generation_ids.extend(stage1_ids)
             for ping in pings:
                 yield ping
             yield f"data: {json.dumps({'type': 'stage1_complete', 'data': stage1_results})}\n\n"
@@ -919,7 +1060,7 @@ async def send_message_stream(
             # Stage 2: Collect rankings
             await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage2_start'})}\n\n"
-            (stage2_results, label_to_model), pings = await run_with_keepalive(
+            (stage2_results, label_to_model, stage2_ids), pings = await run_with_keepalive(
                 stage2_collect_rankings(
                     message_request.content,
                     stage1_results,
@@ -927,6 +1068,7 @@ async def send_message_stream(
                     api_key=api_key
                 )
             )
+            all_generation_ids.extend(stage2_ids)
             for ping in pings:
                 yield ping
             aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_model)
@@ -935,7 +1077,7 @@ async def send_message_stream(
             # Stage 3: Synthesize final answer
             await check_disconnected()
             yield f"data: {json.dumps({'type': 'stage3_start'})}\n\n"
-            stage3_result, pings = await run_with_keepalive(
+            (stage3_result, stage3_id), pings = await run_with_keepalive(
                 stage3_synthesize_final(
                     message_request.content,
                     stage1_results,
@@ -944,13 +1086,17 @@ async def send_message_stream(
                     api_key=api_key
                 )
             )
+            if stage3_id:
+                all_generation_ids.append(stage3_id)
             for ping in pings:
                 yield ping
             yield f"data: {json.dumps({'type': 'stage3_complete', 'data': stage3_result})}\n\n"
 
             # Wait for title generation if it was started
             if title_task:
-                title = await title_task
+                title, title_generation_id = await title_task
+                if title_generation_id:
+                    all_generation_ids.append(title_generation_id)
                 await storage.update_conversation_title(conversation_id, title)
                 yield f"data: {json.dumps({'type': 'title_complete', 'data': {'title': title}})}\n\n"
 
@@ -962,24 +1108,47 @@ async def send_message_stream(
                 stage3_result
             )
 
-            # Send completion event
-            yield f"data: {json.dumps({'type': 'complete'})}\n\n"
+            # Calculate actual costs from OpenRouter
+            costs = await get_generation_costs_batch(all_generation_ids, api_key=api_key)
+            total_openrouter_cost = sum(c.get('total_cost', 0) for c in costs.values())
+
+            # Build model breakdown for transparency
+            model_breakdown = {}
+            for gid, cost_info in costs.items():
+                model = cost_info.get('model', 'unknown')
+                if model not in model_breakdown:
+                    model_breakdown[model] = 0.0
+                model_breakdown[model] += cost_info.get('total_cost', 0)
+
+            # Deduct costs from balance (includes 10% margin)
+            success, new_balance = await storage.deduct_query_cost(
+                user_id=user_id,
+                conversation_id=conversation_id,
+                generation_ids=all_generation_ids,
+                openrouter_cost=total_openrouter_cost,
+                model_breakdown=model_breakdown
+            )
+
+            # Calculate margin for response
+            margin_cost = total_openrouter_cost * 0.10
+            total_cost = total_openrouter_cost + margin_cost
+
+            # Send completion event with cost breakdown
+            yield f"data: {json.dumps({'type': 'complete', 'cost': {'openrouter_cost': round(total_openrouter_cost, 6), 'margin_cost': round(margin_cost, 6), 'total_cost': round(total_cost, 6), 'new_balance': round(new_balance, 6)}})}\n\n"
 
         except ClientDisconnectedError:
             # Client disconnected - cancel any running tasks and stop
+            # No charge since we didn't complete the query
             if title_task and not title_task.done():
                 title_task.cancel()
-            # RECOMMENDATION: Refund credit when client disconnects before completion
-            await storage.add_credits(user_id, 1, "refund", "Refund - client disconnected")
-            logger.info(f"Refunded credit for user {user_id} - client disconnected")
+            logger.info(f"Client disconnected for user {user_id} - no charge")
             return
 
         except Exception as e:
-            # RECOMMENDATION: Refund credit when OpenRouter query fails
-            logger.error(f"Streaming query failed for user {user_id}, refunding credit: {e}")
-            await storage.add_credits(user_id, 1, "refund", f"Refund - query failed: {str(e)[:100]}")
+            # No refund needed - we didn't charge upfront
+            logger.error(f"Streaming query failed for user {user_id}: {e}")
             # Send error event
-            yield f"data: {json.dumps({'type': 'error', 'message': 'AI query failed. Your credit has been refunded.'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': 'AI query failed. No charge was made.'})}\n\n"
 
     return StreamingResponse(
         event_generator(),

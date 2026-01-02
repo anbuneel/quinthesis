@@ -1,37 +1,42 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { credits } from '../api';
+import { billing } from '../api';
 import './PaymentResult.css';
 
-function PaymentSuccess({ onRefreshCredits }) {
+function PaymentSuccess({ onRefreshBalance }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [newBalance, setNewBalance] = useState(null);
 
   useEffect(() => {
-    const loadCredits = async () => {
+    const loadBalance = async () => {
       try {
-        // Refresh credits after successful payment
-        const data = await credits.getBalance();
-        setNewBalance(data.credits);
-        if (onRefreshCredits) {
-          onRefreshCredits();
+        // Refresh balance after successful payment
+        const data = await billing.getBalance();
+        setNewBalance(data.balance);
+        if (onRefreshBalance) {
+          onRefreshBalance();
         }
       } catch (err) {
-        console.error('Failed to load credits:', err);
+        console.error('Failed to load balance:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
     // Small delay to ensure webhook has processed
-    const timer = setTimeout(loadCredits, 1500);
+    const timer = setTimeout(loadBalance, 1500);
     return () => clearTimeout(timer);
-  }, [onRefreshCredits]);
+  }, [onRefreshBalance]);
 
   const handleContinue = () => {
     navigate('/');
+  };
+
+  const formatBalance = (amount) => {
+    if (amount === null || amount === undefined) return '$0.00';
+    return `$${parseFloat(amount).toFixed(2)}`;
   };
 
   return (
@@ -46,15 +51,14 @@ function PaymentSuccess({ onRefreshCredits }) {
         <h1>Payment Successful</h1>
 
         {isLoading ? (
-          <p className="payment-loading">Updating your credits...</p>
+          <p className="payment-loading">Updating your balance...</p>
         ) : (
           <div className="payment-details">
-            <p>Your credits have been added to your account.</p>
+            <p>Your funds have been added to your account.</p>
             {newBalance !== null && (
               <div className="new-balance">
                 <span className="balance-label">Current Balance</span>
-                <span className="balance-value">{newBalance}</span>
-                <span className="balance-unit">credits</span>
+                <span className="balance-value">{formatBalance(newBalance)}</span>
               </div>
             )}
           </div>

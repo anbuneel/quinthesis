@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { credits } from '../api';
+import { billing } from '../api';
 import './Settings.css';
 
-function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits }) {
-  const [packs, setPacks] = useState([]);
-  const [history, setHistory] = useState([]);
-  const [isLoadingPacks, setIsLoadingPacks] = useState(false);
+function Settings({ isOpen, onClose, userEmail, userBalance, onRefreshBalance }) {
+  const [depositOptions, setDepositOptions] = useState([]);
+  const [usageHistory, setUsageHistory] = useState([]);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState('');
@@ -15,7 +15,7 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
 
   useEffect(() => {
     if (isOpen) {
-      loadPacks();
+      loadDepositOptions();
       // Store the previously focused element
       previousActiveElement.current = document.activeElement;
       // Focus the modal
@@ -58,45 +58,45 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const loadPacks = async () => {
-    setIsLoadingPacks(true);
+  const loadDepositOptions = async () => {
+    setIsLoadingOptions(true);
     setError('');
     try {
-      const data = await credits.getPacks();
-      setPacks(data);
+      const data = await billing.getDepositOptions();
+      setDepositOptions(data);
     } catch (err) {
-      setError('Failed to load credit packs');
+      setError('Failed to load deposit options');
     } finally {
-      setIsLoadingPacks(false);
+      setIsLoadingOptions(false);
     }
   };
 
-  const loadHistory = async () => {
+  const loadUsageHistory = async () => {
     setIsLoadingHistory(true);
     try {
-      const data = await credits.getHistory();
-      setHistory(data);
+      const data = await billing.getUsageHistory();
+      setUsageHistory(data);
     } catch (err) {
       // Non-critical, don't show error
-      console.error('Failed to load history:', err);
+      console.error('Failed to load usage history:', err);
     } finally {
       setIsLoadingHistory(false);
     }
   };
 
   const handleToggleHistory = () => {
-    if (!showHistory && history.length === 0) {
-      loadHistory();
+    if (!showHistory && usageHistory.length === 0) {
+      loadUsageHistory();
     }
     setShowHistory(!showHistory);
   };
 
-  const handlePurchase = async (packId) => {
+  const handleDeposit = async (optionId) => {
     setIsPurchasing(true);
     setError('');
     try {
-      await credits.purchasePack(packId);
-      // Redirect happens in purchasePack
+      await billing.purchaseDeposit(optionId);
+      // Redirect happens in purchaseDeposit
     } catch (err) {
       setError(err.message);
       setIsPurchasing(false);
@@ -105,6 +105,15 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
 
   const formatPrice = (cents) => {
     return `$${(cents / 100).toFixed(2)}`;
+  };
+
+  const formatCost = (dollars) => {
+    return `$${parseFloat(dollars).toFixed(4)}`;
+  };
+
+  const formatBalance = (dollars) => {
+    if (dollars === null || dollars === undefined) return '$0.00';
+    return `$${parseFloat(dollars).toFixed(2)}`;
   };
 
   const formatDate = (dateString) => {
@@ -166,13 +175,14 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
           </div>
 
           <section className="settings-section">
-            <h3>Credits</h3>
+            <h3>Balance</h3>
             <div className="credits-balance">
-              <span className="credits-balance-value">{userCredits ?? 0}</span>
-              <span className="credits-balance-label">credits available</span>
+              <span className="credits-balance-value">{formatBalance(userBalance)}</span>
+              <span className="credits-balance-label">available</span>
             </div>
             <p className="settings-desc">
-              Each inquiry uses 1 credit. Purchase credits below to continue using AI Council.
+              Each inquiry costs approximately $0.02-0.10 depending on the AI models used.
+              You pay only for what you use, plus a 10% service fee.
             </p>
           </section>
 
@@ -181,24 +191,24 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
           </div>
 
           <section className="settings-section">
-            <h3>Purchase Credits</h3>
+            <h3>Add Funds</h3>
 
-            {isLoadingPacks ? (
-              <p className="settings-loading">Loading packs...</p>
+            {isLoadingOptions ? (
+              <p className="settings-loading">Loading options...</p>
             ) : (
               <div className="credit-packs">
-                {packs.map((pack) => (
-                  <div key={pack.id} className="credit-pack">
+                {depositOptions.map((option) => (
+                  <div key={option.id} className="credit-pack">
                     <div className="pack-info">
-                      <span className="pack-name">{pack.name}</span>
-                      <span className="pack-credits">{pack.credits} credits</span>
+                      <span className="pack-name">{option.name}</span>
+                      <span className="pack-credits">~{Math.round(option.amount_cents / 5)} inquiries</span>
                     </div>
                     <button
                       className="pack-buy-btn"
-                      onClick={() => handlePurchase(pack.id)}
+                      onClick={() => handleDeposit(option.id)}
                       disabled={isPurchasing}
                     >
-                      {formatPrice(pack.price_cents)}
+                      {formatPrice(option.amount_cents)}
                     </button>
                   </div>
                 ))}
@@ -216,7 +226,7 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
               onClick={handleToggleHistory}
               aria-expanded={showHistory}
             >
-              <span>Transaction History</span>
+              <span>Usage History</span>
               <svg
                 viewBox="0 0 24 24"
                 fill="none"
@@ -232,21 +242,23 @@ function Settings({ isOpen, onClose, userEmail, userCredits, onRefreshCredits })
               <div className="transaction-history">
                 {isLoadingHistory ? (
                   <p className="settings-loading">Loading history...</p>
-                ) : history.length === 0 ? (
-                  <p className="history-empty">No transactions yet</p>
+                ) : usageHistory.length === 0 ? (
+                  <p className="history-empty">No usage yet</p>
                 ) : (
                   <div className="history-list">
-                    {history.map((tx) => (
-                      <div key={tx.id} className="history-item">
+                    {usageHistory.map((usage) => (
+                      <div key={usage.id} className="history-item">
                         <div className="history-item-info">
-                          <span className={`history-amount ${tx.amount > 0 ? 'positive' : 'negative'}`}>
-                            {tx.amount > 0 ? '+' : ''}{tx.amount}
+                          <span className="history-amount negative">
+                            -{formatCost(usage.total_cost)}
                           </span>
-                          <span className="history-type">{tx.transaction_type}</span>
+                          <span className="history-type">Query</span>
                         </div>
                         <div className="history-item-meta">
-                          <span className="history-desc">{tx.description || '-'}</span>
-                          <span className="history-date">{formatDate(tx.created_at)}</span>
+                          <span className="history-desc">
+                            API: {formatCost(usage.openrouter_cost)} + Fee: {formatCost(usage.margin_cost)}
+                          </span>
+                          <span className="history-date">{formatDate(usage.created_at)}</span>
                         </div>
                       </div>
                     ))}

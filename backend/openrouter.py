@@ -13,6 +13,9 @@ from .config import OPENROUTER_API_KEY, OPENROUTER_API_URL
 
 logger = logging.getLogger(__name__)
 
+# OpenRouter generation stats API for cost retrieval
+OPENROUTER_GENERATION_API_URL = "https://openrouter.ai/api/v1/generation"
+
 # Shared HTTP client for connection pooling
 _client: Optional[httpx.AsyncClient] = None
 
@@ -61,7 +64,7 @@ async def query_model(
         api_key: Optional user-provided API key (uses default if not provided)
 
     Returns:
-        Response dict with 'content' and optional 'reasoning_details', or None if failed
+        Response dict with 'content', 'generation_id', and optional 'reasoning_details', or None if failed
     """
     # Use user's API key if provided, otherwise fall back to default
     key = api_key or OPENROUTER_API_KEY
@@ -117,7 +120,8 @@ async def query_model(
 
             return {
                 'content': message.get('content'),
-                'reasoning_details': message.get('reasoning_details')
+                'reasoning_details': message.get('reasoning_details'),
+                'generation_id': data.get('id')  # For cost retrieval via /api/v1/generation
             }
 
         except httpx.TimeoutException as e:
@@ -167,3 +171,101 @@ async def query_models_parallel(
 
     # Map models to their responses
     return {model: response for model, response in zip(models, responses)}
+
+
+async def get_generation_cost(
+    generation_id: str,
+    api_key: Optional[str] = None,
+    max_retries: int = 3,
+    retry_delay: float = 0.5
+) -> Optional[Dict[str, Any]]:
+    """
+    Query OpenRouter for generation cost after completion.
+
+    The /api/v1/generation endpoint returns actual costs using native tokenizer
+    counts, which may differ from the normalized counts in the chat response.
+
+    Args:
+        generation_id: The generation ID from the chat completion response
+        api_key: API key to use (uses user's key or default)
+        max_retries: Number of retries (cost may not be immediately available)
+        retry_delay: Base delay between retries in seconds
+
+    Returns:
+        Dict with 'total_cost', 'native_tokens_prompt', 'native_tokens_completion',
+        'model', 'cache_discount' or None if failed
+    """
+    key = api_key or OPENROUTER_API_KEY
+    if not key:
+        logger.error("No API key available for cost retrieval")
+        return None
+
+    headers = {"Authorization": f"Bearer {key}"}
+    client = await get_client()
+
+    for attempt in range(max_retries):
+        try:
+            response = await client.get(
+                f"{OPENROUTER_GENERATION_API_URL}?id={generation_id}",
+                headers=headers,
+                timeout=10.0
+            )
+
+            if response.status_code == 404:
+                # Generation not found yet, retry after delay
+                if attempt < max_retries - 1:
+                    await asyncio.sleep(retry_delay * (attempt + 1))
+                    continue
+                logger.warning(f"Generation {generation_id} not found after {max_retries} retries")
+                return None
+
+            response.raise_for_status()
+            data = response.json().get('data', {})
+
+            return {
+                'total_cost': float(data.get('total_cost', 0)),
+                'native_tokens_prompt': data.get('native_tokens_prompt', 0),
+                'native_tokens_completion': data.get('native_tokens_completion', 0),
+                'model': data.get('model'),
+                'cache_discount': float(data.get('cache_discount', 0))
+            }
+
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error getting generation cost for {generation_id}: {e.response.status_code}")
+            return None
+
+        except Exception as e:
+            logger.warning(f"Error getting generation cost for {generation_id}: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(retry_delay * (attempt + 1))
+                continue
+            return None
+
+    return None
+
+
+async def get_generation_costs_batch(
+    generation_ids: List[str],
+    api_key: Optional[str] = None
+) -> Dict[str, Dict[str, Any]]:
+    """
+    Get costs for multiple generations in parallel.
+
+    Args:
+        generation_ids: List of generation IDs to query
+        api_key: API key to use
+
+    Returns:
+        Dict mapping generation_id to cost info (only successful retrievals included)
+    """
+    if not generation_ids:
+        return {}
+
+    tasks = [get_generation_cost(gid, api_key) for gid in generation_ids]
+    results = await asyncio.gather(*tasks)
+
+    return {
+        gid: result
+        for gid, result in zip(generation_ids, results)
+        if result is not None
+    }

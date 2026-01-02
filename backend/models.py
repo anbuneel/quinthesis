@@ -107,3 +107,46 @@ class CheckoutSessionResponse(BaseModel):
     """Stripe checkout session response."""
     checkout_url: str
     session_id: str
+
+
+# ============== Usage-Based Billing Schemas ==============
+
+class DepositOptionResponse(BaseModel):
+    """Deposit option for usage-based billing."""
+    id: UUID
+    name: str
+    amount_cents: int
+
+
+class UserBalanceResponse(BaseModel):
+    """User's dollar balance and billing info."""
+    balance: float
+    total_deposited: float
+    total_spent: float
+    has_openrouter_key: bool
+
+
+class UsageHistoryResponse(BaseModel):
+    """Query cost history item."""
+    id: UUID
+    conversation_id: str
+    openrouter_cost: float
+    margin_cost: float
+    total_cost: float
+    model_breakdown: Optional[dict] = None
+    created_at: datetime
+
+
+class CreateDepositRequest(BaseModel):
+    """Request to create Stripe checkout for a deposit."""
+    option_id: UUID
+    success_url: str
+    cancel_url: str
+
+
+class QueryCostResponse(BaseModel):
+    """Cost breakdown for a query."""
+    openrouter_cost: float
+    margin_cost: float
+    total_cost: float
+    new_balance: float

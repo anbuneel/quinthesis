@@ -9,6 +9,13 @@ This file and CLAUDE.md should stay in sync.
 
 ---
 
+## Documentation Rules
+
+- **Always update `docs/INDEX.md`** when creating or updating any document in the `docs/` folder
+- Keep INDEX.md organized chronologically with brief descriptions
+
+---
+
 ## Quick Start Commands
 
 ### Backend
@@ -65,7 +72,7 @@ OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
 
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email address to preserve their archives.
 
-**Monetization:** Users purchase credit packs via Stripe. Each query consumes 1 credit. The system provisions per-user OpenRouter API keys with spending limits.
+**Monetization (Usage-Based Billing):** Users deposit funds via Stripe ($5/$20/$50 options). Each query is charged at actual OpenRouter cost + 10% margin. Costs are calculated after query completion using OpenRouter's generation API. The system provisions per-user OpenRouter API keys with spending limits equal to their deposit amount.
 
 **Database Migrations:** Run before first use:
 ```bash
@@ -107,24 +114,24 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 ## Key File Locations
 
 ### Backend (`backend/`)
-- `main.py` - FastAPI server, OAuth endpoints, credits endpoints, runs on port 8080
+- `main.py` - FastAPI server, OAuth endpoints, billing endpoints, runs on port 8080
 - `config.py` - Models, CORS, DB, JWT, OAuth, Stripe environment variables
 - `oauth.py` - Google and GitHub OAuth handlers (code exchange, user info)
-- `council.py` - Core logic: stage1/2/3, parsing, aggregation
-- `openrouter.py` - OpenRouter API wrapper, parallel queries, accepts per-user API keys
+- `council.py` - Core logic: stage1/2/3, parsing, aggregation, returns generation IDs
+- `openrouter.py` - OpenRouter API wrapper, parallel queries, cost retrieval via generation API
 - `openrouter_provisioning.py` - OpenRouter Provisioning API for per-user key management
-- `stripe_client.py` - Stripe Checkout and webhook handling
-- `storage.py` - PostgreSQL storage with user, OAuth, credits, and provisioned key management
+- `stripe_client.py` - Stripe Checkout and webhook handling (supports deposits and legacy credits)
+- `storage.py` - PostgreSQL storage with user, OAuth, balance, and usage tracking
 - `storage_local.py` - JSON file storage (fallback when `DATABASE_URL` not set)
 - `database.py` - Async PostgreSQL connection pool (asyncpg)
 - `auth_jwt.py` - JWT token creation and verification
 - `encryption.py` - API key encryption (Fernet)
-- `models.py` - Pydantic schemas for OAuth, credits, and checkout endpoints
+- `models.py` - Pydantic schemas for OAuth, billing, and checkout endpoints
 - `migrate.py` - Database migration runner
-- `migrations/` - SQL migration files (includes 005_user_credits.sql)
+- `migrations/` - SQL migration files (006_usage_based_billing.sql for current billing model)
 
 ### Frontend (`frontend/src/`)
-- `App.jsx` - Main orchestration with BrowserRouter, OAuth callback, credit state
+- `App.jsx` - Main orchestration with BrowserRouter, OAuth callback, balance state
 - `components/ChatInterface.jsx` - Main view, question display, SSE streaming, stage tabs
 - `components/InquiryComposer.jsx` - Home page inquiry form with model selection
 - `components/Stage1.jsx` - Expert opinions with tabbed navigation and keyboard support
@@ -133,13 +140,13 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/Sidebar.jsx` - Inquiry list, mobile drawer
 - `components/OAuthCallback.jsx` - Handles OAuth provider redirects
 - `components/Login.jsx` - OAuth login UI (Google and GitHub buttons)
-- `components/Settings.jsx` - Credits purchase and balance display
-- `components/CreditBalance.jsx` - Header credit balance indicator
+- `components/Settings.jsx` - Balance display, deposit options, usage history
+- `components/CreditBalance.jsx` - Header dollar balance indicator
 - `components/PaymentSuccess.jsx` - Post-checkout success page
 - `components/PaymentCancel.jsx` - Checkout cancelled page
 - `components/AvatarMenu.jsx` - User avatar dropdown with settings/logout
 - `components/ConfirmDialog.jsx` - Custom styled confirmation/alert dialogs
-- `api.js` - Backend communication with OAuth auth, JWT tokens, credits API, SSE streaming
+- `api.js` - Backend communication with OAuth auth, JWT tokens, billing API, SSE streaming
 
 ---
 
@@ -324,43 +331,50 @@ data: {"type":"title_complete","data":{"title":"..."}}
 data: {"type":"complete"}
 ```
 
-### Credits API
+### Billing API (Usage-Based)
 
-#### GET `/api/credits`
-Get current credit balance (requires auth):
+#### GET `/api/balance`
+Get current dollar balance and billing info (requires auth):
 ```json
 {
-  "credits": 10,
+  "balance": 4.97,
+  "total_deposited": 5.00,
+  "total_spent": 0.03,
   "has_openrouter_key": true
 }
 ```
 
-#### GET `/api/credits/packs`
-List available credit packs:
+#### GET `/api/deposits/options`
+List available deposit options:
 ```json
-{
-  "packs": [
-    {"id": "uuid", "name": "Starter Pack", "credits": 10, "price_cents": 500},
-    {"id": "uuid", "name": "Value Pack", "credits": 50, "price_cents": 2000}
-  ]
-}
+[
+  {"id": "uuid", "name": "$5 Deposit", "amount_cents": 500},
+  {"id": "uuid", "name": "$20 Deposit", "amount_cents": 2000},
+  {"id": "uuid", "name": "$50 Deposit", "amount_cents": 5000}
+]
 ```
 
-#### GET `/api/credits/history`
-Get credit transaction history (requires auth):
+#### GET `/api/usage/history`
+Get usage history with cost breakdowns (requires auth):
 ```json
-{
-  "transactions": [
-    {"id": "uuid", "amount": 10, "balance_after": 10, "transaction_type": "purchase", "description": "Purchased Starter Pack", "created_at": "..."}
-  ]
-}
+[
+  {
+    "id": "uuid",
+    "conversation_id": "uuid",
+    "openrouter_cost": 0.0234,
+    "margin_cost": 0.0023,
+    "total_cost": 0.0257,
+    "model_breakdown": {"openai/gpt-4o": 0.015, "anthropic/claude-3.5-sonnet": 0.008},
+    "created_at": "2026-01-01T12:00:00Z"
+  }
+]
 ```
 
-#### POST `/api/credits/checkout`
-Create Stripe Checkout session (requires auth):
+#### POST `/api/deposits/checkout`
+Create Stripe Checkout session for deposit (requires auth):
 ```json
 {
-  "pack_id": "uuid",
+  "option_id": "uuid",
   "success_url": "https://example.com/credits/success",
   "cancel_url": "https://example.com/credits/cancel"
 }
@@ -368,7 +382,18 @@ Create Stripe Checkout session (requires auth):
 Returns:
 ```json
 {
-  "checkout_url": "https://checkout.stripe.com/..."
+  "checkout_url": "https://checkout.stripe.com/...",
+  "session_id": "cs_..."
+}
+```
+
+### Credits API (Legacy)
+
+#### GET `/api/credits`
+Get current credit balance (legacy endpoint, requires auth):
+```json
+{
+  "credits": 10
 }
 ```
 
@@ -382,7 +407,7 @@ Retry OpenRouter key provisioning (for users with credits but no key):
 ```
 
 #### POST `/api/webhooks/stripe`
-Stripe webhook endpoint (signature verified). Handles `checkout.session.completed` events.
+Stripe webhook endpoint (signature verified). Handles `checkout.session.completed` events for both deposits and legacy credits.
 
 ---
 
@@ -568,9 +593,9 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Create PostgreSQL database
 - [ ] Generate connection string and set as `DATABASE_URL`
 - [ ] Enable `gen_random_uuid()` extension (usually enabled by default)
-- [ ] Run migrations (includes 005_user_credits.sql for credits system)
+- [ ] Run migrations (includes 006_usage_based_billing.sql for usage-based billing)
 
-### Stripe Setup (for credit purchases)
+### Stripe Setup (for deposits)
 - [ ] Create Stripe account at https://stripe.com
 - [ ] Get API keys from https://dashboard.stripe.com/apikeys
 - [ ] Set `STRIPE_SECRET_KEY` in Fly.io secrets
@@ -578,6 +603,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Select event: `checkout.session.completed`
 - [ ] Copy webhook signing secret and set as `STRIPE_WEBHOOK_SECRET`
 - [ ] Test with Stripe CLI: `stripe listen --forward-to localhost:8080/api/webhooks/stripe`
+- [ ] Deposit options are $5, $20, $50 (configured in database)
 
 ### OpenRouter Provisioning (for per-user API keys)
 - [ ] Go to https://openrouter.ai/settings/provisioning-keys
@@ -642,19 +668,29 @@ Deferred/Accepted:
 - [x] JWTs in localStorage - accepted (standard SPA, CSP is better mitigation)
 - [x] Blocking file I/O in local storage - accepted (dev-only)
 
-**Credits System Security Review (2025-12-31):**
+**Billing System Security Review (2025-12-31):**
 
-A security review of the Stripe credits implementation was conducted.
+A security review of the Stripe billing implementation was conducted.
 
 Completed fixes:
 - [x] Payment status verification (check `payment_status == "paid"`)
 - [x] Webhook idempotency via unique constraint on `stripe_session_id`
 - [x] Session verification from Stripe API (don't trust webhook metadata alone)
-- [x] Amount/currency validation against pack price
-- [x] Credit consumption after precondition checks
-- [x] Refund credits on OpenRouter query failures
+- [x] Amount/currency validation against pack/deposit price
+- [x] Balance check before query (minimum $0.50)
+- [x] No upfront charge - cost deducted only on successful completion
 - [x] Atomic OpenRouter limit increment (prevents race conditions)
 - [x] URL allowlisting for success/cancel redirects (prevents open redirect)
-- [x] Provisioning retry endpoint for users with credits but no key
-- [x] Decimal precision for currency calculations
-- [x] Local storage credits stubs for dev mode
+- [x] Provisioning retry endpoint for users with balance but no key
+- [x] Decimal precision (NUMERIC(10,6)) for cost calculations
+- [x] Local storage billing stubs for dev mode
+
+**Usage-Based Billing Update (2026-01-01):**
+
+Converted from credit-based (1 credit = 1 query) to usage-based billing:
+- [x] Users deposit funds ($5/$20/$50) instead of buying credit packs
+- [x] Queries charged at actual OpenRouter cost + 10% margin
+- [x] Cost calculated after completion via OpenRouter generation API
+- [x] Transparent cost breakdown shown to users
+- [x] Per-query usage history with model breakdowns
+- [x] Minimum $0.50 balance required (no upfront charge)

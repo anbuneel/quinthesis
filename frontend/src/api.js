@@ -239,11 +239,11 @@ export const settings = {
   },
 };
 
-// ============== Credits API ==============
+// ============== Credits API (Legacy) ==============
 
 export const credits = {
   /**
-   * Get current credit balance.
+   * Get current credit balance (legacy endpoint).
    */
   async getBalance() {
     const response = await fetchWithAuth(`${API_BASE}/api/credits`);
@@ -254,7 +254,7 @@ export const credits = {
   },
 
   /**
-   * Get available credit packs.
+   * Get available credit packs (legacy).
    */
   async getPacks() {
     const response = await fetchWithAuth(`${API_BASE}/api/credits/packs`);
@@ -265,7 +265,7 @@ export const credits = {
   },
 
   /**
-   * Get credit transaction history.
+   * Get credit transaction history (legacy).
    */
   async getHistory() {
     const response = await fetchWithAuth(`${API_BASE}/api/credits/history`);
@@ -276,7 +276,7 @@ export const credits = {
   },
 
   /**
-   * Create checkout session and redirect to Stripe.
+   * Create checkout session and redirect to Stripe (legacy).
    */
   async purchasePack(packId) {
     const successUrl = `${window.location.origin}/credits/success?session_id={CHECKOUT_SESSION_ID}`;
@@ -328,6 +328,79 @@ export const credits = {
     }
 
     return response.json();
+  },
+};
+
+// ============== Billing API (Usage-Based) ==============
+
+export const billing = {
+  /**
+   * Get current dollar balance and billing info.
+   * Returns { balance, total_deposited, total_spent, has_openrouter_key }
+   */
+  async getBalance() {
+    const response = await fetchWithAuth(`${API_BASE}/api/balance`);
+    if (!response.ok) {
+      throw new Error('Failed to get balance');
+    }
+    return response.json();
+  },
+
+  /**
+   * Get available deposit options.
+   * Returns [{ id, name, amount_cents }, ...]
+   */
+  async getDepositOptions() {
+    const response = await fetchWithAuth(`${API_BASE}/api/deposits/options`);
+    if (!response.ok) {
+      throw new Error('Failed to get deposit options');
+    }
+    return response.json();
+  },
+
+  /**
+   * Get usage history with cost breakdowns.
+   * Returns [{ id, conversation_id, openrouter_cost, margin_cost, total_cost, model_breakdown, created_at }, ...]
+   */
+  async getUsageHistory() {
+    const response = await fetchWithAuth(`${API_BASE}/api/usage/history`);
+    if (!response.ok) {
+      throw new Error('Failed to get usage history');
+    }
+    return response.json();
+  },
+
+  /**
+   * Create checkout session for a deposit and redirect to Stripe.
+   */
+  async purchaseDeposit(optionId) {
+    const successUrl = `${window.location.origin}/credits/success?session_id={CHECKOUT_SESSION_ID}`;
+    const cancelUrl = `${window.location.origin}/credits/cancel`;
+
+    const response = await fetchWithAuth(`${API_BASE}/api/deposits/checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        option_id: optionId,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      let message = 'Failed to create checkout session';
+      try {
+        const error = await response.json();
+        message = error.detail || message;
+      } catch {
+        // ignore
+      }
+      throw new Error(message);
+    }
+
+    const data = await response.json();
+    // Redirect to Stripe Checkout
+    window.location.href = data.checkout_url;
   },
 };
 

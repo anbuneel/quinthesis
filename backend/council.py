@@ -12,7 +12,7 @@ async def stage1_collect_responses(
     user_query: str,
     models: List[str] | None = None,
     api_key: Optional[str] = None
-) -> List[Dict[str, Any]]:
+) -> Tuple[List[Dict[str, Any]], List[str]]:
     """
     Stage 1: Collect individual responses from all council models.
 
@@ -22,7 +22,7 @@ async def stage1_collect_responses(
         api_key: Optional user-provided API key
 
     Returns:
-        List of dicts with 'model' and 'response' keys
+        Tuple of (results list, generation_ids list)
     """
     messages = [{"role": "user", "content": user_query}]
 
@@ -31,16 +31,19 @@ async def stage1_collect_responses(
     # Query all models in parallel
     responses = await query_models_parallel(active_models, messages, api_key=api_key)
 
-    # Format results
+    # Format results and collect generation IDs
     stage1_results = []
+    generation_ids = []
     for model, response in responses.items():
         if response is not None:  # Only include successful responses
             stage1_results.append({
                 "model": model,
                 "response": response.get('content', '')
             })
+            if response.get('generation_id'):
+                generation_ids.append(response['generation_id'])
 
-    return stage1_results
+    return stage1_results, generation_ids
 
 
 async def stage2_collect_rankings(
@@ -48,7 +51,7 @@ async def stage2_collect_rankings(
     stage1_results: List[Dict[str, Any]],
     models: List[str] | None = None,
     api_key: Optional[str] = None
-) -> Tuple[List[Dict[str, Any]], Dict[str, str]]:
+) -> Tuple[List[Dict[str, Any]], Dict[str, str], List[str]]:
     """
     Stage 2: Each model ranks the anonymized responses.
 
@@ -59,7 +62,7 @@ async def stage2_collect_rankings(
         api_key: Optional user-provided API key
 
     Returns:
-        Tuple of (rankings list, label_to_model mapping)
+        Tuple of (rankings list, label_to_model mapping, generation_ids list)
     """
     # Create anonymized labels for responses (Response A, Response B, etc.)
     labels = [chr(65 + i) for i in range(len(stage1_results))]  # A, B, C, ...
@@ -114,8 +117,9 @@ Now provide your evaluation and ranking:"""
     # Get rankings from all council models in parallel
     responses = await query_models_parallel(active_models, messages, api_key=api_key)
 
-    # Format results
+    # Format results and collect generation IDs
     stage2_results = []
+    generation_ids = []
     for model, response in responses.items():
         if response is not None:
             full_text = response.get('content', '')
@@ -125,8 +129,10 @@ Now provide your evaluation and ranking:"""
                 "ranking": full_text,
                 "parsed_ranking": parsed
             })
+            if response.get('generation_id'):
+                generation_ids.append(response['generation_id'])
 
-    return stage2_results, label_to_model
+    return stage2_results, label_to_model, generation_ids
 
 
 async def stage3_synthesize_final(
@@ -135,7 +141,7 @@ async def stage3_synthesize_final(
     stage2_results: List[Dict[str, Any]],
     lead_model: str | None = None,
     api_key: Optional[str] = None
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Any], Optional[str]]:
     """
     Stage 3: Chairman synthesizes final response.
 
@@ -147,7 +153,7 @@ async def stage3_synthesize_final(
         api_key: Optional user-provided API key
 
     Returns:
-        Dict with 'model' and 'response' keys
+        Tuple of (result dict with 'model' and 'response', generation_id or None)
     """
     # Build comprehensive context for chairman
     stage1_text = "\n\n".join([
@@ -189,12 +195,12 @@ Provide a clear, well-reasoned final answer that represents the council's collec
         return {
             "model": active_lead,
             "response": "Error: Unable to generate final synthesis."
-        }
+        }, None
 
     return {
         "model": active_lead,
         "response": response.get('content', '')
-    }
+    }, response.get('generation_id')
 
 
 def parse_ranking_from_text(ranking_text: str) -> List[str]:
@@ -277,7 +283,7 @@ def calculate_aggregate_rankings(
 async def generate_conversation_title(
     user_query: str,
     api_key: Optional[str] = None
-) -> str:
+) -> Tuple[str, Optional[str]]:
     """
     Generate a short title for a conversation based on the first user message.
 
@@ -286,7 +292,7 @@ async def generate_conversation_title(
         api_key: Optional user-provided API key
 
     Returns:
-        A short title (3-5 words)
+        Tuple of (title string, generation_id or None)
     """
     title_prompt = f"""Generate a very short title (3-5 words maximum) that summarizes the following question.
 The title should be concise and descriptive. Do not use quotes or punctuation in the title.
@@ -307,7 +313,7 @@ Title:"""
 
     if response is None:
         # Fallback to a generic title
-        return "New Conversation"
+        return "New Conversation", None
 
     title = response.get('content', 'New Conversation').strip()
 
@@ -318,7 +324,7 @@ Title:"""
     if len(title) > 50:
         title = title[:47] + "..."
 
-    return title
+    return title, response.get('generation_id')
 
 
 async def run_full_council(
@@ -326,7 +332,7 @@ async def run_full_council(
     models: List[str] | None = None,
     lead_model: str | None = None,
     api_key: Optional[str] = None
-) -> Tuple[List, List, Dict, Dict]:
+) -> Tuple[List, List, Dict, Dict, List[str]]:
     """
     Run the complete 3-stage council process.
 
@@ -337,41 +343,47 @@ async def run_full_council(
         api_key: Optional user-provided API key
 
     Returns:
-        Tuple of (stage1_results, stage2_results, stage3_result, metadata)
+        Tuple of (stage1_results, stage2_results, stage3_result, metadata, all_generation_ids)
     """
+    all_generation_ids = []
+
     # Stage 1: Collect individual responses
-    stage1_results = await stage1_collect_responses(
+    stage1_results, stage1_ids = await stage1_collect_responses(
         user_query,
         models=models,
         api_key=api_key
     )
+    all_generation_ids.extend(stage1_ids)
 
     # If no models responded successfully, return error
     if not stage1_results:
         return [], [], {
             "model": "error",
             "response": "All models failed to respond. Please try again."
-        }, {}
+        }, {}, all_generation_ids
 
     # Stage 2: Collect rankings
-    stage2_results, label_to_model = await stage2_collect_rankings(
+    stage2_results, label_to_model, stage2_ids = await stage2_collect_rankings(
         user_query,
         stage1_results,
         models=models,
         api_key=api_key
     )
+    all_generation_ids.extend(stage2_ids)
 
     # Calculate aggregate rankings
     aggregate_rankings = calculate_aggregate_rankings(stage2_results, label_to_model)
 
     # Stage 3: Synthesize final answer
-    stage3_result = await stage3_synthesize_final(
+    stage3_result, stage3_id = await stage3_synthesize_final(
         user_query,
         stage1_results,
         stage2_results,
         lead_model=lead_model,
         api_key=api_key
     )
+    if stage3_id:
+        all_generation_ids.append(stage3_id)
 
     # Prepare metadata
     metadata = {
@@ -379,4 +391,4 @@ async def run_full_council(
         "aggregate_rankings": aggregate_rankings
     }
 
-    return stage1_results, stage2_results, stage3_result, metadata
+    return stage1_results, stage2_results, stage3_result, metadata, all_generation_ids

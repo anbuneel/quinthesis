@@ -919,3 +919,266 @@ async def get_openrouter_total_limit(user_id: UUID) -> float:
         user_id
     )
     return float(row["openrouter_total_limit"]) if row else 0.0
+
+
+# ============== Usage-Based Billing ==============
+
+# 10% margin on OpenRouter costs
+MARGIN_RATE = 0.10
+
+
+async def get_user_balance(user_id: UUID) -> float:
+    """Get user's current dollar balance."""
+    row = await db.fetchrow(
+        "SELECT balance FROM users WHERE id = $1",
+        user_id
+    )
+    return float(row["balance"]) if row else 0.0
+
+
+async def check_minimum_balance(user_id: UUID, minimum: float = 0.50) -> bool:
+    """Check if user has minimum balance to make a query.
+
+    Args:
+        user_id: User's ID
+        minimum: Minimum required balance (default $0.50)
+
+    Returns:
+        True if balance >= minimum, False otherwise
+    """
+    balance = await get_user_balance(user_id)
+    return balance >= minimum
+
+
+async def add_deposit(
+    user_id: UUID,
+    amount_dollars: float,
+    transaction_type: str = "deposit",
+    description: str = None,
+    stripe_session_id: str = None,
+    stripe_payment_intent_id: str = None
+) -> float:
+    """Add deposit to user's dollar balance.
+
+    Args:
+        user_id: User's ID
+        amount_dollars: Amount in dollars to add
+        transaction_type: Type of transaction ('deposit', 'refund')
+        description: Optional description
+        stripe_session_id: Stripe session ID for deposits
+        stripe_payment_intent_id: Stripe payment intent ID
+
+    Returns:
+        New balance
+    """
+    async with db.transaction() as conn:
+        new_balance = await conn.fetchval(
+            """
+            UPDATE users
+            SET balance = balance + $2,
+                total_deposited = total_deposited + $2,
+                updated_at = NOW()
+            WHERE id = $1
+            RETURNING balance
+            """,
+            user_id,
+            amount_dollars
+        )
+
+        # Record transaction
+        await conn.execute(
+            """
+            INSERT INTO credit_transactions
+            (user_id, amount, balance_after, balance_after_dollars,
+             transaction_type, description, stripe_session_id, stripe_payment_intent_id,
+             total_cost)
+            VALUES ($1, 0, 0, $2, $3, $4, $5, $6, $7)
+            """,
+            user_id,
+            new_balance,
+            transaction_type,
+            description or f"Deposit ${amount_dollars:.2f}",
+            stripe_session_id,
+            stripe_payment_intent_id,
+            amount_dollars
+        )
+
+        return float(new_balance)
+
+
+async def deduct_query_cost(
+    user_id: UUID,
+    conversation_id: str,
+    generation_ids: List[str],
+    openrouter_cost: float,
+    model_breakdown: Dict[str, float] = None,
+    description: str = None
+) -> tuple[bool, float]:
+    """Deduct query cost from user's balance.
+
+    Calculates margin and total cost, then atomically deducts from balance.
+
+    Args:
+        user_id: User's ID
+        conversation_id: Conversation ID for tracking
+        generation_ids: List of OpenRouter generation IDs
+        openrouter_cost: Raw OpenRouter cost in dollars
+        model_breakdown: Optional cost per model {model_name: cost}
+        description: Optional description
+
+    Returns:
+        Tuple of (success, new_balance)
+        Note: May allow small negative balance (up to -$0.50) for good UX
+    """
+    margin_cost = openrouter_cost * MARGIN_RATE
+    total_cost = openrouter_cost + margin_cost
+
+    async with db.transaction() as conn:
+        # Deduct from balance
+        new_balance = await conn.fetchval(
+            """
+            UPDATE users
+            SET balance = balance - $2,
+                total_spent = total_spent + $2,
+                updated_at = NOW()
+            WHERE id = $1
+            RETURNING balance
+            """,
+            user_id,
+            total_cost
+        )
+
+        # Record in query_costs table for detailed tracking
+        await conn.execute(
+            """
+            INSERT INTO query_costs
+            (user_id, conversation_id, generation_ids,
+             openrouter_cost, margin_cost, total_cost, model_breakdown)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            """,
+            user_id,
+            conversation_id,
+            json.dumps(generation_ids),
+            openrouter_cost,
+            margin_cost,
+            total_cost,
+            json.dumps(model_breakdown) if model_breakdown else None
+        )
+
+        # Also record in credit_transactions for unified history
+        await conn.execute(
+            """
+            INSERT INTO credit_transactions
+            (user_id, amount, balance_after, balance_after_dollars,
+             openrouter_cost, margin_cost, total_cost, generation_ids,
+             transaction_type, description)
+            VALUES ($1, 0, 0, $2, $3, $4, $5, $6, 'usage', $7)
+            """,
+            user_id,
+            new_balance,
+            openrouter_cost,
+            margin_cost,
+            total_cost,
+            json.dumps(generation_ids),
+            description or f"Query cost: ${total_cost:.4f}"
+        )
+
+        return True, float(new_balance)
+
+
+async def refund_query_cost(
+    user_id: UUID,
+    openrouter_cost: float,
+    description: str = "Query refund"
+) -> float:
+    """Refund a query cost to user's balance.
+
+    Args:
+        user_id: User's ID
+        openrouter_cost: The OpenRouter cost that was charged
+        description: Reason for refund
+
+    Returns:
+        New balance
+    """
+    margin_cost = openrouter_cost * MARGIN_RATE
+    total_cost = openrouter_cost + margin_cost
+
+    return await add_deposit(
+        user_id,
+        total_cost,
+        transaction_type="refund",
+        description=description
+    )
+
+
+async def get_deposit_options() -> List[Dict[str, Any]]:
+    """Get available deposit options."""
+    rows = await db.fetch(
+        """
+        SELECT id, name, amount_cents
+        FROM deposit_options
+        WHERE is_active = true
+        ORDER BY sort_order ASC
+        """
+    )
+    return [dict(row) for row in rows]
+
+
+async def get_deposit_option(option_id: UUID) -> Optional[Dict[str, Any]]:
+    """Get a specific deposit option."""
+    row = await db.fetchrow(
+        "SELECT * FROM deposit_options WHERE id = $1 AND is_active = true",
+        option_id
+    )
+    return dict(row) if row else None
+
+
+async def get_usage_history(
+    user_id: UUID,
+    limit: int = 50
+) -> List[Dict[str, Any]]:
+    """Get user's usage history with cost breakdowns.
+
+    Returns query costs with OpenRouter cost, margin, and model breakdown.
+    """
+    rows = await db.fetch(
+        """
+        SELECT id, conversation_id, openrouter_cost, margin_cost,
+               total_cost, model_breakdown, created_at
+        FROM query_costs
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT $2
+        """,
+        user_id,
+        limit
+    )
+    return [dict(row) for row in rows]
+
+
+async def get_user_billing_info(user_id: UUID) -> Dict[str, Any]:
+    """Get user's complete billing information.
+
+    Returns balance, total deposited, total spent, and whether they have an API key.
+    """
+    row = await db.fetchrow(
+        """
+        SELECT balance, total_deposited, total_spent, openrouter_api_key IS NOT NULL as has_openrouter_key
+        FROM users WHERE id = $1
+        """,
+        user_id
+    )
+    if row:
+        return {
+            "balance": float(row["balance"]),
+            "total_deposited": float(row["total_deposited"]),
+            "total_spent": float(row["total_spent"]),
+            "has_openrouter_key": row["has_openrouter_key"]
+        }
+    return {
+        "balance": 0.0,
+        "total_deposited": 0.0,
+        "total_spent": 0.0,
+        "has_openrouter_key": False
+    }
