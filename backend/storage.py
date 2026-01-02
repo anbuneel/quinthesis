@@ -1135,12 +1135,26 @@ async def get_deposit_options() -> List[Dict[str, Any]]:
     return [dict(row) for row in rows]
 
 
-async def get_deposit_option(option_id: UUID) -> Optional[Dict[str, Any]]:
-    """Get a specific deposit option."""
-    row = await db.fetchrow(
-        "SELECT * FROM deposit_options WHERE id = $1 AND is_active = true",
-        option_id
-    )
+async def get_deposit_option(
+    option_id: UUID,
+    include_inactive: bool = False
+) -> Optional[Dict[str, Any]]:
+    """Get a specific deposit option.
+
+    Args:
+        option_id: The deposit option UUID
+        include_inactive: If True, return option even if deactivated (for webhook validation)
+    """
+    if include_inactive:
+        row = await db.fetchrow(
+            "SELECT * FROM deposit_options WHERE id = $1",
+            option_id
+        )
+    else:
+        row = await db.fetchrow(
+            "SELECT * FROM deposit_options WHERE id = $1 AND is_active = true",
+            option_id
+        )
     return dict(row) if row else None
 
 

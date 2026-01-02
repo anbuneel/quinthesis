@@ -607,8 +607,16 @@ async def get_deposit_options() -> List[Dict]:
     ]
 
 
-async def get_deposit_option(option_id: UUID) -> Optional[Dict]:
-    """Get a specific deposit option by ID."""
+async def get_deposit_option(
+    option_id: UUID,
+    include_inactive: bool = False
+) -> Optional[Dict]:
+    """Get a specific deposit option by ID.
+
+    Args:
+        option_id: The deposit option UUID
+        include_inactive: Ignored in local dev (all options always returned)
+    """
     options = await get_deposit_options()
     for option in options:
         if option["id"] == str(option_id):

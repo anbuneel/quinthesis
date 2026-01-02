@@ -942,7 +942,8 @@ async def handle_successful_payment(session: dict):
 
     if is_deposit:
         # Usage-based billing: add to dollar balance
-        option = await storage.get_deposit_option(pack_id)
+        # Use include_inactive=True to handle in-flight checkouts after migration
+        option = await storage.get_deposit_option(pack_id, include_inactive=True)
         if not option:
             logger.error(f"Deposit option {pack_id} not found for session {session_id}")
             raise ValueError(f"Invalid option ID in session metadata: {pack_id}")
