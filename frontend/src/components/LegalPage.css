@@ -1,0 +1,224 @@
+/* ==========================================================================
+   Legal Pages (Privacy Policy, Terms of Service) - "The Paper of Record" Theme
+   ========================================================================== */
+
+.legal-page {
+  min-height: 100vh;
+  background: var(--paper-cream);
+  padding: 2rem var(--container-padding);
+}
+
+.legal-content {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+.legal-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--ink-black);
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.back-link:hover {
+  color: var(--ink-dark);
+}
+
+.legal-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--ink-black);
+  letter-spacing: var(--tracking-tight);
+}
+
+.legal-date {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+}
+
+/* ==========================================================================
+   Body Content
+   ========================================================================== */
+
+.legal-body {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: var(--ink-dark);
+}
+
+.legal-section {
+  margin-bottom: 2rem;
+}
+
+.legal-section h2 {
+  margin: 0 0 1rem;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--ink-black);
+  letter-spacing: var(--tracking-tight);
+}
+
+.legal-section h3 {
+  margin: 1.25rem 0 0.75rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--ink-dark);
+}
+
+.legal-section p {
+  margin: 0 0 0.75rem;
+}
+
+.legal-section ul {
+  margin: 0 0 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.legal-section li {
+  margin-bottom: 0.5rem;
+}
+
+.legal-section li strong {
+  font-weight: 600;
+  color: var(--ink-black);
+}
+
+.legal-section a {
+  color: var(--accent-forest);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
+}
+
+.legal-section a:hover {
+  color: var(--ink-dark);
+}
+
+/* Important Notice Callout */
+.important-notice {
+  padding: 0.875rem 1rem;
+  background: var(--paper-aged);
+  border-left: 3px solid var(--accent-ochre);
+  margin: 1rem 0;
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--ink-dark);
+}
+
+/* Rights Table */
+.rights-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+}
+
+.rights-table th,
+.rights-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--paper-border);
+}
+
+.rights-table th {
+  background: var(--paper-aged);
+  font-weight: 600;
+  color: var(--ink-black);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+}
+
+.rights-table td {
+  color: var(--ink-dark);
+}
+
+.rights-table tbody tr:hover {
+  background: var(--paper-aged);
+}
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
+
+.legal-footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--paper-border);
+  text-align: center;
+}
+
+.footer-link {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
+}
+
+.footer-link:hover {
+  color: var(--ink-dark);
+}
+
+.footer-divider {
+  margin: 0 1rem;
+  color: var(--paper-border);
+}
+
+/* ==========================================================================
+   Mobile Responsive
+   ========================================================================== */
+
+@media (max-width: 639px) {
+  .legal-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .legal-title {
+    font-size: 1.5rem;
+  }
+
+  .legal-body {
+    font-size: var(--text-sm);
+  }
+
+  .legal-section h2 {
+    font-size: var(--text-base);
+  }
+
+  .rights-table {
+    font-size: var(--text-xs);
+  }
+
+  .rights-table th,
+  .rights-table td {
+    padding: 0.5rem 0.75rem;
+  }
+}

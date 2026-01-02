@@ -267,6 +267,23 @@ Get current user info (requires auth):
 }
 ```
 
+#### DELETE `/api/auth/account`
+Delete user account and all associated data (requires auth). Irreversible.
+Returns:
+```json
+{
+  "status": "ok",
+  "message": "Account deleted successfully"
+}
+```
+
+#### GET `/api/auth/export`
+Export all user data as a ZIP file (requires auth).
+Returns a ZIP archive containing:
+- `data.json` - Complete data export (account, conversations, transactions)
+- `conversations/*.md` - Each conversation as a Markdown file
+- `account_summary.md` - Account overview in Markdown
+
 ### GET `/api/models`
 Returns available models and defaults:
 ```json
@@ -738,3 +755,21 @@ Repeat findings (already accepted/deferred):
 
 Completed:
 - [x] Rate limiting on checkout/provisioning endpoints (10 req/min via `checkout_rate_limiter`)
+
+---
+
+## Development Lessons Learned
+
+### Database Schema Verification (2026-01-02)
+
+When writing database queries, always verify the schema first:
+
+1. **Read migration files before writing SQL** - Don't assume column names exist. The stage tables (`stage1_responses`, `stage2_rankings`, `stage3_synthesis`) use `message_id`, not `conversation_id`.
+
+2. **Verify table names** - The transactions table is named `credit_transactions`, not `transactions`. Check migrations before referencing tables.
+
+3. **Check imports when using new symbols** - Using `timezone.utc` requires `from datetime import datetime, timezone`, not just `datetime`.
+
+4. **Update both storage implementations** - This project has `storage.py` (PostgreSQL) and `storage_local.py` (JSON fallback). New functions must be added to both.
+
+5. **Verify claims in documentation** - The privacy policy claimed IPs were "not logged" but they're used for rate limiting. Always verify documentation accuracy against actual code behavior.

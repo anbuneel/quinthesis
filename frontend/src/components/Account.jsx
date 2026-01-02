@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { billing, auth } from '../api';
+import ConfirmDialog from './ConfirmDialog';
 import AvatarMenu from './AvatarMenu';
 import CreditBalance from './CreditBalance';
 import './Account.css';
@@ -23,9 +24,25 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
   const [isDeletingKey, setIsDeletingKey] = useState(false);
   const [keyError, setKeyError] = useState('');
 
+  // Account deletion state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Export state
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+
   useEffect(() => {
     loadAllData();
   }, []);
+
+  // Auto-dismiss export error after 5 seconds
+  useEffect(() => {
+    if (exportError) {
+      const timer = setTimeout(() => setExportError(''), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [exportError]);
 
   const loadAllData = async () => {
     setIsLoading(true);
@@ -98,6 +115,33 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
       setKeyError(err.message || 'Failed to remove API key');
     } finally {
       setIsDeletingKey(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeletingAccount(true);
+    try {
+      await auth.deleteAccount();
+      // Account deleted, redirect to login
+      onLogout();
+      navigate('/');
+    } catch (err) {
+      setError(err.message || 'Failed to delete account');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
+  const handleExportData = async () => {
+    setIsExporting(true);
+    setExportError('');
+    try {
+      await auth.exportData();
+    } catch (err) {
+      setExportError(err.message || 'Failed to export data. Please try again.');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -375,6 +419,78 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
             </div>
           </section>
 
+          {/* Data & Privacy Section */}
+          <section className="account-card">
+            <div className="card-header">
+              <h2 className="card-title">Data &amp; Privacy</h2>
+            </div>
+            <div className="card-content">
+              {/* Export Data */}
+              <div className="data-action">
+                <div className="data-action-info">
+                  <h3 className="data-action-title">Export Your Data</h3>
+                  <p className="data-action-description">
+                    Download a ZIP file containing all your conversations (as Markdown) and account
+                    data (as JSON).
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="data-action-btn"
+                  onClick={handleExportData}
+                  disabled={isExporting}
+                >
+                  {isExporting ? (
+                    <>
+                      <span className="btn-spinner"></span>
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                      </svg>
+                      Download
+                    </>
+                  )}
+                </button>
+                {exportError && (
+                  <div className="export-error">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    {exportError}
+                  </div>
+                )}
+              </div>
+
+              {/* Delete Account */}
+              <div className="danger-zone">
+                <div className="danger-info">
+                  <h3 className="danger-title">Delete Account</h3>
+                  <p className="danger-description">
+                    Permanently delete your account and all associated data. This cannot be undone.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="danger-btn"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  Delete Account
+                </button>
+              </div>
+
+              <div className="legal-links-footer">
+                <a href="/privacy" className="legal-link">Privacy Policy</a>
+                <span className="legal-divider">|</span>
+                <a href="/terms" className="legal-link">Terms of Service</a>
+              </div>
+            </div>
+          </section>
+
           {/* Member Info Footer */}
           {userInfo && (
             <footer className="account-footer">
@@ -389,6 +505,20 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
           )}
         </div>
       </div>
+
+      {/* Delete Account Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Account"
+        message="Are you sure you want to delete your account? This will permanently remove all your conversations, transaction history, and account data. This action cannot be undone."
+        variant="danger"
+        icon="warning"
+        confirmLabel={isDeletingAccount ? 'Deleting...' : 'Delete My Account'}
+        cancelLabel="Cancel"
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setShowDeleteConfirm(false)}
+        confirmDisabled={isDeletingAccount}
+      />
     </div>
   );
 }

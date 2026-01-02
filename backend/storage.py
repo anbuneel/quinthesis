@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from . import database as db
@@ -1314,3 +1314,324 @@ async def get_effective_api_key(user_id: UUID) -> tuple[Optional[str], str]:
         return provisioned_key, "credits"
 
     return None, "none"
+
+
+async def export_user_data(user_id: UUID) -> Dict[str, Any]:
+    """Export all user data for GDPR compliance.
+
+    Returns a dict with:
+    - account: User account information
+    - conversations: All conversations with full message content
+    - transactions: All financial transactions
+    - usage_history: Per-query cost breakdown with model details
+
+    Does NOT include:
+    - Decrypted API keys (security)
+    - Internal IDs where not needed
+    """
+    # Get user account info
+    user = await db.fetchrow(
+        """
+        SELECT id, email, name, avatar_url, oauth_provider,
+               balance, total_deposited, total_spent,
+               created_at, updated_at
+        FROM users WHERE id = $1
+        """,
+        user_id
+    )
+
+    if not user:
+        return None
+
+    account_data = {
+        "email": user["email"],
+        "name": user["name"],
+        "avatar_url": user["avatar_url"],
+        "oauth_provider": user["oauth_provider"],
+        "balance": float(user["balance"]) if user["balance"] else 0.0,
+        "total_deposited": float(user["total_deposited"]) if user["total_deposited"] else 0.0,
+        "total_spent": float(user["total_spent"]) if user["total_spent"] else 0.0,
+        "created_at": user["created_at"].isoformat() if user["created_at"] else None,
+        "updated_at": user["updated_at"].isoformat() if user["updated_at"] else None,
+    }
+
+    # Get all conversations with full content
+    conv_rows = await db.fetch(
+        """
+        SELECT id, title, created_at, models, lead_model
+        FROM conversations
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        """,
+        user_id
+    )
+
+    conversations = []
+    for conv_row in conv_rows:
+        conv_id = conv_row["id"]
+
+        # Parse models
+        raw_models = conv_row["models"]
+        if isinstance(raw_models, str):
+            try:
+                raw_models = json.loads(raw_models)
+            except json.JSONDecodeError:
+                raw_models = []
+
+        # Get messages
+        message_rows = await db.fetch(
+            """
+            SELECT id, role, content, message_order, created_at
+            FROM messages
+            WHERE conversation_id = $1
+            ORDER BY message_order ASC
+            """,
+            conv_id
+        )
+
+        # Get assistant message IDs for stage data
+        assistant_msg_ids = [
+            msg_row["id"] for msg_row in message_rows if msg_row["role"] == "assistant"
+        ]
+
+        # Batch fetch stage data
+        stage1_data = {}
+        stage2_data = {}
+        stage3_data = {}
+
+        if assistant_msg_ids:
+            stage1_rows = await db.fetch(
+                """
+                SELECT message_id, model, response
+                FROM stage1_responses
+                WHERE message_id = ANY($1)
+                ORDER BY message_id, model ASC
+                """,
+                assistant_msg_ids
+            )
+            for r in stage1_rows:
+                mid = r["message_id"]
+                if mid not in stage1_data:
+                    stage1_data[mid] = []
+                stage1_data[mid].append({
+                    "model": r["model"],
+                    "response": r["response"]
+                })
+
+            stage2_rows = await db.fetch(
+                """
+                SELECT message_id, model, ranking, parsed_ranking
+                FROM stage2_rankings
+                WHERE message_id = ANY($1)
+                ORDER BY message_id, model ASC
+                """,
+                assistant_msg_ids
+            )
+            for r in stage2_rows:
+                mid = r["message_id"]
+                if mid not in stage2_data:
+                    stage2_data[mid] = []
+                stage2_data[mid].append({
+                    "model": r["model"],
+                    "ranking": r["ranking"],
+                    "parsed_ranking": r["parsed_ranking"]
+                })
+
+            stage3_rows = await db.fetch(
+                """
+                SELECT message_id, model, response
+                FROM stage3_synthesis
+                WHERE message_id = ANY($1)
+                """,
+                assistant_msg_ids
+            )
+            for r in stage3_rows:
+                stage3_data[r["message_id"]] = {
+                    "model": r["model"],
+                    "response": r["response"]
+                }
+
+        # Build messages list
+        messages = []
+        for msg_row in message_rows:
+            msg = {
+                "role": msg_row["role"],
+                "content": msg_row["content"],
+                "created_at": msg_row["created_at"].isoformat() if msg_row["created_at"] else None,
+            }
+
+            if msg_row["role"] == "assistant":
+                mid = msg_row["id"]
+                msg["stage1"] = stage1_data.get(mid, [])
+                msg["stage2"] = stage2_data.get(mid, [])
+                msg["stage3"] = stage3_data.get(mid)
+
+            messages.append(msg)
+
+        conversations.append({
+            "title": conv_row["title"],
+            "created_at": conv_row["created_at"].isoformat() if conv_row["created_at"] else None,
+            "models": raw_models,
+            "lead_model": conv_row["lead_model"],
+            "messages": messages,
+        })
+
+    # Get transactions (from credit_transactions table)
+    tx_rows = await db.fetch(
+        """
+        SELECT transaction_type, amount, openrouter_cost, margin_cost, total_cost,
+               model_breakdown, created_at
+        FROM credit_transactions
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        """,
+        user_id
+    )
+
+    transactions = []
+    for tx in tx_rows:
+        tx_data = {
+            "type": tx["transaction_type"],
+            "created_at": tx["created_at"].isoformat() if tx["created_at"] else None,
+        }
+        if tx["transaction_type"] == "deposit":
+            tx_data["amount"] = float(tx["amount"]) if tx["amount"] else 0.0
+        else:
+            tx_data["openrouter_cost"] = float(tx["openrouter_cost"]) if tx["openrouter_cost"] else 0.0
+            tx_data["margin_cost"] = float(tx["margin_cost"]) if tx["margin_cost"] else 0.0
+            tx_data["total_cost"] = float(tx["total_cost"]) if tx["total_cost"] else 0.0
+            tx_data["model_breakdown"] = tx["model_breakdown"]
+        transactions.append(tx_data)
+
+    # Get usage history (query costs with model breakdowns)
+    usage_rows = await db.fetch(
+        """
+        SELECT conversation_id, openrouter_cost, margin_cost, total_cost,
+               model_breakdown, created_at
+        FROM query_costs
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        """,
+        user_id
+    )
+
+    usage_history = []
+    for row in usage_rows:
+        usage_history.append({
+            "conversation_id": str(row["conversation_id"]) if row["conversation_id"] else None,
+            "openrouter_cost": float(row["openrouter_cost"]) if row["openrouter_cost"] else 0.0,
+            "margin_cost": float(row["margin_cost"]) if row["margin_cost"] else 0.0,
+            "total_cost": float(row["total_cost"]) if row["total_cost"] else 0.0,
+            "model_breakdown": row["model_breakdown"],
+            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+        })
+
+    return {
+        "export_date": datetime.now(timezone.utc).isoformat(),
+        "account": account_data,
+        "conversations": conversations,
+        "transactions": transactions,
+        "usage_history": usage_history,
+    }
+
+
+async def delete_user_account(user_id: UUID) -> tuple[bool, Optional[str]]:
+    """Delete user account and all associated data.
+
+    Deletes in order (respecting foreign key constraints):
+    1. Query costs
+    2. Stage responses (stage1_responses, stage2_rankings, stage3_synthesis)
+    3. Messages
+    4. Conversations
+    5. Transactions
+    6. API keys
+    7. User account
+
+    Returns:
+        Tuple of (success, openrouter_key_hash):
+        - success: True if user was deleted, False if user not found
+        - openrouter_key_hash: The user's provisioned key hash (if any) for cleanup
+    """
+    async with db.pool.acquire() as conn:
+        async with conn.transaction():
+            # Get user info for audit logging and key cleanup
+            user = await conn.fetchrow(
+                "SELECT id, email, openrouter_key_hash FROM users WHERE id = $1",
+                user_id
+            )
+            if not user:
+                return False, None
+
+            # Audit log before deletion (critical for irreversible action)
+            logger.info(
+                f"Account deletion initiated: user_id={user_id}, email={user['email']}"
+            )
+
+            # Get all conversation IDs for this user
+            conv_ids = await conn.fetch(
+                "SELECT id FROM conversations WHERE user_id = $1",
+                user_id
+            )
+            conv_id_list = [row["id"] for row in conv_ids]
+
+            # Delete query costs (usage history)
+            await conn.execute(
+                "DELETE FROM query_costs WHERE user_id = $1",
+                user_id
+            )
+
+            if conv_id_list:
+                # Get all message IDs for these conversations (needed for stage data)
+                msg_ids = await conn.fetch(
+                    "SELECT id FROM messages WHERE conversation_id = ANY($1)",
+                    conv_id_list
+                )
+                msg_id_list = [row["id"] for row in msg_ids]
+
+                if msg_id_list:
+                    # Delete stage responses by message_id (not conversation_id)
+                    await conn.execute(
+                        "DELETE FROM stage1_responses WHERE message_id = ANY($1)",
+                        msg_id_list
+                    )
+                    await conn.execute(
+                        "DELETE FROM stage2_rankings WHERE message_id = ANY($1)",
+                        msg_id_list
+                    )
+                    await conn.execute(
+                        "DELETE FROM stage3_synthesis WHERE message_id = ANY($1)",
+                        msg_id_list
+                    )
+
+                # Delete messages
+                await conn.execute(
+                    "DELETE FROM messages WHERE conversation_id = ANY($1)",
+                    conv_id_list
+                )
+
+                # Delete conversations
+                await conn.execute(
+                    "DELETE FROM conversations WHERE user_id = $1",
+                    user_id
+                )
+
+            # Delete transactions (credit_transactions table)
+            await conn.execute(
+                "DELETE FROM credit_transactions WHERE user_id = $1",
+                user_id
+            )
+
+            # Delete API keys
+            await conn.execute(
+                "DELETE FROM user_api_keys WHERE user_id = $1",
+                user_id
+            )
+
+            # Delete user
+            await conn.execute(
+                "DELETE FROM users WHERE id = $1",
+                user_id
+            )
+
+            logger.info(f"Account deletion completed: user_id={user_id}")
+            return True, user["openrouter_key_hash"]

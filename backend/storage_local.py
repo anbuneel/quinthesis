@@ -2,7 +2,7 @@
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from uuid import UUID, uuid4
 from .config import DEFAULT_MODELS, DEFAULT_LEAD_MODEL
@@ -647,3 +647,91 @@ async def get_openrouter_total_limit(user_id: UUID) -> float:
     """Get user's total OpenRouter limit."""
     data = _load_user_credits(str(user_id))
     return data.get("openrouter_total_limit", 0)
+
+
+async def export_user_data(user_id: UUID) -> Dict[str, Any]:
+    """Export all user data for GDPR compliance (local storage version).
+
+    Returns a dict with account and conversation data.
+    """
+    user_id_str = str(user_id)
+    user_path = USERS_DIR / f"{user_id_str}.json"
+
+    if not user_path.exists():
+        return None
+
+    with open(user_path, 'r') as f:
+        user = json.load(f)
+
+    account_data = {
+        "email": user.get("email"),
+        "name": user.get("name"),
+        "avatar_url": user.get("avatar_url"),
+        "oauth_provider": user.get("oauth_provider"),
+        "balance": user.get("balance", 0.0),
+        "total_deposited": user.get("total_deposited", 0.0),
+        "total_spent": user.get("total_spent", 0.0),
+        "created_at": user.get("created_at"),
+        "updated_at": user.get("updated_at"),
+    }
+
+    # Get all conversations for this user
+    conversations = []
+    _ensure_data_dir()
+    for conv_file in DATA_DIR.glob("*.json"):
+        with open(conv_file, 'r') as f:
+            conv = json.load(f)
+        if conv.get("user_id") == user_id_str:
+            conversations.append({
+                "title": conv.get("title"),
+                "created_at": conv.get("created_at"),
+                "models": conv.get("models", []),
+                "lead_model": conv.get("lead_model"),
+                "messages": conv.get("messages", []),
+            })
+
+    return {
+        "export_date": datetime.now(timezone.utc).isoformat(),
+        "account": account_data,
+        "conversations": conversations,
+        "transactions": [],  # No transaction tracking in local storage
+        "usage_history": [],  # No usage tracking in local storage
+    }
+
+
+async def delete_user_account(user_id: UUID) -> tuple[bool, Optional[str]]:
+    """Delete user account and all associated data (local storage version).
+
+    Returns:
+        Tuple of (success, openrouter_key_hash):
+        - success: True if user was deleted, False if user not found
+        - openrouter_key_hash: Always None for local storage
+    """
+    user_id_str = str(user_id)
+    user_path = USERS_DIR / f"{user_id_str}.json"
+
+    if not user_path.exists():
+        return False, None
+
+    # Delete user's conversations
+    _ensure_data_dir()
+    for conv_file in DATA_DIR.glob("*.json"):
+        with open(conv_file, 'r') as f:
+            conv = json.load(f)
+        if conv.get("user_id") == user_id_str:
+            conv_file.unlink()
+
+    # Delete user's API key file if exists
+    api_key_path = API_KEYS_DIR / f"{user_id_str}.json"
+    if api_key_path.exists():
+        api_key_path.unlink()
+
+    # Delete user's credits file if exists
+    credits_path = USERS_DIR / f"{user_id_str}_credits.json"
+    if credits_path.exists():
+        credits_path.unlink()
+
+    # Delete user file
+    user_path.unlink()
+
+    return True, None

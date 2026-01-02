@@ -41,6 +41,7 @@ Feature implementation plans and roadmaps.
 | [cleanup.md](implementation/cleanup.md) | Code cleanup plan | 2025-12-28 |
 | [usage-based-billing.md](implementation/usage-based-billing.md) | Usage-based billing (implemented) | 2026-01-01 |
 | [byok-recommendations.md](implementation/byok-recommendations.md) | BYOK friction reduction recommendations | 2026-01-01 |
+| [privacy-compliance.md](implementation/privacy-compliance.md) | Privacy compliance (Privacy Policy, ToS, account deletion) | 2026-01-02 |
 
 ---
 
@@ -82,6 +83,7 @@ Superseded documentation (kept for reference).
 - Production app deployed (Vercel + Fly.io + Supabase)
 - Usage-based billing implemented ($5/$10/$20 deposits + BYOK)
 - All security fixes complete (Phase 1-3 + checkout rate limiting)
+- Privacy compliance ready (Privacy Policy, ToS, account deletion)
 
 **Key Docs:**
 - Security: [production-readiness-2025-12-31.md](security/production-readiness-2025-12-31.md)

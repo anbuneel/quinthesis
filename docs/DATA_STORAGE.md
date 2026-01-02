@@ -135,14 +135,14 @@ If a user provides their own OpenRouter API key:
 
 ---
 
-## User Rights (Planned)
+## User Rights
 
 | Right | Status |
 |-------|--------|
 | View data | Available (Account page, conversation history) |
-| Export data | Not yet implemented |
-| Delete account | Not yet implemented |
-| Delete conversations | Not yet implemented |
+| Export data | Available (Account page > Data & Privacy) |
+| Delete account | Available (Account page > Data & Privacy) |
+| Delete conversations | Available (Archive sidebar) |
 
 ---
 

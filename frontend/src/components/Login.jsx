@@ -56,13 +56,23 @@ function Login({ onLogin }) {
 
         {/* Sign-in card */}
         <div className="login-card">
-          <div className="card-header">
-            <h2 className="card-title">Enter the Council</h2>
-            <div className="byok-badge" title="Bring Your Own Key - You provide your own OpenRouter API key">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="byok-icon">
-                <path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="byok-text">BYOK</span>
+          <h2 className="card-title">Enter the Council</h2>
+
+          <div className="pricing-options">
+            <div className="pricing-option">
+              <span className="pricing-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <path d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </span>
+              <span className="pricing-label">BYOK</span>
+              <span className="pricing-desc">Use your own API key</span>
+            </div>
+            <span className="pricing-or">or</span>
+            <div className="pricing-option">
+              <span className="pricing-icon credits">$</span>
+              <span className="pricing-label">Credits</span>
+              <span className="pricing-desc">Pay as you go</span>
             </div>
           </div>
 
@@ -128,6 +138,11 @@ function Login({ onLogin }) {
             >
               Andrej Karpathy's LLM Council
             </a>
+          </div>
+          <div className="legal-links">
+            <a href="/privacy" className="legal-link">Privacy Policy</a>
+            <span className="legal-divider">|</span>
+            <a href="/terms" className="legal-link">Terms of Service</a>
           </div>
         </footer>
       </div>

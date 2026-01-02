@@ -15,6 +15,9 @@ import json
 import asyncio
 import asyncpg
 from decimal import Decimal
+import io
+import zipfile
+from datetime import datetime
 
 from .rate_limit import api_rate_limiter, streaming_rate_limiter, checkout_rate_limiter
 
@@ -349,6 +352,187 @@ async def get_current_user_info(user_id: UUID = Depends(get_current_user)):
         avatar_url=user.get("avatar_url"),
         oauth_provider=user.get("oauth_provider"),
         created_at=user["created_at"]
+    )
+
+
+@app.delete("/api/auth/account")
+async def delete_account(
+    request: Request,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Delete user account and all associated data.
+
+    This action is irreversible. Deletes:
+    - All conversations and messages
+    - All transactions
+    - API keys
+    - User account
+    """
+    # Rate limit by both user and IP to prevent abuse
+    await checkout_rate_limiter.check(str(user_id))
+    await checkout_rate_limiter.check(f"ip:{get_client_ip(request)}")
+
+    deleted, openrouter_key_hash = await storage.delete_user_account(user_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Clean up OpenRouter provisioned key if exists
+    if openrouter_key_hash and openrouter_provisioning.is_provisioning_configured():
+        try:
+            await openrouter_provisioning.delete_key(openrouter_key_hash)
+        except Exception as e:
+            # Log but don't fail - account is already deleted
+            logger.warning(f"Failed to delete OpenRouter key {openrouter_key_hash}: {e}")
+
+    return {"status": "ok", "message": "Account deleted successfully"}
+
+
+@app.get("/api/auth/export")
+async def export_data(
+    request: Request,
+    user_id: UUID = Depends(get_current_user)
+):
+    """Export all user data as a ZIP file containing JSON and Markdown.
+
+    Returns a ZIP archive with:
+    - data.json: Complete data export in JSON format
+    - conversations/: Markdown files for each conversation (human-readable)
+    """
+    # Rate limit by both user and IP to prevent abuse
+    await checkout_rate_limiter.check(str(user_id))
+    await checkout_rate_limiter.check(f"ip:{get_client_ip(request)}")
+
+    data = await storage.export_user_data(user_id)
+    if not data:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Create ZIP in memory
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        # Add JSON export
+        json_content = json.dumps(data, indent=2, ensure_ascii=False)
+        zf.writestr("data.json", json_content)
+
+        # Add Markdown files for each conversation
+        for i, conv in enumerate(data.get("conversations", [])):
+            title = conv.get("title") or f"Conversation {i+1}"
+            # Sanitize title for filename
+            safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in title)[:50]
+            created = conv.get("created_at", "")[:10] if conv.get("created_at") else ""
+            filename = f"conversations/{created}_{safe_title}.md"
+
+            # Generate Markdown content
+            md_lines = [
+                f"# {title}",
+                "",
+                f"**Date:** {conv.get('created_at', 'Unknown')}",
+                f"**Models:** {', '.join(conv.get('models', []))}",
+                f"**Lead Model:** {conv.get('lead_model', 'Unknown')}",
+                "",
+                "---",
+                "",
+            ]
+
+            for msg in conv.get("messages", []):
+                if msg["role"] == "user":
+                    md_lines.append(f"## Question")
+                    md_lines.append("")
+                    md_lines.append(msg.get("content", ""))
+                    md_lines.append("")
+                elif msg["role"] == "assistant":
+                    # Stage 3 - Final Answer
+                    stage3 = msg.get("stage3")
+                    if stage3:
+                        md_lines.append("## Final Answer")
+                        md_lines.append("")
+                        md_lines.append(f"*Synthesized by {stage3.get('model', 'Unknown')}*")
+                        md_lines.append("")
+                        md_lines.append(stage3.get("response", ""))
+                        md_lines.append("")
+
+                    # Stage 1 - Expert Opinions
+                    stage1 = msg.get("stage1", [])
+                    if stage1:
+                        md_lines.append("---")
+                        md_lines.append("")
+                        md_lines.append("### Expert Opinions")
+                        md_lines.append("")
+                        for opinion in stage1:
+                            md_lines.append(f"#### {opinion.get('model', 'Unknown')}")
+                            md_lines.append("")
+                            md_lines.append(opinion.get("response", ""))
+                            md_lines.append("")
+
+                    # Stage 2 - Peer Review
+                    stage2 = msg.get("stage2", [])
+                    if stage2:
+                        md_lines.append("---")
+                        md_lines.append("")
+                        md_lines.append("### Peer Review Rankings")
+                        md_lines.append("")
+                        for review in stage2:
+                            md_lines.append(f"#### {review.get('model', 'Unknown')}")
+                            md_lines.append("")
+                            md_lines.append(review.get("ranking", ""))
+                            md_lines.append("")
+
+                md_lines.append("---")
+                md_lines.append("")
+
+            zf.writestr(filename, "\n".join(md_lines))
+
+        # Add account summary markdown
+        account = data.get("account", {})
+        account_md = [
+            "# Account Summary",
+            "",
+            f"**Email:** {account.get('email', 'Unknown')}",
+            f"**Name:** {account.get('name', 'Unknown')}",
+            f"**Provider:** {account.get('oauth_provider', 'Unknown')}",
+            f"**Member Since:** {account.get('created_at', 'Unknown')}",
+            "",
+            "## Balance",
+            "",
+            f"- Current Balance: ${account.get('balance', 0):.2f}",
+            f"- Total Deposited: ${account.get('total_deposited', 0):.2f}",
+            f"- Total Spent: ${account.get('total_spent', 0):.2f}",
+            "",
+            f"## Statistics",
+            "",
+            f"- Total Conversations: {len(data.get('conversations', []))}",
+            f"- Total Transactions: {len(data.get('transactions', []))}",
+            f"- Total Queries: {len(data.get('usage_history', []))}",
+            "",
+        ]
+
+        # Add usage history section if there's data
+        usage_history = data.get("usage_history", [])
+        if usage_history:
+            account_md.append("## Recent Usage History")
+            account_md.append("")
+            account_md.append("| Date | Cost | Models |")
+            account_md.append("|------|------|--------|")
+            for usage in usage_history[:20]:  # Show last 20 entries
+                date = usage.get("created_at", "")[:10] if usage.get("created_at") else "Unknown"
+                cost = usage.get("total_cost", 0)
+                models = usage.get("model_breakdown", {})
+                model_list = ", ".join(models.keys()) if models else "N/A"
+                account_md.append(f"| {date} | ${cost:.4f} | {model_list} |")
+            account_md.append("")
+
+        account_md.append(f"*Exported on {data.get('export_date', 'Unknown')}*")
+        zf.writestr("account_summary.md", "\n".join(account_md))
+
+    zip_buffer.seek(0)
+
+    # Generate filename with date
+    export_date = datetime.now().strftime("%Y-%m-%d")
+    filename = f"ai-council-export-{export_date}.zip"
+
+    return StreamingResponse(
+        zip_buffer,
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
 
 

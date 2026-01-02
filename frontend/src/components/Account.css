@@ -653,6 +653,179 @@
 }
 
 /* ==========================================================================
+   Data Actions (Export, etc.)
+   ========================================================================== */
+
+.data-action {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: var(--paper-aged);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1rem;
+}
+
+.data-action-info {
+  flex: 1;
+}
+
+.data-action-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--ink-dark);
+}
+
+.data-action-description {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  line-height: 1.5;
+}
+
+.data-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.625rem 1rem;
+  background: var(--accent-forest);
+  border: 1px solid var(--accent-forest);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.data-action-btn:hover:not(:disabled) {
+  background: var(--accent-forest-dark, #234a31);
+}
+
+.data-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Export Error Toast */
+.export-error {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.625rem 0.875rem;
+  background: rgba(196, 61, 46, 0.08);
+  border: 1px solid rgba(196, 61, 46, 0.2);
+  border-radius: var(--radius-sm);
+  color: var(--accent-vermillion);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  animation: fadeIn 200ms ease-out;
+}
+
+.export-error svg {
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Danger Zone (Account Management)
+   ========================================================================== */
+
+.danger-zone {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem;
+  background: rgba(196, 61, 46, 0.03);
+  border: 1px solid rgba(196, 61, 46, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.danger-info {
+  flex: 1;
+}
+
+.danger-title {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent-vermillion);
+}
+
+.danger-description {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+  line-height: 1.5;
+}
+
+.danger-btn {
+  flex-shrink: 0;
+  padding: 0.625rem 1rem;
+  background: transparent;
+  border: 1px solid var(--accent-vermillion);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--accent-vermillion);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.danger-btn:hover {
+  background: var(--accent-vermillion);
+  color: white;
+}
+
+/* Legal Links Footer */
+.legal-links-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--paper-border);
+}
+
+.legal-links-footer .legal-link {
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  color: var(--ink-medium);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
+}
+
+.legal-links-footer .legal-link:hover {
+  color: var(--ink-dark);
+}
+
+.legal-links-footer .legal-divider {
+  color: var(--paper-border);
+}
+
+/* ==========================================================================
    Mobile Responsive
    ========================================================================== */
 
@@ -714,6 +887,24 @@
   }
 
   .byok-save-btn {
+    align-self: flex-start;
+  }
+
+  .data-action {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .data-action-btn {
+    align-self: flex-start;
+  }
+
+  .danger-zone {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .danger-btn {
     align-self: flex-start;
   }
 }
