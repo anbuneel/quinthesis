@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from uuid import UUID
 from . import database as db
@@ -1476,12 +1476,12 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
             "messages": messages,
         })
 
-    # Get transactions
+    # Get transactions (from credit_transactions table)
     tx_rows = await db.fetch(
         """
         SELECT transaction_type, amount, openrouter_cost, margin_cost, total_cost,
                model_breakdown, created_at
-        FROM transactions
+        FROM credit_transactions
         WHERE user_id = $1
         ORDER BY created_at DESC
         """,
@@ -1581,19 +1581,27 @@ async def delete_user_account(user_id: UUID) -> tuple[bool, Optional[str]]:
             )
 
             if conv_id_list:
-                # Delete stage responses for all user's conversations
-                await conn.execute(
-                    "DELETE FROM stage1_responses WHERE conversation_id = ANY($1)",
+                # Get all message IDs for these conversations (needed for stage data)
+                msg_ids = await conn.fetch(
+                    "SELECT id FROM messages WHERE conversation_id = ANY($1)",
                     conv_id_list
                 )
-                await conn.execute(
-                    "DELETE FROM stage2_rankings WHERE conversation_id = ANY($1)",
-                    conv_id_list
-                )
-                await conn.execute(
-                    "DELETE FROM stage3_synthesis WHERE conversation_id = ANY($1)",
-                    conv_id_list
-                )
+                msg_id_list = [row["id"] for row in msg_ids]
+
+                if msg_id_list:
+                    # Delete stage responses by message_id (not conversation_id)
+                    await conn.execute(
+                        "DELETE FROM stage1_responses WHERE message_id = ANY($1)",
+                        msg_id_list
+                    )
+                    await conn.execute(
+                        "DELETE FROM stage2_rankings WHERE message_id = ANY($1)",
+                        msg_id_list
+                    )
+                    await conn.execute(
+                        "DELETE FROM stage3_synthesis WHERE message_id = ANY($1)",
+                        msg_id_list
+                    )
 
                 # Delete messages
                 await conn.execute(
@@ -1607,9 +1615,9 @@ async def delete_user_account(user_id: UUID) -> tuple[bool, Optional[str]]:
                     user_id
                 )
 
-            # Delete transactions
+            # Delete transactions (credit_transactions table)
             await conn.execute(
-                "DELETE FROM transactions WHERE user_id = $1",
+                "DELETE FROM credit_transactions WHERE user_id = $1",
                 user_id
             )
 

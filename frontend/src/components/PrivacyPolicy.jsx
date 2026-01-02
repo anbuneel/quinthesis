@@ -160,10 +160,16 @@ function PrivacyPolicy() {
             <ul>
               <li>Passwords (OAuth-only authentication)</li>
               <li>Credit card numbers (Stripe handles these)</li>
-              <li>IP addresses (not logged or stored)</li>
               <li>Browser fingerprints (not collected)</li>
               <li>Tracking cookies (we don't use third-party trackers)</li>
             </ul>
+
+            <h3>IP Addresses</h3>
+            <p>
+              IP addresses are used transiently for rate limiting to prevent abuse but are not
+              stored in our database. They may appear in infrastructure logs (hosting provider)
+              which are retained for a limited period for security purposes.
+            </p>
           </section>
 
           <section className="legal-section">
