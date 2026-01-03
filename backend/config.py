@@ -25,6 +25,9 @@ _raw_encryption_keys = os.getenv("API_KEY_ENCRYPTION_KEY", "")
 API_KEY_ENCRYPTION_KEYS: list[str] = [
     k.strip() for k in _raw_encryption_keys.split(",") if k.strip()
 ]
+# Optional explicit version to keep rotation monotonic across removals
+_raw_key_version = os.getenv("API_KEY_ENCRYPTION_KEY_VERSION", "").strip()
+API_KEY_ENCRYPTION_KEY_VERSION = int(_raw_key_version) if _raw_key_version else None
 # Backwards compatibility: single key access
 API_KEY_ENCRYPTION_KEY = API_KEY_ENCRYPTION_KEYS[0] if API_KEY_ENCRYPTION_KEYS else None
 
@@ -94,6 +97,8 @@ def validate_secrets() -> None:
             )
         else:
             warnings.append("API_KEY_ENCRYPTION_KEY not set (API key storage disabled)")
+    if API_KEY_ENCRYPTION_KEY_VERSION is not None and API_KEY_ENCRYPTION_KEY_VERSION < 1:
+        errors.append("API_KEY_ENCRYPTION_KEY_VERSION must be >= 1")
 
     # OAuth credentials validation
     if not GOOGLE_CLIENT_ID or not GOOGLE_CLIENT_SECRET:

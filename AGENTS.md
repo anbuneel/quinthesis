@@ -43,6 +43,8 @@ JWT_SECRET=your-secure-random-secret-here
 
 # API Key Encryption (required for production)
 API_KEY_ENCRYPTION_KEY=your-fernet-key-here
+# Optional: monotonic key version (increment when you rotate keys)
+API_KEY_ENCRYPTION_KEY_VERSION=1
 
 # OAuth Configuration (required for production)
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -61,6 +63,23 @@ OPENROUTER_API_KEY=sk-or-v1-...
 **Authentication:** Users sign in via Google or GitHub OAuth. Each user provides their own OpenRouter API key in Settings.
 
 Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in `data/conversations/`.
+
+---
+
+## Encryption Key Rotation
+
+**When to rotate:**
+- Suspected key compromise or accidental exposure
+- Production access changes (new operator/vendor/CI secret exposure)
+- On a periodic cadence (every 6-12 months)
+
+**Manual procedure (short version):**
+1. Generate a new key (Fernet).
+2. Prepend it to `API_KEY_ENCRYPTION_KEY` and bump `API_KEY_ENCRYPTION_KEY_VERSION`.
+3. Deploy and ensure migrations 011-012 are applied.
+4. After lazy rotation completes, remove the old key.
+
+Full details are in `CLAUDE.md`.
 
 ---
 
@@ -103,7 +122,7 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `storage_local.py` - JSON file storage (fallback when `DATABASE_URL` not set)
 - `database.py` - Async PostgreSQL connection pool (asyncpg)
 - `auth_jwt.py` - JWT token creation and verification
-- `encryption.py` - API key encryption (Fernet)
+- `encryption.py` - API key encryption (MultiFernet + rotation/version tracking)
 - `models.py` - Pydantic schemas for OAuth and API key endpoints
 - `migrate.py` - Database migration runner
 
@@ -380,6 +399,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 ### Fly.io (Backend)
 - [ ] Set `JWT_SECRET` in Fly.io secrets (required)
 - [ ] Set `API_KEY_ENCRYPTION_KEY` in Fly.io secrets (required)
+- [ ] Set `API_KEY_ENCRYPTION_KEY_VERSION` when rotating keys (optional)
 - [ ] Set OAuth secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
 - [ ] Set `OAUTH_REDIRECT_BASE` to Vercel frontend URL
 - [ ] Set `DATABASE_URL` pointing to Supabase PostgreSQL

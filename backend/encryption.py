@@ -5,19 +5,16 @@ Uses MultiFernet for key rotation support:
 - Newest key is listed first and used for all new encryptions
 - Older keys are retained for decrypting existing data
 - Enables zero-downtime key rotation
+ - Optional API_KEY_ENCRYPTION_KEY_VERSION for monotonic version tracking
 """
 
 from cryptography.fernet import Fernet, MultiFernet, InvalidToken
 
-from .config import API_KEY_ENCRYPTION_KEYS
+from .config import API_KEY_ENCRYPTION_KEYS, API_KEY_ENCRYPTION_KEY_VERSION
 
 
-def _get_fernet() -> MultiFernet:
-    """Get the MultiFernet instance for API key encryption.
-
-    Returns MultiFernet configured with all available keys.
-    The first key is used for encryption, all keys are tried for decryption.
-    """
+def _get_fernets() -> list[Fernet]:
+    """Build Fernet instances for all configured keys."""
     if not API_KEY_ENCRYPTION_KEYS:
         raise ValueError(
             "API_KEY_ENCRYPTION_KEY not configured. "
@@ -31,7 +28,21 @@ def _get_fernet() -> MultiFernet:
         except Exception as e:
             raise ValueError(f"Invalid Fernet key at position {i}: {e}")
 
-    return MultiFernet(fernets)
+    return fernets
+
+
+def _get_primary_fernet() -> Fernet:
+    """Get the primary (newest) Fernet instance for encryption."""
+    return _get_fernets()[0]
+
+
+def _get_fernet() -> MultiFernet:
+    """Get the MultiFernet instance for API key encryption.
+
+    Returns MultiFernet configured with all available keys.
+    The first key is used for encryption, all keys are tried for decryption.
+    """
+    return MultiFernet(_get_fernets())
 
 
 def encrypt_api_key(api_key: str) -> str:
@@ -67,18 +78,19 @@ def rotate_api_key(encrypted_key: str) -> tuple[str, bool]:
     This is useful for lazy re-encryption: when a user accesses their key,
     we can transparently upgrade it to the newest encryption key.
     """
+    primary = _get_primary_fernet()
+    try:
+        # If primary key can decrypt, no rotation needed
+        primary.decrypt(encrypted_key.encode("utf-8"))
+        return encrypted_key, False
+    except InvalidToken:
+        pass
+
     fernet = _get_fernet()
     try:
-        # Decrypt with any available key
         decrypted = fernet.decrypt(encrypted_key.encode("utf-8"))
-
-        # Re-encrypt with the primary (first/newest) key
-        new_encrypted = fernet.encrypt(decrypted).decode("utf-8")
-
-        # Check if it changed (different key was used)
-        was_rotated = new_encrypted != encrypted_key
-
-        return new_encrypted, was_rotated
+        new_encrypted = primary.encrypt(decrypted).decode("utf-8")
+        return new_encrypted, True
     except InvalidToken:
         raise ValueError("Failed to rotate API key - invalid token or key")
 
@@ -98,4 +110,15 @@ def get_key_count() -> int:
 
     Useful for diagnostics and rotation status checks.
     """
+    return len(API_KEY_ENCRYPTION_KEYS)
+
+
+def get_current_key_version() -> int:
+    """Get the current encryption key version.
+
+    Uses API_KEY_ENCRYPTION_KEY_VERSION if set, otherwise falls back to the
+    number of configured keys (newest-first ordering).
+    """
+    if API_KEY_ENCRYPTION_KEY_VERSION is not None:
+        return API_KEY_ENCRYPTION_KEY_VERSION
     return len(API_KEY_ENCRYPTION_KEYS)

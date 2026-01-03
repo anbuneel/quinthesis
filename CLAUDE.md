@@ -54,6 +54,8 @@ JWT_SECRET=your-secure-random-secret-here
 # Generate with: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 # Supports comma-separated keys for rotation (newest first): "new-key,old-key"
 API_KEY_ENCRYPTION_KEY=your-fernet-key-here
+# Optional: monotonic key version (increment when you rotate keys)
+API_KEY_ENCRYPTION_KEY_VERSION=1
 
 # OAuth Configuration (required for production)
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -135,7 +137,7 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `storage_local.py` - JSON file storage (fallback when `DATABASE_URL` not set)
 - `database.py` - Async PostgreSQL connection pool (asyncpg)
 - `auth_jwt.py` - JWT token creation and verification
-- `encryption.py` - API key encryption (MultiFernet with key rotation support)
+- `encryption.py` - API key encryption (MultiFernet + rotation/version tracking)
 - `models.py` - Pydantic schemas for OAuth, billing, and checkout endpoints
 - `migrate.py` - Database migration runner
 - `migrations/` - SQL migration files (011_add_key_version.sql for encryption key rotation)
@@ -666,6 +668,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 ### Fly.io (Backend)
 - [ ] Set `JWT_SECRET` in Fly.io secrets (required)
 - [ ] Set `API_KEY_ENCRYPTION_KEY` in Fly.io secrets (required)
+- [ ] Set `API_KEY_ENCRYPTION_KEY_VERSION` when rotating keys (optional)
 - [ ] Set OAuth secrets: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`
 - [ ] Set `OAUTH_REDIRECT_BASE` to Vercel frontend URL
 - [ ] Set `DATABASE_URL` pointing to Supabase PostgreSQL
@@ -814,6 +817,13 @@ The application uses MultiFernet for API key encryption, supporting zero-downtim
 2. **Encrypt with newest**: New encryptions always use the first (newest) key
 3. **Decrypt with any**: Decryption tries all keys until one succeeds
 4. **Lazy re-encryption**: When a key is accessed, it's automatically re-encrypted with the newest key
+5. **Version tracking**: `API_KEY_ENCRYPTION_KEY_VERSION` tracks the current generation (optional but recommended)
+
+### When to Rotate
+
+- Suspected key compromise or accidental exposure
+- Production access changes (new operator, vendor, or CI secret exposure)
+- On a scheduled cadence (e.g., every 6–12 months)
 
 ### Rotation Procedure
 
@@ -829,11 +839,16 @@ The application uses MultiFernet for API key encryption, supporting zero-downtim
    fly secrets set API_KEY_ENCRYPTION_KEY="new-key,old-key"
    ```
 
-3. **Deploy**: The app will immediately use the new key for all new encryptions
+3. **Bump key version** (recommended for monotonic tracking):
+   ```bash
+   fly secrets set API_KEY_ENCRYPTION_KEY_VERSION=2
+   ```
 
-4. **Lazy migration**: Existing keys are automatically re-encrypted when accessed
+4. **Deploy**: The app will immediately use the new key for all new encryptions
 
-5. **Remove old key** (after all keys have been accessed/rotated):
+5. **Lazy migration**: Existing keys are automatically re-encrypted when accessed
+
+6. **Remove old key** (after all keys have been accessed/rotated):
    ```bash
    fly secrets set API_KEY_ENCRYPTION_KEY="new-key"
    ```
@@ -842,9 +857,10 @@ The application uses MultiFernet for API key encryption, supporting zero-downtim
 
 - `user_api_keys.key_version` - Tracks encryption version for legacy API keys
 - `users.byok_key_version` - Tracks encryption version for BYOK keys
-- Version increments on each re-encryption (audit trail)
+- `users.openrouter_key_version` - Tracks encryption version for provisioned OpenRouter keys
+- Version is set to the current key generation when rotated (not incremented per access)
 
-### Migration 011
+### Migrations 011-012
 
 Run `uv run python -m backend.migrate` to add key version columns.
 

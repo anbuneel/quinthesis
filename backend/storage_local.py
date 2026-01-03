@@ -392,10 +392,13 @@ async def save_user_api_key(
     provider: str,
     encrypted_key: str,
     key_hint: str,
-    key_version: int = 1
+    key_version: Optional[int] = None
 ) -> Dict[str, Any]:
     """Save or update a user's API key."""
     _ensure_api_keys_dir()
+    if key_version is None:
+        from .encryption import get_current_key_version
+        key_version = get_current_key_version() or 1
 
     path = _get_api_keys_path(str(user_id))
     now = datetime.utcnow().isoformat()
@@ -433,7 +436,7 @@ async def get_user_api_key(user_id: UUID, provider: str) -> Optional[str]:
 
     Performs lazy re-encryption if the key was encrypted with an older key version.
     """
-    from .encryption import decrypt_api_key, rotate_api_key, get_key_count
+    from .encryption import decrypt_api_key, rotate_api_key, get_current_key_version
 
     path = _get_api_keys_path(str(user_id))
 
@@ -448,19 +451,19 @@ async def get_user_api_key(user_id: UUID, provider: str) -> Optional[str]:
         return None
 
     encrypted = key_data["encrypted_key"]
-    current_version = key_data.get("key_version", 1)
+    stored_version = key_data.get("key_version", 1)
+    current_version = get_current_key_version() or stored_version
 
-    # Lazy re-encryption: if we have multiple keys, try to rotate
-    if get_key_count() > 1:
+    if stored_version < current_version:
         try:
             new_encrypted, was_rotated = rotate_api_key(encrypted)
             if was_rotated:
                 key_data["encrypted_key"] = new_encrypted
-                key_data["key_version"] = current_version + 1
-                key_data["updated_at"] = datetime.utcnow().isoformat()
-                with open(path, 'w') as f:
-                    json.dump(keys, f, indent=2)
                 encrypted = new_encrypted
+            key_data["key_version"] = current_version
+            key_data["updated_at"] = datetime.utcnow().isoformat()
+            with open(path, 'w') as f:
+                json.dump(keys, f, indent=2)
         except ValueError:
             pass  # Rotation failed, continue with original
 
@@ -670,7 +673,12 @@ async def get_user_openrouter_key_hash(user_id: UUID) -> Optional[str]:
     return None
 
 
-async def save_user_openrouter_key(user_id: UUID, encrypted_key: str, key_hash: str) -> None:
+async def save_user_openrouter_key(
+    user_id: UUID,
+    encrypted_key: str,
+    key_hash: str,
+    key_version: Optional[int] = None
+) -> None:
     """Save user's provisioned OpenRouter key."""
     # For local dev, just log
     pass
