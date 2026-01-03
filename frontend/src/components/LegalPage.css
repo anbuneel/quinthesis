@@ -3,7 +3,8 @@
    ========================================================================== */
 
 .legal-page {
-  height: 100vh;
+  min-height: 100vh; /* Fallback for older browsers */
+  min-height: 100dvh; /* Dynamic viewport height for iOS/mobile */
   overflow-y: auto;
   background: var(--paper-cream);
   padding: 2rem var(--container-padding);
