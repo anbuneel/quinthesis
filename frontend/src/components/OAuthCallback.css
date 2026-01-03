@@ -6,8 +6,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh; /* Fallback for older browsers */
-  min-height: 100dvh; /* Dynamic viewport height for iOS/mobile */
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Dynamic viewport height for iOS/mobile */
   overflow-y: auto;
   background: var(--paper-cream);
   padding: 1.5rem;

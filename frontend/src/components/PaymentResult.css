@@ -3,8 +3,8 @@
    ========================================================================== */
 
 .payment-result {
-  min-height: 100vh; /* Fallback for older browsers */
-  min-height: 100dvh; /* Dynamic viewport height for iOS/mobile */
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Dynamic viewport height for iOS/mobile */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
