@@ -8,7 +8,9 @@
     flex-direction: column;
     background: var(--paper-cream);
     flex-shrink: 0;
-    position: relative;
+    position: sticky;
+    top: 0;
+    z-index: 20;
 }
 
 /* Subtle paper texture */
