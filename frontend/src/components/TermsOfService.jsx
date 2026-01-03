@@ -5,7 +5,7 @@ import './LegalPage.css';
 function TermsOfService() {
   return (
     <div className="legal-page">
-      <Masthead variant="minimal" backTo="/" backLabel="Back" />
+      <Masthead variant="minimal" />
       <div className="legal-content">
         <header className="legal-header">
           <h1 className="legal-title">Terms of Service</h1>

@@ -176,11 +176,14 @@ export default function DemoView() {
     // Demo detail view
     return (
         <div className="demo-view">
-            <Masthead
-                variant="minimal"
-                onBack={handleBack}
-                backLabel="All Examples"
-            >
+            <Masthead variant="minimal">
+                <button
+                    type="button"
+                    className="demo-view-all-btn"
+                    onClick={handleBack}
+                >
+                    View All
+                </button>
                 <SignUpButton />
             </Masthead>
 

@@ -40,6 +40,26 @@
     font-size: var(--text-base);
 }
 
+/* View All button in detail view header */
+.demo-view-all-btn {
+    padding: 0.375rem 0.75rem;
+    background: var(--paper-aged);
+    border: 1px solid var(--paper-border);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--ink-medium);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.demo-view-all-btn:hover {
+    background: var(--paper-dark);
+    border-color: var(--ink-faint);
+    color: var(--ink-dark);
+}
+
 /* ==========================================================================
    Demo Content - List View
    ========================================================================== */
