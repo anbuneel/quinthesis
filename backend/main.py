@@ -1,6 +1,7 @@
 """FastAPI backend for LLM Council."""
 
 import logging
+import sentry_sdk
 from fastapi import FastAPI, HTTPException, Depends, Request
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,20 @@ from .config import (
     AVAILABLE_MODELS,
     DEFAULT_MODELS,
     DEFAULT_LEAD_MODEL,
+    SENTRY_DSN,
+    IS_PRODUCTION,
     validate_secrets
 )
+
+# Initialize Sentry for error tracking (only if DSN is configured)
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=0.1,  # 10% of transactions for performance monitoring
+        profiles_sample_rate=0.1,  # 10% of sampled transactions for profiling
+        environment="production" if IS_PRODUCTION else "development",
+        send_default_pii=False,  # Don't send PII by default
+    )
 from .auth_jwt import (
     get_current_user,
     get_optional_user,
@@ -339,12 +352,20 @@ async def refresh_tokens(data: RefreshTokenRequest, request: Request):
     )
 
 
+def set_sentry_user(user_id: UUID, email: str = None):
+    """Set user context for Sentry error tracking."""
+    if SENTRY_DSN:
+        sentry_sdk.set_user({"id": str(user_id), "email": email})
+
+
 @app.get("/api/auth/me", response_model=UserResponse)
 async def get_current_user_info(user_id: UUID = Depends(get_current_user)):
     """Get current user information."""
     user = await storage.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    # Set Sentry user context
+    set_sentry_user(user_id, user.get("email"))
     return UserResponse(
         id=user["id"],
         email=user["email"],
@@ -1121,6 +1142,9 @@ async def send_message(
     Rate limited to 10 requests/minute per user to control OpenRouter costs.
     Uses usage-based billing: actual OpenRouter cost + 10% margin deducted after query.
     """
+    # Set Sentry user context for error tracking
+    set_sentry_user(user_id)
+
     # Rate limit check (council queries are expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
 
@@ -1245,6 +1269,9 @@ async def send_message_stream(
     Uses usage-based billing: actual OpenRouter cost + 10% margin deducted after query.
     Detects client disconnection and cancels in-flight API calls to save costs.
     """
+    # Set Sentry user context for error tracking
+    set_sentry_user(user_id)
+
     # Rate limit check (streaming is expensive - limit to 10/min)
     await streaming_rate_limiter.check(str(user_id))
 

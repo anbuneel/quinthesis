@@ -2,6 +2,7 @@
  * API client for the LLM Council backend.
  * Uses JWT-based authentication.
  */
+import * as Sentry from '@sentry/react';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
 
@@ -170,6 +171,8 @@ export const auth = {
    */
   logout() {
     clearTokens();
+    // Clear Sentry user context
+    Sentry.setUser(null);
   },
 
   /**
@@ -180,7 +183,10 @@ export const auth = {
     if (!response.ok) {
       throw new Error('Failed to get user info');
     }
-    return response.json();
+    const user = await response.json();
+    // Set Sentry user context for error tracking
+    Sentry.setUser({ id: user.id, email: user.email });
+    return user;
   },
 
   /**

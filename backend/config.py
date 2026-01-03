@@ -35,6 +35,9 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
 # OpenRouter Provisioning API key (for creating per-user API keys)
 OPENROUTER_PROVISIONING_KEY = os.getenv("OPENROUTER_PROVISIONING_KEY")
 
+# Sentry Configuration (for error tracking and monitoring)
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+
 # CORS origins (comma-separated list)
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",")
 

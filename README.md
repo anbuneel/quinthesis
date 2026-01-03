@@ -81,6 +81,9 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 # OpenRouter Provisioning (for per-user API keys)
 OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
+
+# Sentry (optional - for error tracking and monitoring)
+SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 ```
 
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email to preserve their data.
@@ -142,5 +145,6 @@ Then open http://localhost:5173 in your browser.
 - Backend: FastAPI (Python 3.10+), Uvicorn, asyncpg, OpenRouter API
 - Frontend: React + Vite, react-markdown rendering
 - Storage: PostgreSQL (production via Supabase), JSON fallback (local development)
+- Monitoring: Sentry (error tracking and performance monitoring)
 - Deployment: Vercel (frontend), Fly.io (backend), Supabase (database)
 - Package Management: uv for Python, npm for JavaScript

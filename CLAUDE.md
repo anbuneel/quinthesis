@@ -70,6 +70,9 @@ STRIPE_WEBHOOK_SECRET=whsec_...
 
 # OpenRouter Provisioning (for per-user API keys)
 OPENROUTER_PROVISIONING_KEY=sk-or-prov-...
+
+# Sentry (for error tracking and monitoring - optional but recommended)
+SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 ```
 
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email address to preserve their archives.
@@ -652,6 +655,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 
 ### Vercel (Frontend)
 - [ ] Set `VITE_API_BASE` environment variable to Fly.io backend URL
+- [ ] Set `VITE_SENTRY_DSN` environment variable (optional, for error tracking)
 - [ ] Verify `vercel.json` has correct build command and output directory
 - [ ] Test SPA routing (all paths redirect to `/index.html`)
 
@@ -662,6 +666,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Set `OAUTH_REDIRECT_BASE` to Vercel frontend URL
 - [ ] Set `DATABASE_URL` pointing to Supabase PostgreSQL
 - [ ] Set `CORS_ORIGINS` to include Vercel frontend URL
+- [ ] Set `SENTRY_DSN` in Fly.io secrets (optional, for error tracking)
 - [ ] Verify `fly.toml` configuration (port 8080, region, memory)
 - [ ] Test health check endpoint: `GET /`
 - [ ] Run database migrations: `uv run python -m backend.migrate`
@@ -688,6 +693,14 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Set `OPENROUTER_PROVISIONING_KEY` in Fly.io secrets
 - [ ] Add credits to your OpenRouter account (this is the pool for all users)
 - [ ] Monitor usage at https://openrouter.ai/activity
+
+### Sentry (for error tracking - recommended)
+- [ ] Create Sentry account at https://sentry.io
+- [ ] Create a new project (select Python for backend)
+- [ ] Copy DSN and set `SENTRY_DSN` in Fly.io secrets
+- [ ] Create another project (select React for frontend)
+- [ ] Copy DSN and set `VITE_SENTRY_DSN` in Vercel environment variables
+- [ ] Configure alerts for error spikes (optional)
 
 ---
 
