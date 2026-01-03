@@ -47,6 +47,16 @@ Feature implementation plans and roadmaps.
 
 ---
 
+## Infrastructure
+
+Hosting, deployment, and infrastructure analysis.
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [infra-prod-readiness-claude.md](infrastructure/infra-prod-readiness-claude.md) | Free tier analysis (Fly.io, Supabase, Vercel) | 2026-01-02 |
+
+---
+
 ## Reference
 
 Technical reference documentation.
@@ -86,9 +96,11 @@ Superseded documentation (kept for reference).
 - Usage-based billing implemented ($5/$10/$20 deposits + BYOK)
 - All security fixes complete (Phase 1-3 + checkout rate limiting)
 - Privacy compliance ready (Privacy Policy, ToS, account deletion)
+- Free tier infrastructure verified ready for launch
 
 **Key Docs:**
 - Security: [production-readiness-2025-12-31.md](security/production-readiness-2025-12-31.md)
 - Design: [ui-redesign-proposal.md](design/ui-redesign-proposal.md)
 - Billing: [usage-based-billing.md](implementation/usage-based-billing.md)
 - Data: [DATA_STORAGE.md](DATA_STORAGE.md)
+- Infrastructure: [infra-prod-readiness-claude.md](infrastructure/infra-prod-readiness-claude.md)

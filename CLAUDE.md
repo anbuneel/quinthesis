@@ -113,6 +113,8 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - Schema: Tables auto-created via `storage.py` migrations
 - Credentials: Stored in `.env` and Fly.io/Vercel secret management
 
+**Free Tier Analysis:** See `docs/infrastructure/infra-prod-readiness-claude.md` for limits, costs, and scaling triggers.
+
 ---
 
 ## Key File Locations
