@@ -1331,9 +1331,11 @@ async def get_effective_api_key(user_id: UUID) -> tuple[Optional[str], str]:
 
 
 async def export_user_data(user_id: UUID) -> Dict[str, Any]:
-    """Export all user data for GDPR compliance.
+    """Export all user data for portability and offboarding.
 
     Returns a dict with:
+    - schema_version: Export format version
+    - summary: Record counts for quick validation
     - account: User account information
     - conversations: All conversations with full message content
     - transactions: All financial transactions
@@ -1343,205 +1345,218 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
     - Decrypted API keys (security)
     - Internal IDs where not needed
     """
-    # Get user account info
-    user = await db.fetchrow(
-        """
-        SELECT id, email, name, avatar_url, oauth_provider,
-               balance, total_deposited, total_spent,
-               created_at, updated_at
-        FROM users WHERE id = $1
-        """,
-        user_id
-    )
-
-    if not user:
-        return None
-
-    account_data = {
-        "email": user["email"],
-        "name": user["name"],
-        "avatar_url": user["avatar_url"],
-        "oauth_provider": user["oauth_provider"],
-        "balance": float(user["balance"]) if user["balance"] else 0.0,
-        "total_deposited": float(user["total_deposited"]) if user["total_deposited"] else 0.0,
-        "total_spent": float(user["total_spent"]) if user["total_spent"] else 0.0,
-        "created_at": user["created_at"].isoformat() if user["created_at"] else None,
-        "updated_at": user["updated_at"].isoformat() if user["updated_at"] else None,
-    }
-
-    # Get all conversations with full content
-    conv_rows = await db.fetch(
-        """
-        SELECT id, title, created_at, models, lead_model
-        FROM conversations
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-        """,
-        user_id
-    )
-
-    conversations = []
-    for conv_row in conv_rows:
-        conv_id = conv_row["id"]
-
-        # Parse models
-        raw_models = conv_row["models"]
-        if isinstance(raw_models, str):
-            try:
-                raw_models = json.loads(raw_models)
-            except json.JSONDecodeError:
-                raw_models = []
-
-        # Get messages
-        message_rows = await db.fetch(
+    pool = await db.get_pool()
+    async with pool.acquire() as conn:
+        # Get user account info
+        user = await conn.fetchrow(
             """
-            SELECT id, role, content, message_order, created_at
-            FROM messages
-            WHERE conversation_id = $1
-            ORDER BY message_order ASC
+            SELECT id, email, name, avatar_url, oauth_provider,
+                   balance, total_deposited, total_spent,
+                   created_at, updated_at
+            FROM users WHERE id = $1
             """,
-            conv_id
+            user_id
         )
 
-        # Get assistant message IDs for stage data
-        assistant_msg_ids = [
-            msg_row["id"] for msg_row in message_rows if msg_row["role"] == "assistant"
-        ]
+        if not user:
+            return None
 
-        # Batch fetch stage data
-        stage1_data = {}
-        stage2_data = {}
-        stage3_data = {}
+        account_data = {
+            "email": user["email"],
+            "name": user["name"],
+            "avatar_url": user["avatar_url"],
+            "oauth_provider": user["oauth_provider"],
+            "balance": float(user["balance"]) if user["balance"] else 0.0,
+            "total_deposited": float(user["total_deposited"]) if user["total_deposited"] else 0.0,
+            "total_spent": float(user["total_spent"]) if user["total_spent"] else 0.0,
+            "created_at": user["created_at"].isoformat() if user["created_at"] else None,
+            "updated_at": user["updated_at"].isoformat() if user["updated_at"] else None,
+        }
 
-        if assistant_msg_ids:
-            stage1_rows = await db.fetch(
+        # Get all conversations with full content
+        conv_rows = await conn.fetch(
+            """
+            SELECT id, title, created_at, models, lead_model
+            FROM conversations
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            """,
+            user_id
+        )
+
+        conversations = []
+        total_messages = 0
+        for conv_row in conv_rows:
+            conv_id = conv_row["id"]
+
+            # Parse models
+            raw_models = conv_row["models"]
+            if isinstance(raw_models, str):
+                try:
+                    raw_models = json.loads(raw_models)
+                except json.JSONDecodeError:
+                    raw_models = []
+
+            # Get messages
+            message_rows = await conn.fetch(
                 """
-                SELECT message_id, model, response
-                FROM stage1_responses
-                WHERE message_id = ANY($1)
-                ORDER BY message_id, model ASC
+                SELECT id, role, content, message_order, created_at
+                FROM messages
+                WHERE conversation_id = $1
+                ORDER BY message_order ASC
                 """,
-                assistant_msg_ids
+                conv_id
             )
-            for r in stage1_rows:
-                mid = r["message_id"]
-                if mid not in stage1_data:
-                    stage1_data[mid] = []
-                stage1_data[mid].append({
-                    "model": r["model"],
-                    "response": r["response"]
-                })
 
-            stage2_rows = await db.fetch(
-                """
-                SELECT message_id, model, ranking, parsed_ranking
-                FROM stage2_rankings
-                WHERE message_id = ANY($1)
-                ORDER BY message_id, model ASC
-                """,
-                assistant_msg_ids
-            )
-            for r in stage2_rows:
-                mid = r["message_id"]
-                if mid not in stage2_data:
-                    stage2_data[mid] = []
-                stage2_data[mid].append({
-                    "model": r["model"],
-                    "ranking": r["ranking"],
-                    "parsed_ranking": r["parsed_ranking"]
-                })
+            # Get assistant message IDs for stage data
+            assistant_msg_ids = [
+                msg_row["id"] for msg_row in message_rows if msg_row["role"] == "assistant"
+            ]
 
-            stage3_rows = await db.fetch(
-                """
-                SELECT message_id, model, response
-                FROM stage3_synthesis
-                WHERE message_id = ANY($1)
-                """,
-                assistant_msg_ids
-            )
-            for r in stage3_rows:
-                stage3_data[r["message_id"]] = {
-                    "model": r["model"],
-                    "response": r["response"]
+            # Batch fetch stage data
+            stage1_data = {}
+            stage2_data = {}
+            stage3_data = {}
+
+            if assistant_msg_ids:
+                stage1_rows = await conn.fetch(
+                    """
+                    SELECT message_id, model, response
+                    FROM stage1_responses
+                    WHERE message_id = ANY($1)
+                    ORDER BY message_id, model ASC
+                    """,
+                    assistant_msg_ids
+                )
+                for r in stage1_rows:
+                    mid = r["message_id"]
+                    if mid not in stage1_data:
+                        stage1_data[mid] = []
+                    stage1_data[mid].append({
+                        "model": r["model"],
+                        "response": r["response"]
+                    })
+
+                stage2_rows = await conn.fetch(
+                    """
+                    SELECT message_id, model, ranking, parsed_ranking
+                    FROM stage2_rankings
+                    WHERE message_id = ANY($1)
+                    ORDER BY message_id, model ASC
+                    """,
+                    assistant_msg_ids
+                )
+                for r in stage2_rows:
+                    mid = r["message_id"]
+                    if mid not in stage2_data:
+                        stage2_data[mid] = []
+                    stage2_data[mid].append({
+                        "model": r["model"],
+                        "ranking": r["ranking"],
+                        "parsed_ranking": r["parsed_ranking"]
+                    })
+
+                stage3_rows = await conn.fetch(
+                    """
+                    SELECT message_id, model, response
+                    FROM stage3_synthesis
+                    WHERE message_id = ANY($1)
+                    """,
+                    assistant_msg_ids
+                )
+                for r in stage3_rows:
+                    stage3_data[r["message_id"]] = {
+                        "model": r["model"],
+                        "response": r["response"]
+                    }
+
+            # Build messages list
+            messages = []
+            for msg_row in message_rows:
+                msg = {
+                    "role": msg_row["role"],
+                    "content": msg_row["content"],
+                    "created_at": msg_row["created_at"].isoformat() if msg_row["created_at"] else None,
                 }
 
-        # Build messages list
-        messages = []
-        for msg_row in message_rows:
-            msg = {
-                "role": msg_row["role"],
-                "content": msg_row["content"],
-                "created_at": msg_row["created_at"].isoformat() if msg_row["created_at"] else None,
+                if msg_row["role"] == "assistant":
+                    mid = msg_row["id"]
+                    msg["stage1"] = stage1_data.get(mid, [])
+                    msg["stage2"] = stage2_data.get(mid, [])
+                    msg["stage3"] = stage3_data.get(mid)
+
+                messages.append(msg)
+
+            total_messages += len(messages)
+            conversations.append({
+                "title": conv_row["title"],
+                "created_at": conv_row["created_at"].isoformat() if conv_row["created_at"] else None,
+                "models": raw_models,
+                "lead_model": conv_row["lead_model"],
+                "messages": messages,
+            })
+
+        # Get transactions (from credit_transactions table)
+        tx_rows = await conn.fetch(
+            """
+            SELECT transaction_type, amount, openrouter_cost, margin_cost, total_cost,
+                   model_breakdown, created_at
+            FROM credit_transactions
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            """,
+            user_id
+        )
+
+        transactions = []
+        for tx in tx_rows:
+            tx_data = {
+                "type": tx["transaction_type"],
+                "created_at": tx["created_at"].isoformat() if tx["created_at"] else None,
             }
+            if tx["transaction_type"] == "deposit":
+                tx_data["amount"] = float(tx["amount"]) if tx["amount"] else 0.0
+            else:
+                tx_data["openrouter_cost"] = float(tx["openrouter_cost"]) if tx["openrouter_cost"] else 0.0
+                tx_data["margin_cost"] = float(tx["margin_cost"]) if tx["margin_cost"] else 0.0
+                tx_data["total_cost"] = float(tx["total_cost"]) if tx["total_cost"] else 0.0
+                tx_data["model_breakdown"] = tx["model_breakdown"]
+            transactions.append(tx_data)
 
-            if msg_row["role"] == "assistant":
-                mid = msg_row["id"]
-                msg["stage1"] = stage1_data.get(mid, [])
-                msg["stage2"] = stage2_data.get(mid, [])
-                msg["stage3"] = stage3_data.get(mid)
+        # Get usage history (query costs with model breakdowns)
+        usage_rows = await conn.fetch(
+            """
+            SELECT conversation_id, openrouter_cost, margin_cost, total_cost,
+                   model_breakdown, created_at
+            FROM query_costs
+            WHERE user_id = $1
+            ORDER BY created_at DESC
+            """,
+            user_id
+        )
 
-            messages.append(msg)
+        usage_history = []
+        for row in usage_rows:
+            usage_history.append({
+                "conversation_id": str(row["conversation_id"]) if row["conversation_id"] else None,
+                "openrouter_cost": float(row["openrouter_cost"]) if row["openrouter_cost"] else 0.0,
+                "margin_cost": float(row["margin_cost"]) if row["margin_cost"] else 0.0,
+                "total_cost": float(row["total_cost"]) if row["total_cost"] else 0.0,
+                "model_breakdown": row["model_breakdown"],
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+            })
 
-        conversations.append({
-            "title": conv_row["title"],
-            "created_at": conv_row["created_at"].isoformat() if conv_row["created_at"] else None,
-            "models": raw_models,
-            "lead_model": conv_row["lead_model"],
-            "messages": messages,
-        })
-
-    # Get transactions (from credit_transactions table)
-    tx_rows = await db.fetch(
-        """
-        SELECT transaction_type, amount, openrouter_cost, margin_cost, total_cost,
-               model_breakdown, created_at
-        FROM credit_transactions
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-        """,
-        user_id
-    )
-
-    transactions = []
-    for tx in tx_rows:
-        tx_data = {
-            "type": tx["transaction_type"],
-            "created_at": tx["created_at"].isoformat() if tx["created_at"] else None,
-        }
-        if tx["transaction_type"] == "deposit":
-            tx_data["amount"] = float(tx["amount"]) if tx["amount"] else 0.0
-        else:
-            tx_data["openrouter_cost"] = float(tx["openrouter_cost"]) if tx["openrouter_cost"] else 0.0
-            tx_data["margin_cost"] = float(tx["margin_cost"]) if tx["margin_cost"] else 0.0
-            tx_data["total_cost"] = float(tx["total_cost"]) if tx["total_cost"] else 0.0
-            tx_data["model_breakdown"] = tx["model_breakdown"]
-        transactions.append(tx_data)
-
-    # Get usage history (query costs with model breakdowns)
-    usage_rows = await db.fetch(
-        """
-        SELECT conversation_id, openrouter_cost, margin_cost, total_cost,
-               model_breakdown, created_at
-        FROM query_costs
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-        """,
-        user_id
-    )
-
-    usage_history = []
-    for row in usage_rows:
-        usage_history.append({
-            "conversation_id": str(row["conversation_id"]) if row["conversation_id"] else None,
-            "openrouter_cost": float(row["openrouter_cost"]) if row["openrouter_cost"] else 0.0,
-            "margin_cost": float(row["margin_cost"]) if row["margin_cost"] else 0.0,
-            "total_cost": float(row["total_cost"]) if row["total_cost"] else 0.0,
-            "model_breakdown": row["model_breakdown"],
-            "created_at": row["created_at"].isoformat() if row["created_at"] else None,
-        })
+    summary = {
+        "conversations": len(conversations),
+        "messages": total_messages,
+        "transactions": len(transactions),
+        "usage_history": len(usage_history),
+    }
 
     return {
         "export_date": datetime.now(timezone.utc).isoformat(),
+        "schema_version": 1,
+        "summary": summary,
         "account": account_data,
         "conversations": conversations,
         "transactions": transactions,

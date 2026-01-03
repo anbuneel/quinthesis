@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 from uuid import UUID
 import uuid
 import json
+import hashlib
 import asyncio
 import asyncpg
 from decimal import Decimal
@@ -133,6 +134,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 # Request body size limit (1MB)
@@ -430,25 +432,60 @@ async def export_data(
     # Create ZIP in memory
     zip_buffer = io.BytesIO()
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        def safe_text(value: Any) -> str:
+            if value is None:
+                return ""
+            return value if isinstance(value, str) else str(value)
+
+        manifest = {
+            "schema_version": data.get("schema_version", 1),
+            "exported_at": data.get("export_date"),
+            "summary": data.get("summary", {}),
+            "files": []
+        }
+
+        def add_file(path: str, content: str) -> None:
+            content_bytes = content.encode("utf-8")
+            zf.writestr(path, content_bytes)
+            manifest["files"].append({
+                "path": path,
+                "sha256": hashlib.sha256(content_bytes).hexdigest(),
+                "bytes": len(content_bytes)
+            })
+
         # Add JSON export
         json_content = json.dumps(data, indent=2, ensure_ascii=False)
-        zf.writestr("data.json", json_content)
+        add_file("data.json", json_content)
 
+        index_entries = []
         # Add Markdown files for each conversation
         for i, conv in enumerate(data.get("conversations", [])):
             title = conv.get("title") or f"Conversation {i+1}"
             # Sanitize title for filename
-            safe_title = "".join(c if c.isalnum() or c in " -_" else "_" for c in title)[:50]
-            created = conv.get("created_at", "")[:10] if conv.get("created_at") else ""
-            filename = f"conversations/{created}_{safe_title}.md"
+            safe_title = "".join(
+                c if (c.isascii() and c.isalnum()) or c in " -_" else "_"
+                for c in title
+            ).strip(" _-")[:50]
+            if not safe_title:
+                safe_title = f"conversation_{i+1:03d}"
+            created = conv.get("created_at", "")[:10] if conv.get("created_at") else "unknown-date"
+            filename = f"conversations/{i+1:03d}_{created}_{safe_title}.md"
+            index_entries.append({
+                "number": i + 1,
+                "created": created,
+                "title": title,
+                "filename": filename,
+            })
 
             # Generate Markdown content
+            models = conv.get("models") or []
+            model_list = ", ".join([str(model) for model in models]) if models else "Unknown"
             md_lines = [
                 f"# {title}",
                 "",
-                f"**Date:** {conv.get('created_at', 'Unknown')}",
-                f"**Models:** {', '.join(conv.get('models', []))}",
-                f"**Lead Model:** {conv.get('lead_model', 'Unknown')}",
+                f"**Date:** {safe_text(conv.get('created_at', 'Unknown'))}",
+                f"**Models:** {model_list}",
+                f"**Lead Model:** {safe_text(conv.get('lead_model', 'Unknown'))}",
                 "",
                 "---",
                 "",
@@ -458,7 +495,7 @@ async def export_data(
                 if msg["role"] == "user":
                     md_lines.append(f"## Question")
                     md_lines.append("")
-                    md_lines.append(msg.get("content", ""))
+                    md_lines.append(safe_text(msg.get("content", "")))
                     md_lines.append("")
                 elif msg["role"] == "assistant":
                     # Stage 3 - Final Answer
@@ -466,9 +503,9 @@ async def export_data(
                     if stage3:
                         md_lines.append("## Final Answer")
                         md_lines.append("")
-                        md_lines.append(f"*Synthesized by {stage3.get('model', 'Unknown')}*")
+                        md_lines.append(f"*Synthesized by {safe_text(stage3.get('model', 'Unknown'))}*")
                         md_lines.append("")
-                        md_lines.append(stage3.get("response", ""))
+                        md_lines.append(safe_text(stage3.get("response", "")))
                         md_lines.append("")
 
                     # Stage 1 - Expert Opinions
@@ -479,9 +516,9 @@ async def export_data(
                         md_lines.append("### Expert Opinions")
                         md_lines.append("")
                         for opinion in stage1:
-                            md_lines.append(f"#### {opinion.get('model', 'Unknown')}")
+                            md_lines.append(f"#### {safe_text(opinion.get('model', 'Unknown'))}")
                             md_lines.append("")
-                            md_lines.append(opinion.get("response", ""))
+                            md_lines.append(safe_text(opinion.get("response", "")))
                             md_lines.append("")
 
                     # Stage 2 - Peer Review
@@ -492,15 +529,39 @@ async def export_data(
                         md_lines.append("### Peer Review Rankings")
                         md_lines.append("")
                         for review in stage2:
-                            md_lines.append(f"#### {review.get('model', 'Unknown')}")
+                            md_lines.append(f"#### {safe_text(review.get('model', 'Unknown'))}")
                             md_lines.append("")
-                            md_lines.append(review.get("ranking", ""))
+                            md_lines.append(safe_text(review.get("ranking", "")))
                             md_lines.append("")
 
                 md_lines.append("---")
                 md_lines.append("")
 
-            zf.writestr(filename, "\n".join(md_lines))
+            add_file(filename, "\n".join(md_lines))
+
+        index_lines = [
+            "# Conversations Index",
+            "",
+            f"Exported: {safe_text(data.get('export_date', 'Unknown'))}",
+            f"Total conversations: {len(index_entries)}",
+            "",
+        ]
+        if index_entries:
+            index_lines.extend([
+                "| # | Date | Title | File |",
+                "|---|------|-------|------|",
+            ])
+            for entry in index_entries:
+                title_text = safe_text(entry["title"]).replace("\r", " ").replace("\n", " ")
+                title_text = title_text.replace("|", "\\|")
+                created_text = safe_text(entry["created"]) or "unknown-date"
+                index_lines.append(
+                    f"| {entry['number']} | {created_text} | {title_text} | `{entry['filename']}` |"
+                )
+        else:
+            index_lines.append("No conversations found.")
+
+        add_file("conversations/index.md", "\n".join(index_lines))
 
         # Add account summary markdown
         account = data.get("account", {})
@@ -536,13 +597,16 @@ async def export_data(
             for usage in usage_history[:20]:  # Show last 20 entries
                 date = usage.get("created_at", "")[:10] if usage.get("created_at") else "Unknown"
                 cost = usage.get("total_cost", 0)
-                models = usage.get("model_breakdown", {})
-                model_list = ", ".join(models.keys()) if models else "N/A"
+                models = usage.get("model_breakdown") or {}
+                model_list = ", ".join(models.keys()) if isinstance(models, dict) and models else "N/A"
                 account_md.append(f"| {date} | ${cost:.4f} | {model_list} |")
             account_md.append("")
 
         account_md.append(f"*Exported on {data.get('export_date', 'Unknown')}*")
-        zf.writestr("account_summary.md", "\n".join(account_md))
+        add_file("account_summary.md", "\n".join(account_md))
+
+        manifest_content = json.dumps(manifest, indent=2, ensure_ascii=False)
+        zf.writestr("manifest.json", manifest_content)
 
     zip_buffer.seek(0)
 
@@ -553,7 +617,11 @@ async def export_data(
     return StreamingResponse(
         zip_buffer,
         media_type="application/zip",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{filename}\"",
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        }
     )
 
 

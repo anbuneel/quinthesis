@@ -679,9 +679,9 @@ async def get_openrouter_total_limit(user_id: UUID) -> float:
 
 
 async def export_user_data(user_id: UUID) -> Dict[str, Any]:
-    """Export all user data for GDPR compliance (local storage version).
+    """Export all user data for portability and offboarding (local storage version).
 
-    Returns a dict with account and conversation data.
+    Returns a dict with account and conversation data, plus summary counts.
     """
     user_id_str = str(user_id)
     user_path = USERS_DIR / f"{user_id_str}.json"
@@ -706,21 +706,33 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
 
     # Get all conversations for this user
     conversations = []
+    total_messages = 0
     _ensure_data_dir()
     for conv_file in DATA_DIR.glob("*.json"):
         with open(conv_file, 'r') as f:
             conv = json.load(f)
         if conv.get("user_id") == user_id_str:
+            messages = conv.get("messages", [])
+            total_messages += len(messages)
             conversations.append({
                 "title": conv.get("title"),
                 "created_at": conv.get("created_at"),
                 "models": conv.get("models", []),
                 "lead_model": conv.get("lead_model"),
-                "messages": conv.get("messages", []),
+                "messages": messages,
             })
+
+    summary = {
+        "conversations": len(conversations),
+        "messages": total_messages,
+        "transactions": 0,
+        "usage_history": 0,
+    }
 
     return {
         "export_date": datetime.now(timezone.utc).isoformat(),
+        "schema_version": 1,
+        "summary": summary,
         "account": account_data,
         "conversations": conversations,
         "transactions": [],  # No transaction tracking in local storage

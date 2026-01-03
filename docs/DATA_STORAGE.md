@@ -135,6 +135,26 @@ If a user provides their own OpenRouter API key:
 
 ---
 
+## Data Export & Deletion
+
+### Export (Data Portability)
+- **Endpoint:** `GET /api/auth/export` (authenticated)
+- **Format:** ZIP archive containing:
+  - `data.json` (account, conversations, transactions, usage history, summary, schema_version)
+  - `account_summary.md` (human-readable account summary)
+  - `conversations/*.md` (one Markdown file per conversation)
+  - `conversations/index.md` (table of contents)
+  - `manifest.json` (SHA-256 checksums + file sizes for integrity)
+- **Exclusions:** Decrypted API keys are never included in exports.
+
+### Deletion (Account Offboarding)
+- **Endpoint:** `DELETE /api/auth/account` (authenticated)
+- **Deletes:** query costs, stage responses, messages, conversations, credit transactions, API keys, and the user record (transactional).
+- **Post-delete:** Best-effort revocation of provisioned OpenRouter keys (if configured).
+- **External services:** OAuth accounts (Google/GitHub) and Stripe customer records are not deleted by this endpoint.
+
+---
+
 ## User Rights
 
 | Right | Status |
@@ -146,4 +166,4 @@ If a user provides their own OpenRouter API key:
 
 ---
 
-*Last updated: 2026-01-02*
+*Last updated: 2026-01-03*

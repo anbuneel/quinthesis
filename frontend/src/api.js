@@ -227,6 +227,19 @@ export const auth = {
       }
       throw new Error(message);
     }
+    const getFilenameFromDisposition = (disposition) => {
+      if (!disposition) return null;
+      const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (utf8Match) {
+        try {
+          return decodeURIComponent(utf8Match[1]);
+        } catch {
+          return utf8Match[1];
+        }
+      }
+      const asciiMatch = disposition.match(/filename=\"?([^\";]+)\"?/i);
+      return asciiMatch ? asciiMatch[1] : null;
+    };
     // Get the blob and trigger download
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
@@ -235,11 +248,9 @@ export const auth = {
     // Get filename from Content-Disposition header or use default
     const disposition = response.headers.get('Content-Disposition');
     let filename = 'ai-council-export.zip';
-    if (disposition) {
-      const match = disposition.match(/filename=(.+)/);
-      if (match) {
-        filename = match[1];
-      }
+    const headerFilename = getFilenameFromDisposition(disposition);
+    if (headerFilename) {
+      filename = headerFilename;
     }
     a.download = filename;
     document.body.appendChild(a);

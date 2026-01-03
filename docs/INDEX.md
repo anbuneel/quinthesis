@@ -42,7 +42,7 @@ Feature implementation plans and roadmaps.
 | [cleanup.md](implementation/cleanup.md) | Code cleanup plan | 2025-12-28 |
 | [usage-based-billing.md](implementation/usage-based-billing.md) | Usage-based billing (implemented) | 2026-01-01 |
 | [byok-recommendations.md](implementation/byok-recommendations.md) | BYOK friction reduction recommendations | 2026-01-01 |
-| [privacy-compliance.md](implementation/privacy-compliance.md) | Privacy compliance (Privacy Policy, ToS, account deletion) | 2026-01-02 |
+| [privacy-compliance.md](implementation/privacy-compliance.md) | Privacy compliance (Privacy Policy, ToS, account deletion) | 2026-01-03 |
 | [pr-27-review-codex.md](implementation/pr-27-review-codex.md) | PR #27 launch readiness review (all items fixed) | 2026-01-02 |
 
 ---
@@ -64,7 +64,7 @@ Technical reference documentation.
 
 | Document | Description | Date |
 |----------|-------------|------|
-| [DATA_STORAGE.md](DATA_STORAGE.md) | What user data is stored and how it's handled | 2026-01-02 |
+| [DATA_STORAGE.md](DATA_STORAGE.md) | What user data is stored and how it's handled | 2026-01-03 |
 
 ---
 

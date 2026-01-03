@@ -4,6 +4,7 @@ Implementation details for privacy compliance features.
 
 **Branch:** `feature/privacy-compliance`
 **Date:** 2026-01-02
+**Updated:** 2026-01-03
 
 ---
 
@@ -36,12 +37,17 @@ Usage terms covering:
 **Backend Endpoint:** `DELETE /api/auth/account`
 
 Deletes all user data in a single transaction:
-1. Stage responses (stage1_responses, stage2_rankings, stage3_synthesis)
-2. Messages
-3. Conversations
-4. Transactions
-5. API keys
-6. User account
+1. Query costs (query_costs)
+2. Stage responses (stage1_responses, stage2_rankings, stage3_synthesis)
+3. Messages
+4. Conversations
+5. Transactions (credit_transactions)
+6. API keys (user_api_keys)
+7. User account
+
+Post-delete cleanup:
+- Attempts to revoke any provisioned OpenRouter key (best-effort; failures are logged).
+- External provider accounts (Stripe, Google/GitHub OAuth) are not deleted.
 
 **Frontend:** Delete Account button in Account page with confirmation dialog.
 
@@ -64,11 +70,11 @@ Notice in InquiryComposer informing users:
 | File | Changes |
 |------|---------|
 | `frontend/src/App.jsx` | Added routes for `/privacy` and `/terms` |
-| `frontend/src/api.js` | Added `auth.deleteAccount()` function |
+| `frontend/src/api.js` | Added `auth.deleteAccount()` and `auth.exportData()` functions |
 | `frontend/src/components/PrivacyPolicy.jsx` | NEW - Privacy Policy page |
 | `frontend/src/components/TermsOfService.jsx` | NEW - Terms of Service page |
 | `frontend/src/components/LegalPage.css` | NEW - Shared legal page styles |
-| `frontend/src/components/Account.jsx` | Added delete account UI with ConfirmDialog |
+| `frontend/src/components/Account.jsx` | Added export + delete account UI with confirmation dialog |
 | `frontend/src/components/Account.css` | Added danger zone and legal link styles |
 | `frontend/src/components/InquiryComposer.jsx` | Added data disclosure notice |
 | `frontend/src/components/InquiryComposer.css` | Added disclosure styles |
@@ -98,9 +104,11 @@ Legal links are accessible from:
 **Backend Endpoint:** `GET /api/auth/export`
 
 Returns a ZIP archive containing:
-- `data.json` - Complete data export (account info, conversations, transactions)
+- `data.json` - Complete data export (account, conversations, transactions, usage history, summary, schema_version)
 - `conversations/*.md` - Each conversation as a Markdown file (human-readable)
+- `conversations/index.md` - Table of contents for all conversations
 - `account_summary.md` - Account overview in Markdown
+- `manifest.json` - File checksums and byte sizes for integrity verification
 
 **Frontend:** "Download" button in Account page (Data & Privacy section).
 
