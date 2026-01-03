@@ -49,8 +49,9 @@ function App() {
     try {
       const data = await billing.getBalance();
       setUserBalance(data.balance);
-      // Auto-redirect to Account if user has no balance
-      if (data.balance === 0 && window.location.pathname !== '/account') {
+      // Auto-redirect to Account if user has no balance (except for certain pages)
+      const excludedPaths = ['/account', '/privacy', '/terms', '/demo'];
+      if (data.balance === 0 && !excludedPaths.includes(window.location.pathname)) {
         window.location.href = '/account';
       }
     } catch (e) {
