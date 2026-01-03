@@ -54,6 +54,7 @@ Hosting, deployment, and infrastructure analysis.
 | Document | Description | Date |
 |----------|-------------|------|
 | [infra-prod-readiness-claude.md](infrastructure/infra-prod-readiness-claude.md) | Free tier analysis (Fly.io, Supabase, Vercel) | 2026-01-02 |
+| [sentry-integration.md](infrastructure/sentry-integration.md) | Sentry error monitoring setup and configuration | 2026-01-03 |
 
 ---
 
