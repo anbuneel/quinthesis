@@ -89,7 +89,7 @@ SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email to preserve their data.
 
 **Usage-Based Billing:** Users have two options:
-- **Credits Mode:** Deposit funds via Stripe ($5/$10/$20). Each query is charged at actual OpenRouter cost + 10% margin with transparent per-query cost breakdowns.
+- **Credits Mode:** Deposit funds via Stripe ($1/$2/$5/$10/$20). Each query is charged at actual OpenRouter cost + 10% margin with transparent per-query cost breakdowns.
 - **BYOK Mode:** Use your own OpenRouter API key to bypass the credit system entirely and pay OpenRouter directly.
 
 **Database Migrations:** Run migrations before first use:

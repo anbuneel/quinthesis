@@ -78,7 +78,7 @@ SENTRY_DSN=https://xxx@xxx.ingest.sentry.io/xxx
 **Authentication:** Users sign in via Google or GitHub OAuth. Existing users are linked by email address to preserve their archives.
 
 **Monetization (Usage-Based Billing):** Users have two options:
-1. **Credits Mode:** Users deposit funds via Stripe ($5/$10/$20 options). Each query is charged at actual OpenRouter cost + 10% margin. Costs are calculated after query completion using OpenRouter's generation API.
+1. **Credits Mode:** Users deposit funds via Stripe ($1/$2/$5/$10/$20 options). Each query is charged at actual OpenRouter cost + 10% margin. Costs are calculated after query completion using OpenRouter's generation API.
 2. **BYOK Mode (Bring Your Own Key):** Users can provide their own OpenRouter API key to bypass the credit system entirely. They pay OpenRouter directly for API usage with no margin added.
 
 **Database Migrations:** Run before first use:
@@ -380,6 +380,8 @@ Get current dollar balance and billing info (requires auth):
 List available deposit options:
 ```json
 [
+  {"id": "uuid", "name": "$1 Try It", "amount_cents": 100},
+  {"id": "uuid", "name": "$2 Starter", "amount_cents": 200},
   {"id": "uuid", "name": "$5 Deposit", "amount_cents": 500},
   {"id": "uuid", "name": "$10 Deposit", "amount_cents": 1000},
   {"id": "uuid", "name": "$20 Deposit", "amount_cents": 2000}
@@ -685,7 +687,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Select event: `checkout.session.completed`
 - [ ] Copy webhook signing secret and set as `STRIPE_WEBHOOK_SECRET`
 - [ ] Test with Stripe CLI: `stripe listen --forward-to localhost:8080/api/webhooks/stripe`
-- [ ] Deposit options are $5, $10, $20 (configured in database)
+- [ ] Deposit options are $1, $2, $5, $10, $20 (configured via migration 009)
 
 ### OpenRouter Provisioning (for per-user API keys)
 - [ ] Go to https://openrouter.ai/settings/provisioning-keys
