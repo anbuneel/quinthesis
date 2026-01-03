@@ -5,6 +5,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import Stage1 from './Stage1';
 import Stage2 from './Stage2';
 import Stage3 from './Stage3';
+import Masthead from './Masthead';
 import demos from '../demoData/demos.json';
 import './DemoView.css';
 
@@ -86,17 +87,22 @@ export default function DemoView() {
         navigate('/');
     };
 
+    // Sign Up CTA button component
+    const SignUpButton = ({ large = false }) => (
+        <button
+            type="button"
+            className={`demo-cta-btn ${large ? 'demo-cta-large' : ''}`}
+            onClick={handleSignUp}
+        >
+            Sign Up
+        </button>
+    );
+
     // Error handling: invalid demo ID selected
     if (selectedDemoId && !selectedDemo) {
         return (
             <div className="demo-view">
-                <header className="demo-masthead">
-                    <div className="masthead-row">
-                        <div className="masthead-center">
-                            <h1 className="masthead-title">The AI Council</h1>
-                        </div>
-                    </div>
-                </header>
+                <Masthead variant="centered" />
                 <div className="demo-content">
                     <div className="demo-error">
                         <h2>Demo Not Found</h2>
@@ -118,23 +124,9 @@ export default function DemoView() {
     if (!selectedDemo) {
         return (
             <div className="demo-view">
-                <header className="demo-masthead">
-                    <div className="masthead-row">
-                        <div className="masthead-center">
-                            <h1 className="masthead-title">The AI Council</h1>
-                            <p className="masthead-tagline">See how multiple AI models collaborate to answer complex questions</p>
-                        </div>
-                        <div className="masthead-actions">
-                            <button
-                                type="button"
-                                className="demo-cta-btn"
-                                onClick={handleSignUp}
-                            >
-                                Sign Up
-                            </button>
-                        </div>
-                    </div>
-                </header>
+                <Masthead variant="full">
+                    <SignUpButton />
+                </Masthead>
 
                 <div className="demo-content">
                     <div className="demo-intro">
@@ -184,34 +176,16 @@ export default function DemoView() {
     // Demo detail view
     return (
         <div className="demo-view">
-            <header className="demo-masthead">
-                <div className="masthead-row">
-                    <button
-                        type="button"
-                        className="demo-back-btn"
-                        onClick={handleBack}
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="19" y1="12" x2="5" y2="12"></line>
-                            <polyline points="12 19 5 12 12 5"></polyline>
-                        </svg>
-                        All Examples
-                    </button>
-                    <div className="masthead-center">
-                        <h1 className="masthead-title">The AI Council</h1>
-                        <p className="masthead-tagline">Example Deliberation</p>
-                    </div>
-                    <div className="masthead-actions">
-                        <button
-                            type="button"
-                            className="demo-cta-btn"
-                            onClick={handleSignUp}
-                        >
-                            Sign Up
-                        </button>
-                    </div>
-                </div>
-            </header>
+            <Masthead variant="minimal">
+                <button
+                    type="button"
+                    className="demo-view-all-btn"
+                    onClick={handleBack}
+                >
+                    View All
+                </button>
+                <SignUpButton />
+            </Masthead>
 
             <div className="demo-question-panel">
                 <div className="panel-inner">
@@ -228,7 +202,7 @@ export default function DemoView() {
                             </div>
                         </div>
                         <div className="demo-question-meta">
-                            <span className="demo-badge">Demo</span>
+                            <span className="demo-status">Example</span>
                             <span className="demo-models-used">
                                 {selectedDemo.models.length} models consulted
                             </span>

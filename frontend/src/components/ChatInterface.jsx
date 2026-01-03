@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import Stage1 from './Stage1';
 import Stage2 from './Stage2';
 import Stage3 from './Stage3';
 import InquiryComposer from './InquiryComposer';
-import AvatarMenu from './AvatarMenu';
-import CreditBalance from './CreditBalance';
+import Masthead from './Masthead';
 import './ChatInterface.css';
 
 const MAX_COLLAPSED_HEIGHT = 60; // pixels
@@ -78,8 +76,6 @@ export default function ChatInterface({
     onLogout,
     onNewInquiry,
 }) {
-    const navigate = useNavigate();
-    const handleOpenAccount = () => navigate('/account');
     const [input, setInput] = useState('');
     const [activeTab, setActiveTab] = useState('final');
 
@@ -169,32 +165,14 @@ export default function ChatInterface({
     if (!conversation) {
         return (
             <div className="chat-interface">
-                <header className="masthead">
-                    <div className="masthead-row">
-                        <button
-                            type="button"
-                            className="sidebar-toggle"
-                            onClick={onToggleSidebar}
-                            aria-label="Open archive (Ctrl+K)"
-                            aria-expanded={isSidebarOpen}
-                            aria-controls="sidebar"
-                            title="Open archive (Ctrl+K)"
-                        >
-                            Archive
-                        </button>
-                        <div className="masthead-center">
-                            <h1 className="masthead-title">The AI Council</h1>
-                            <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
-                        </div>
-                        <div className="masthead-actions">
-                            <CreditBalance balance={userBalance} onClick={handleOpenAccount} />
-                            <AvatarMenu
-                                userEmail={userEmail}
-                                                                onLogout={onLogout}
-                            />
-                        </div>
-                    </div>
-                </header>
+                <Masthead
+                    variant="full"
+                    onToggleSidebar={onToggleSidebar}
+                    isSidebarOpen={isSidebarOpen}
+                    userEmail={userEmail}
+                    userBalance={userBalance}
+                    onLogout={onLogout}
+                />
                 <InquiryComposer
                     availableModels={availableModels || []}
                     defaultModels={defaultModels || []}
@@ -211,46 +189,16 @@ export default function ChatInterface({
 
     return (
         <div className="chat-interface">
-            <header className="masthead">
-                <div className="masthead-row">
-                    <button
-                        type="button"
-                        className="sidebar-toggle"
-                        onClick={onToggleSidebar}
-                        aria-label="Open archive (Ctrl+K)"
-                        aria-expanded={isSidebarOpen}
-                        aria-controls="sidebar"
-                        title="Open archive (Ctrl+K)"
-                    >
-                        Archive
-                    </button>
-                    <div className="masthead-center">
-                        <h1 className="masthead-title">The AI Council</h1>
-                        <p className="masthead-tagline">Synthesized knowledge from AI experts</p>
-                    </div>
-                    <div className="masthead-actions">
-                        {onNewInquiry && (
-                            <button
-                                type="button"
-                                className="masthead-btn masthead-btn-new"
-                                onClick={onNewInquiry}
-                                title="New Inquiry (Ctrl+N)"
-                            >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                                </svg>
-                                <span className="masthead-btn-label">New Inquiry</span>
-                            </button>
-                        )}
-                        <CreditBalance balance={userBalance} onClick={handleOpenAccount} />
-                        <AvatarMenu
-                            userEmail={userEmail}
-                                                        onLogout={onLogout}
-                        />
-                    </div>
-                </div>
-            </header>
+            <Masthead
+                variant="full"
+                onToggleSidebar={onToggleSidebar}
+                isSidebarOpen={isSidebarOpen}
+                userEmail={userEmail}
+                userBalance={userBalance}
+                onLogout={onLogout}
+                onNewInquiry={onNewInquiry}
+                showNewInquiry={Boolean(onNewInquiry)}
+            />
 
             <div className="question-panel">
                 <div className="panel-inner">

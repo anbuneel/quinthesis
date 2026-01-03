@@ -1197,7 +1197,19 @@ The original proposal suggested an "answer-first" hierarchy where Stage 3 (Counc
 - Users can quickly compare stages without scrolling
 - Tab interface is more familiar and intuitive
 
-The editorial styling (typography, colors, drop caps, two-column layout) is still applied to all stages, maintaining the "Paper of Record" aesthetic while using a more practical navigation pattern
+The editorial styling (typography, colors, drop caps) is still applied to all stages, maintaining the "Paper of Record" aesthetic while using a more practical navigation pattern.
+
+### Two-Column Layout (Stage 3)
+
+**Proposal**: Two-column newspaper-style layout for Stage 3 content on desktop.
+
+**Implementation Decision (2026-01-02)**: Single column layout retained.
+
+**Rationale**:
+- Single column provides better readability for technical content
+- Two-column layout can break awkwardly with code blocks, lists, and varied content lengths
+- Mobile-first approach means the single column is the primary experience
+- Users scroll vertically anyway; two columns add horizontal eye movement without clear benefit
 
 ---
 

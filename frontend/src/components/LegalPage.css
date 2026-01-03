@@ -3,13 +3,15 @@
    ========================================================================== */
 
 .legal-page {
-  min-height: 100vh;
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Dynamic viewport height for iOS/mobile */
+  overflow-y: auto;
   background: var(--paper-cream);
   padding: 2rem var(--container-padding);
 }
 
 .legal-content {
-  max-width: 720px;
+  max-width: var(--content-max-width-reading);
   margin: 0 auto;
 }
 
@@ -23,29 +25,10 @@
   border-bottom: 2px solid var(--ink-black);
 }
 
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.5rem 0;
-  background: none;
-  border: none;
-  font-family: var(--font-ui);
-  font-size: var(--text-sm);
-  color: var(--ink-medium);
-  cursor: pointer;
-  transition: color var(--transition-fast);
-}
-
-.back-link:hover {
-  color: var(--ink-dark);
-}
-
 .legal-title {
   margin: 0 0 0.5rem;
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--ink-black);
   letter-spacing: var(--tracking-tight);
@@ -202,7 +185,7 @@
   }
 
   .legal-title {
-    font-size: 1.5rem;
+    font-size: var(--text-xl);
   }
 
   .legal-body {

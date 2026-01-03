@@ -23,7 +23,7 @@
 }
 
 .account-inner {
-  max-width: 720px;
+  max-width: var(--content-max-width-reading);
   margin: 0 auto;
   display: flex;
   flex-direction: column;

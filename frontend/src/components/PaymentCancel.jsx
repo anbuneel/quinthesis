@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import Masthead from './Masthead';
 import './PaymentResult.css';
 
 function PaymentCancel() {
@@ -10,6 +11,7 @@ function PaymentCancel() {
 
   return (
     <div className="payment-result">
+      <Masthead variant="minimal" />
       <div className="payment-result-card cancel">
         <div className="payment-icon-wrapper cancel">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

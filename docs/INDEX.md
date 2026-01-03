@@ -26,6 +26,7 @@ UI/UX design proposals and reviews.
 | [ui-redesign-proposal.md](design/ui-redesign-proposal.md) | "Paper of Record" editorial theme design | 2025-12-26 |
 | [ui-ux-review.md](design/ui-ux-review.md) | UI/UX review and recommendations | 2025-12-27 |
 | [account-page.md](design/account-page.md) | Account page design (implemented) | 2026-01-01 |
+| [ui-audit-2026-01-02.md](design/ui-audit-2026-01-02.md) | Comprehensive UI audit: design drift and inconsistencies | 2026-01-02 |
 
 ---
 

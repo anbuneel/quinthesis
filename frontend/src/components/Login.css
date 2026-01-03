@@ -4,9 +4,12 @@
 
 .login-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: flex-start;
   align-items: center;
-  min-height: 100vh;
+  height: 100vh; /* Fallback for older browsers */
+  height: 100dvh; /* Dynamic viewport height for iOS/mobile */
+  overflow-y: auto;
   background: var(--paper-cream);
   padding: 1.5rem;
   position: relative;
@@ -28,11 +31,12 @@
   flex-direction: column;
   align-items: center;
   gap: 1.75rem;
-  max-width: 520px;
+  max-width: var(--content-max-width-narrow);
   width: 100%;
+  margin: auto;
   position: relative;
   z-index: 1;
-  animation: fadeIn 500ms ease-out;
+  animation: fadeIn 400ms ease-out;
 }
 
 /* ==========================================================================
@@ -255,7 +259,7 @@
 
 .pricing-icon.credits {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: var(--text-xl);
   font-weight: 700;
 }
 

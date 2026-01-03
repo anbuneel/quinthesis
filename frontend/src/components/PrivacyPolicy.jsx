@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { LEGAL_CONFIG } from '../legalConfig';
+import Masthead from './Masthead';
 import './LegalPage.css';
 
 function PrivacyPolicy() {
@@ -7,14 +8,9 @@ function PrivacyPolicy() {
 
   return (
     <div className="legal-page">
+      <Masthead variant="minimal" />
       <div className="legal-content">
         <header className="legal-header">
-          <button type="button" className="back-link" onClick={() => navigate(-1)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Back
-          </button>
           <h1 className="legal-title">Privacy Policy</h1>
           <p className="legal-date">Last updated: {LEGAL_CONFIG.privacyPolicyLastUpdated}</p>
         </header>
