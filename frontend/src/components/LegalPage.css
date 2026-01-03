@@ -7,12 +7,12 @@
   height: 100dvh; /* Dynamic viewport height for iOS/mobile */
   overflow-y: auto;
   background: var(--paper-cream);
-  padding: 2rem var(--container-padding);
 }
 
 .legal-content {
   max-width: var(--content-max-width-reading);
   margin: 0 auto;
+  padding: 2rem var(--container-padding);
 }
 
 /* ==========================================================================
@@ -180,7 +180,7 @@
    ========================================================================== */
 
 @media (max-width: 639px) {
-  .legal-page {
+  .legal-content {
     padding: 1.5rem 1rem;
   }
 

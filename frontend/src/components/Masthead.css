@@ -72,7 +72,7 @@
 
 .masthead-tagline {
     font-family: var(--font-body);
-    font-size: 0.625rem;
+    font-size: var(--text-xs);
     font-style: italic;
     color: var(--ink-medium);
     margin: 0;
