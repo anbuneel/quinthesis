@@ -49,9 +49,10 @@ function App() {
     try {
       const data = await billing.getBalance();
       setUserBalance(data.balance);
-      // Auto-redirect to Account if user has no balance and no BYOK key (except for certain pages)
+      // Auto-redirect to Account if user has no balance and no API key (except for certain pages)
       const excludedPaths = ['/account', '/privacy', '/terms', '/demo'];
-      const needsBalance = data.balance === 0 && !data.has_openrouter_key;
+      const hasAnyKey = data.has_openrouter_key || data.has_byok_key;
+      const needsBalance = data.balance === 0 && !hasAnyKey;
       if (needsBalance && !excludedPaths.includes(window.location.pathname)) {
         window.location.href = '/account';
       }
