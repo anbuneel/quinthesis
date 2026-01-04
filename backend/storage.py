@@ -1594,10 +1594,11 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
             })
 
         # Get transactions (from credit_transactions table)
+        # Note: model_breakdown is in query_costs, not credit_transactions
         tx_rows = await conn.fetch(
             """
             SELECT transaction_type, amount, openrouter_cost, margin_cost, total_cost,
-                   model_breakdown, created_at
+                   created_at
             FROM credit_transactions
             WHERE user_id = $1
             ORDER BY created_at DESC
@@ -1617,7 +1618,6 @@ async def export_user_data(user_id: UUID) -> Dict[str, Any]:
                 tx_data["openrouter_cost"] = float(tx["openrouter_cost"]) if tx["openrouter_cost"] else 0.0
                 tx_data["margin_cost"] = float(tx["margin_cost"]) if tx["margin_cost"] else 0.0
                 tx_data["total_cost"] = float(tx["total_cost"]) if tx["total_cost"] else 0.0
-                tx_data["model_breakdown"] = tx["model_breakdown"]
             transactions.append(tx_data)
 
         # Get usage history (query costs with model breakdowns)
