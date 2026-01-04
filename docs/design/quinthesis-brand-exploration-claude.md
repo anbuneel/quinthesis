@@ -337,10 +337,10 @@ The five-dot pattern (four corners + center) is a powerful symbol:
 - [ ] Update documentation
 
 ### Phase 4: Infrastructure (Week 4)
-- [ ] New domain setup
-- [ ] Update Fly.io app name
-- [ ] Update Vercel project
-- [ ] Redirect old URLs
+- [x] New domain setup (using quinthesis.vercel.app)
+- [x] Update Fly.io app name (quinthesis-api)
+- [x] Update Vercel project (quinthesis)
+- [x] Redirect old URLs (N/A - fresh deployment)
 
 ---
 
