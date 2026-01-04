@@ -77,7 +77,7 @@ export default function InquiryComposer({
   return (
     <div className="inquiry-composer">
       <div className="composer-inner">
-        <h2 className="composer-heading">What would you like to ask the Council?</h2>
+        <h2 className="composer-heading">What would you like to ask?</h2>
 
         <form onSubmit={handleSubmit} className="composer-form">
           {(modelsError || submitError) && (
@@ -104,7 +104,7 @@ export default function InquiryComposer({
               className="config-toggle"
               onClick={() => setIsConfigOpen(!isConfigOpen)}
               aria-expanded={isConfigOpen}
-              aria-controls="council-config"
+              aria-controls="model-config"
               disabled={isLoadingModels}
             >
               <span className="config-toggle-icon">{isConfigOpen ? '▾' : '▸'}</span>
@@ -112,13 +112,13 @@ export default function InquiryComposer({
                 {isLoadingModels ? (
                   'Loading models...'
                 ) : (
-                  <>Configure Council ({selectionCount} model{selectionCount !== 1 ? 's' : ''})</>
+                  <>Configure Models ({selectionCount})</>
                 )}
               </span>
             </button>
 
             {isConfigOpen && !isLoadingModels && (
-              <div className="config-panel" id="council-config">
+              <div className="config-panel" id="model-config">
                 <div className="config-section">
                   <div className="config-label">Select experts</div>
                   <div className="model-chips">
@@ -177,7 +177,7 @@ export default function InquiryComposer({
                   Asking...
                 </>
               ) : (
-                'Ask the Council'
+                'Begin Deliberation'
               )}
             </button>
             <div className="cost-estimate">

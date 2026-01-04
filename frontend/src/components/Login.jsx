@@ -89,7 +89,7 @@ function Login({ onLogin }) {
             </span>
             <span className="demo-link-text">
               <span className="demo-link-title">See Example Deliberations</span>
-              <span className="demo-link-subtitle">Browse real council responses</span>
+              <span className="demo-link-subtitle">Browse real deliberations</span>
             </span>
             <svg className="demo-link-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="5" y1="12" x2="19" y2="12" />
@@ -114,7 +114,7 @@ function Login({ onLogin }) {
         {/* Right column: Sign-in card */}
         <aside className="login-sidebar">
           <div className="login-card">
-            <h2 className="card-title">Enter the Council</h2>
+            <h2 className="card-title">Get Started</h2>
 
             <div className="oauth-buttons">
               <button
