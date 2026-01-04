@@ -1,0 +1,61 @@
+/* ==========================================================================
+   Toast Notification - "The Paper of Record" Theme
+   ========================================================================== */
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--ink-black);
+  color: var(--paper-cream);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  z-index: 9999;
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast-hidden {
+  opacity: 0;
+  transform: translateX(-50%) translateY(10px);
+  pointer-events: none;
+}
+
+.toast-icon {
+  color: var(--accent-forest-light, #3D7A52);
+  font-weight: 600;
+}
+
+.toast-message {
+  font-weight: 500;
+}
+
+/* Mobile adjustment */
+@media (max-width: 767px) {
+  .toast {
+    bottom: 1rem;
+    left: 1rem;
+    right: 1rem;
+    transform: none;
+    justify-content: center;
+  }
+
+  .toast-visible {
+    transform: translateY(0);
+  }
+
+  .toast-hidden {
+    transform: translateY(10px);
+  }
+}

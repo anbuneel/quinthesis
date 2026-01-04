@@ -306,7 +306,7 @@ export default function ChatInterface({
                                             </div>
                                         )}
                                         {latestAssistant?.stage3 ? (
-                                            <Stage3 finalResponse={latestAssistant.stage3} />
+                                            <Stage3 finalResponse={latestAssistant.stage3} question={questionText} />
                                         ) : (
                                             !latestAssistant?.loading?.stage3 && (
                                                 <div className="tab-empty">Final answer is pending.</div>
