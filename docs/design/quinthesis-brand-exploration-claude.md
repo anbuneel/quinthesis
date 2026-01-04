@@ -321,8 +321,8 @@ The five-dot pattern (four corners + center) is a powerful symbol:
 ### Phase 1: Core Identity (Week 1)
 - [ ] Finalize wordmark design
 - [x] Update masthead component (added "The" prefix + diamond divider)
-- [ ] Update page titles and meta tags
-- [ ] Update favicon and app icons
+- [x] Update page titles and meta tags (description, OG tags, theme color)
+- [x] Update favicon and app icons (quincunx SVG)
 
 ### Phase 2: UI Polish (Week 2)
 - [x] Apply refined color palette (added --accent-gold)
