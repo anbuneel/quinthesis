@@ -67,6 +67,7 @@ async def notify_new_signup(
     user_id: str
 ) -> bool:
     """Notify admin of a new user signup."""
+    logger.info(f"Sending signup notification for {email}")
     subject = f"New Quinthesis signup: {email}"
 
     html_body = f"""

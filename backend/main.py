@@ -230,6 +230,7 @@ async def find_or_create_oauth_user(oauth_user) -> dict:
         oauth_user.provider_id
     )
     if existing_oauth:
+        logger.info(f"Returning user: OAuth already linked for {oauth_user.email}")
         return existing_oauth
 
     # 2. Check if email exists (link OAuth to existing account)
@@ -243,9 +244,11 @@ async def find_or_create_oauth_user(oauth_user) -> dict:
             oauth_user.name,
             oauth_user.avatar_url
         )
+        logger.info(f"Linked OAuth for existing user: {oauth_user.email}")
         return user
 
     # 3. Create new user
+    logger.info(f"Creating new user: {oauth_user.email}")
     user = await storage.create_oauth_user(
         email=oauth_user.email,
         oauth_provider=oauth_user.provider,
