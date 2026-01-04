@@ -1,4 +1,4 @@
-"""FastAPI backend for LLM Council."""
+"""FastAPI backend for Quinthesis."""
 
 import logging
 import sentry_sdk
@@ -125,7 +125,7 @@ async def lifespan(app: FastAPI):
         await close_pool()
 
 
-app = FastAPI(title="LLM Council API", lifespan=lifespan)
+app = FastAPI(title="Quinthesis API", lifespan=lifespan)
 
 # Enable CORS with configurable origins
 app.add_middleware(
@@ -213,7 +213,7 @@ def validate_model_selection(
 @app.get("/")
 async def root():
     """Health check endpoint."""
-    return {"status": "ok", "service": "LLM Council API"}
+    return {"status": "ok", "service": "Quinthesis API"}
 
 
 # ============== OAuth Authentication Endpoints ==============

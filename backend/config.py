@@ -1,4 +1,4 @@
-"""Configuration for the LLM Council."""
+"""Configuration for Quinthesis."""
 
 import os
 import logging

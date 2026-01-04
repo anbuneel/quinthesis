@@ -1,5 +1,5 @@
 /**
- * API client for the LLM Council backend.
+ * API client for the Quinthesis backend.
  * Uses JWT-based authentication.
  */
 import * as Sentry from '@sentry/react';
