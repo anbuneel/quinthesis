@@ -376,7 +376,11 @@ function Account({ userEmail, userBalance, onLogout, onRefreshBalance, onToggleS
             <div className="card-content card-content-flush">
               {usageHistory.length === 0 ? (
                 <div className="history-empty">
-                  <p>No usage yet. Submit an inquiry to see your usage history.</p>
+                  {apiMode?.mode === 'byok' ? (
+                    <p>Usage tracking is only available in credits mode. BYOK users pay OpenRouter directly.</p>
+                  ) : (
+                    <p>No usage yet. Submit an inquiry to see your cost breakdown here.</p>
+                  )}
                 </div>
               ) : (
                 <div className="history-ledger">
