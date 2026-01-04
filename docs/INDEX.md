@@ -61,6 +61,7 @@ Hosting, deployment, and infrastructure analysis.
 | [infra-prod-readiness-claude.md](infrastructure/infra-prod-readiness-claude.md) | Free tier analysis (Fly.io, Supabase, Vercel) | 2026-01-02 |
 | [sentry-integration.md](infrastructure/sentry-integration.md) | Sentry error monitoring setup and configuration | 2026-01-03 |
 | [quinthesis-deployment-guide.md](infrastructure/quinthesis-deployment-guide.md) | Infrastructure setup for Quinthesis rebrand | 2026-01-03 |
+| [openrouter-provisioning.md](infrastructure/openrouter-provisioning.md) | OpenRouter provisioning keys and usage tracking | 2026-01-04 |
 
 ---
 
