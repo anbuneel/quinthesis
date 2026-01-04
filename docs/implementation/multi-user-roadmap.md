@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the enhancements needed to transform AI Council from a single-user personal tool to a multi-user application.
+This document outlines the enhancements needed to transform Quinthesis from a single-user personal tool to a multi-user application.
 
 **Current State**: Single shared Basic Auth credentials, single OpenRouter API key in `.env`
 

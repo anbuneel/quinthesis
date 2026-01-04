@@ -1,7 +1,7 @@
-# CLAUDE.md - Technical Notes for AI Council
+# CLAUDE.md - Technical Notes for Quinthesis
 
-## Project: AI Council
-A 3-stage deliberation system where multiple LLMs collaboratively answer questions with anonymized peer review.
+## Project: Quinthesis
+A multi-AI deliberation platform where multiple LLMs collaboratively answer questions with anonymized peer review. The name combines "quintessence" (the purest essence) with "synthesis" (combining ideas).
 
 **Primary goal:** Learn to use AI agents (Claude Code, Codex) to build a full-stack SaaS application from scratch.
 
@@ -103,7 +103,7 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - Rewrite Rules: SPA routing (`/(.*) -> /index.html`)
 
 ### Backend (Fly.io)
-- App Name: `ai-council-api`
+- App Name: `quinthesis-api`
 - Region: `sjc` (San Jose)
 - Port: 8080 (exposed; local dev also uses 8080)
 - Server: Uvicorn with FastAPI
@@ -543,7 +543,7 @@ Use OpenRouter model identifiers. Verify with `test_openrouter.py` before adding
 
 ## Design Theme: The Paper of Record
 
-An editorial/newspaper-inspired light theme that treats AI Council as a prestigious publication.
+An editorial/newspaper-inspired light theme that treats Quinthesis as a prestigious publication.
 
 ### Color Palette
 - Paper tones: `--paper-cream` (#FAF8F5), `--paper-aged` (#F5F0E8)
@@ -637,9 +637,9 @@ An editorial/newspaper-inspired light theme that treats AI Council as a prestigi
 
 ## Quick Links
 
-- GitHub: https://github.com/anbuneel/ai-council
-- Frontend (Vercel): https://ai-council-anbs.vercel.app
-- Backend (Fly.io): https://ai-council-api.fly.dev (health check at `GET /`)
+- GitHub: https://github.com/anbuneel/quinthesis
+- Frontend (Vercel): https://quinthesis.vercel.app
+- Backend (Fly.io): https://quinthesis-api.fly.dev (health check at `GET /`)
 
 ---
 
@@ -688,7 +688,7 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 - [ ] Create Stripe account at https://stripe.com
 - [ ] Get API keys from https://dashboard.stripe.com/apikeys
 - [ ] Set `STRIPE_SECRET_KEY` in Fly.io secrets
-- [ ] Add webhook endpoint: `https://ai-council-api.fly.dev/api/webhooks/stripe`
+- [ ] Add webhook endpoint: `https://quinthesis-api.fly.dev/api/webhooks/stripe`
 - [ ] Select event: `checkout.session.completed`
 - [ ] Copy webhook signing secret and set as `STRIPE_WEBHOOK_SECRET`
 - [ ] Test with Stripe CLI: `stripe listen --forward-to localhost:8080/api/webhooks/stripe`

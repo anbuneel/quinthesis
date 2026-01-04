@@ -1,8 +1,8 @@
-# AI Council
+# Quinthesis
 
-![llmcouncil](header.jpg)
+![quinthesis](header.jpg)
 
-A collaborative deliberation system where multiple LLMs answer your questions, then review and rank each other anonymously. A Chairman LLM synthesizes the insights into a final response.
+A multi-AI deliberation platform where multiple LLMs answer your questions, review and rank each other anonymously, then synthesize the insights into a refined final response. The name combines "quintessence" (the purest essence) with "synthesis" (combining ideas).
 
 ## Project Purpose
 
@@ -10,13 +10,13 @@ A collaborative deliberation system where multiple LLMs answer your questions, t
 
 This project serves as a hands-on exploration of AI-assisted development workflows, covering frontend (React/Vite), backend (FastAPI/Python), database (PostgreSQL/Supabase), authentication (OAuth), payments (Stripe), and deployment (Vercel/Fly.io).
 
-Instead of asking a single LLM provider, submit your question to the AI Council, a group of leading models (OpenAI GPT-5.1, Google Gemini 3 Pro, Anthropic Claude Sonnet 4.5, xAI Grok 4, etc.). The Council deliberates in three stages: individual responses, peer review, and final synthesis.
+Instead of asking a single LLM provider, submit your question to Quinthesis and get responses from a group of leading models (OpenAI GPT-5.1, Google Gemini 3 Pro, Anthropic Claude Sonnet 4.5, xAI Grok 4, etc.). The deliberation happens in three stages: individual responses, peer review, and final synthesis.
 
 The UI uses a two-pane docket layout:
 - Left pane: Archive drawer with search and date-grouped conversations (Today, Yesterday, This Week, etc.)
 - Right pane: The inquiry with question, final answer, and collapsible Stage 1/2 deliberation records
 
-**Live Demo:** https://ai-council-anbs.vercel.app
+**Live Demo:** https://quinthesis.vercel.app
 
 **Try Before Signing Up:** Visit `/demo` to see example deliberations without creating an account.
 
@@ -26,11 +26,11 @@ In a bit more detail, here is what happens when you submit a query:
 
 1. Stage 1: First opinions. The user query is given to all LLMs individually, and the responses are collected. The individual responses are shown in expert tabs with full content displayed.
 2. Stage 2: Review. Each individual LLM is given the responses of the other LLMs. Under the hood, the LLM identities are anonymized so that the LLM cannot play favorites when judging their outputs. The LLM is asked to rank them in accuracy and insight.
-3. Stage 3: Final response. The designated Chairman of the AI Council takes all of the model responses and compiles them into a single final opinion.
+3. Stage 3: Final response. The lead model takes all of the model responses and synthesizes them into a single refined answer.
 
 ## Status
 
-Originally a vibe-coded exploration, AI Council is now a fully-featured production application deployed to Vercel, Fly.io, and Supabase. See `AGENTS.md` for deployment and development reference, `CLAUDE.md` for technical notes, and `docs/UI_REDESIGN_PROPOSAL_opus_claude.md` for the "Paper of Record" design system.
+Originally a vibe-coded exploration, Quinthesis is now a fully-featured production application deployed to Vercel, Fly.io, and Supabase. See `AGENTS.md` for deployment and development reference, `CLAUDE.md` for technical notes, and `docs/design/ui-redesign-proposal.md` for the "Paper of Record" design system.
 
 ## Setup
 

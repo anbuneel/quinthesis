@@ -1,6 +1,6 @@
 # Data Storage Reference
 
-What user data AI Council stores and how it's handled.
+What user data Quinthesis stores and how it's handled.
 
 ---
 

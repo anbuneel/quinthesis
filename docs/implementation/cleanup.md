@@ -1,4 +1,4 @@
-# Code Cleanup Record: AI Council
+# Code Cleanup Record: Quinthesis
 
 **Date:** 2025-12-28
 

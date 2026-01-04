@@ -1,6 +1,6 @@
 # Sentry Integration
 
-Production error monitoring and performance tracking for AI Council.
+Production error monitoring and performance tracking for Quinthesis.
 
 **Date:** 2026-01-03
 

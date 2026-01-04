@@ -12,5 +12,5 @@ export const LEGAL_CONFIG = {
 
   // Contact information
   contactMethod: "GitHub Issues",
-  repositoryUrl: "https://github.com/anbuneel/ai-council",
+  repositoryUrl: "https://github.com/anbuneel/quinthesis",
 };

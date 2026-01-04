@@ -1,7 +1,7 @@
 # Usage-Based Billing Implementation Plan
 
 ## Summary
-Convert AI Council from credit-based (1 credit per query) to usage-based billing (actual OpenRouter cost + 10% margin).
+Convert Quinthesis from credit-based (1 credit per query) to usage-based billing (actual OpenRouter cost + 10% margin).
 
 ## Key Changes
 

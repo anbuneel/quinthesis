@@ -27,6 +27,10 @@ UI/UX design proposals and reviews.
 | [ui-ux-review.md](design/ui-ux-review.md) | UI/UX review and recommendations | 2025-12-27 |
 | [account-page.md](design/account-page.md) | Account page design (implemented) | 2026-01-01 |
 | [ui-audit-2026-01-02.md](design/ui-audit-2026-01-02.md) | Comprehensive UI audit: design drift and inconsistencies | 2026-01-02 |
+| [quinthesis-rebrand-summary-claude.md](design/quinthesis-rebrand-summary-claude.md) | Quinthesis rebrand decision summary | 2026-01-03 |
+| [quinthesis-brand-exploration-claude.md](design/quinthesis-brand-exploration-claude.md) | Visual branding: logo, typography, colors, masthead | 2026-01-03 |
+| [quinthesis-taglines-claude.md](design/quinthesis-taglines-claude.md) | Tagline options (5 categories, top 5 recommendations) | 2026-01-03 |
+| [quinthesis-rebrand-audit-claude.md](design/quinthesis-rebrand-audit-claude.md) | Codebase audit: 93 references to update | 2026-01-03 |
 
 ---
 
@@ -56,6 +60,7 @@ Hosting, deployment, and infrastructure analysis.
 |----------|-------------|------|
 | [infra-prod-readiness-claude.md](infrastructure/infra-prod-readiness-claude.md) | Free tier analysis (Fly.io, Supabase, Vercel) | 2026-01-02 |
 | [sentry-integration.md](infrastructure/sentry-integration.md) | Sentry error monitoring setup and configuration | 2026-01-03 |
+| [quinthesis-deployment-guide.md](infrastructure/quinthesis-deployment-guide.md) | Infrastructure setup for Quinthesis rebrand | 2026-01-03 |
 
 ---
 

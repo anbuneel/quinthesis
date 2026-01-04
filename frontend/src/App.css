@@ -53,7 +53,7 @@
 }
 
 .app-loading::before {
-  content: 'THE AI COUNCIL';
+  content: 'Quinthesis';
   font-family: var(--font-display);
   font-size: var(--text-xl);
   font-weight: 700;

@@ -19,7 +19,7 @@ function PrivacyPolicy() {
           <section className="legal-section">
             <h2>Overview</h2>
             <p>
-              AI Council ("we", "us", "our") is committed to protecting your privacy. This policy explains
+              Quinthesis ("we", "us", "our") is committed to protecting your privacy. This policy explains
               what data we collect, how we use it, and your rights regarding that data.
             </p>
           </section>
@@ -182,7 +182,7 @@ function PrivacyPolicy() {
             <h2>Contact</h2>
             <p>
               For privacy-related questions or requests, please open an issue on our{' '}
-              <a href="https://github.com/anbuneel/ai-council" target="_blank" rel="noopener noreferrer">
+              <a href={LEGAL_CONFIG.repositoryUrl} target="_blank" rel="noopener noreferrer">
                 GitHub repository
               </a>.
             </p>
@@ -192,7 +192,7 @@ function PrivacyPolicy() {
         <footer className="legal-footer">
           <a href="/terms" className="footer-link">Terms of Service</a>
           <span className="footer-divider">|</span>
-          <a href="/" className="footer-link">Return to AI Council</a>
+          <a href="/" className="footer-link">Return to Quinthesis</a>
         </footer>
       </div>
     </div>

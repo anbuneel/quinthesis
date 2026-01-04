@@ -1,4 +1,4 @@
-# AI Council UI Redesign Proposal: "The Paper of Record"
+# Quinthesis UI Redesign Proposal: "The Paper of Record"
 
 **Author**: Claude (Opus 4.5)
 **Date**: December 26, 2025
@@ -14,7 +14,7 @@
 
 ## Executive Summary
 
-The previous proposal missed the mark by copying Linear/Vercel's aesthetic - essentially replacing one dark SaaS look with another. This proposal takes a radically different approach: **"The Paper of Record"** - treating AI Council as a prestigious editorial publication rather than a software tool.
+The previous proposal missed the mark by copying Linear/Vercel's aesthetic - essentially replacing one dark SaaS look with another. This proposal takes a radically different approach: **"The Paper of Record"** - treating Quinthesis as a prestigious editorial publication rather than a software tool.
 
 Think: *The Economist* meets *The New York Times* meets a scholarly journal. Warm, paper-textured backgrounds. Rich typographic hierarchy. Authoritative yet approachable. The synthesized answer presented like a front-page headline, with deliberation details available like diving into the full article.
 
@@ -200,7 +200,7 @@ This isn't just visual differentiation - it's a conceptual reframe that makes th
 │   └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│  © 2025 AI Council · About · Privacy                                        │
+│  © 2025 Quinthesis · About · Privacy                                        │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -1242,7 +1242,7 @@ Each of these would be distinctive. The editorial direction was chosen because i
 
 ## Summary
 
-**"The Paper of Record"** transforms AI Council from a generic dark-mode SaaS tool into a distinctive, memorable experience that:
+**"The Paper of Record"** transforms Quinthesis from a generic dark-mode SaaS tool into a distinctive, memorable experience that:
 
 1. **Looks like nothing else** - Warm paper, rich typography, editorial layouts
 2. **Reinforces the metaphor** - Expert council issuing considered opinions

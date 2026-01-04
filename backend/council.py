@@ -1,4 +1,4 @@
-"""3-stage LLM Council orchestration."""
+"""3-stage multi-model deliberation orchestration."""
 
 import re
 from collections import defaultdict
@@ -143,7 +143,7 @@ async def stage3_synthesize_final(
     api_key: Optional[str] = None
 ) -> Tuple[Dict[str, Any], Optional[str]]:
     """
-    Stage 3: Chairman synthesizes final response.
+    Stage 3: Lead model synthesizes final response.
 
     Args:
         user_query: The original user query
@@ -155,7 +155,7 @@ async def stage3_synthesize_final(
     Returns:
         Tuple of (result dict with 'model' and 'response', generation_id or None)
     """
-    # Build comprehensive context for chairman
+    # Build comprehensive context for lead model
     stage1_text = "\n\n".join([
         f"Model: {result['model']}\nResponse: {result['response']}"
         for result in stage1_results
@@ -166,7 +166,7 @@ async def stage3_synthesize_final(
         for result in stage2_results
     ])
 
-    chairman_prompt = f"""You are the Chairman of an LLM Council. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
+    synthesis_prompt = f"""You are the lead synthesizer in a multi-model deliberation. Multiple AI models have provided responses to a user's question, and then ranked each other's responses.
 
 Original Question: {user_query}
 
@@ -176,14 +176,14 @@ STAGE 1 - Individual Responses:
 STAGE 2 - Peer Rankings:
 {stage2_text}
 
-Your task as Chairman is to synthesize all of this information into a single, comprehensive, accurate answer to the user's original question. Consider:
+Your task is to synthesize all of this information into a single, comprehensive, accurate answer to the user's original question. Consider:
 - The individual responses and their insights
 - The peer rankings and what they reveal about response quality
 - Any patterns of agreement or disagreement
 
-Provide a clear, well-reasoned final answer that represents the council's collective wisdom:"""
+Provide a clear, well-reasoned final answer that represents the collective wisdom of the models:"""
 
-    messages = [{"role": "user", "content": chairman_prompt}]
+    messages = [{"role": "user", "content": synthesis_prompt}]
 
     active_lead = lead_model or DEFAULT_LEAD_MODEL
 

@@ -66,7 +66,7 @@ function PaymentSuccess({ onRefreshBalance }) {
         )}
 
         <button className="payment-continue-btn" onClick={handleContinue}>
-          Continue to AI Council
+          Continue to Quinthesis
         </button>
       </div>
     </div>

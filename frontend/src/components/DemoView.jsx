@@ -27,7 +27,7 @@ export default function DemoView() {
     // SEO meta tags for social sharing
     useEffect(() => {
         const originalTitle = document.title;
-        document.title = 'Example Deliberations | AI Council';
+        document.title = 'Example Deliberations | Quinthesis';
 
         // Set Open Graph meta tags
         const setMetaTag = (property, content) => {
@@ -40,7 +40,7 @@ export default function DemoView() {
             meta.setAttribute('content', content);
         };
 
-        setMetaTag('og:title', 'AI Council - Example Deliberations');
+        setMetaTag('og:title', 'Quinthesis - Example Deliberations');
         setMetaTag('og:description', 'See how multiple AI models collaborate to answer complex questions through structured deliberation.');
         setMetaTag('og:type', 'website');
 
@@ -132,7 +132,7 @@ export default function DemoView() {
                     <div className="demo-intro">
                         <h2>Example Deliberations</h2>
                         <p>
-                            The AI Council gathers responses from multiple AI models, has them review each other's answers,
+                            Quinthesis gathers responses from multiple AI models, has them review each other's answers,
                             then synthesizes a comprehensive final answer. Click any example below to see the full deliberation process.
                         </p>
                     </div>

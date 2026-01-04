@@ -28,7 +28,7 @@ function Login({ onLogin }) {
       <header className="login-masthead">
         <div className="masthead-inner">
           <div className="masthead-rule" />
-          <h1 className="masthead-title">The AI Council</h1>
+          <h1 className="masthead-title">Quinthesis</h1>
           <div className="masthead-rule" />
         </div>
       </header>

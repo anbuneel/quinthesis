@@ -69,9 +69,9 @@ async def create_checkout_session(
     # For deposits, describe as dollar amount; for credits, describe as queries
     if is_deposit:
         deposit_dollars = price_cents / 100.0
-        description = f"${deposit_dollars:.2f} balance for AI Council usage"
+        description = f"${deposit_dollars:.2f} balance for Quinthesis usage"
     else:
-        description = f"{credits} AI Council queries"
+        description = f"{credits} Quinthesis queries"
 
     session_params = {
         "payment_method_types": ["card"],

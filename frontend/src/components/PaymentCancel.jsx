@@ -25,7 +25,7 @@ function PaymentCancel() {
         <p>Your payment was cancelled. No charges were made.</p>
 
         <button className="payment-continue-btn" onClick={handleGoBack}>
-          Return to AI Council
+          Return to Quinthesis
         </button>
       </div>
     </div>

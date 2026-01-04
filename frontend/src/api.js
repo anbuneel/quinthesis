@@ -1,5 +1,5 @@
 /**
- * API client for the LLM Council backend.
+ * API client for the Quinthesis backend.
  * Uses JWT-based authentication.
  */
 import * as Sentry from '@sentry/react';
@@ -247,7 +247,7 @@ export const auth = {
     a.href = url;
     // Get filename from Content-Disposition header or use default
     const disposition = response.headers.get('Content-Disposition');
-    let filename = 'ai-council-export.zip';
+    let filename = 'quinthesis-export.zip';
     const headerFilename = getFilenameFromDisposition(disposition);
     if (headerFilename) {
       filename = headerFilename;

@@ -1,4 +1,4 @@
-# AI Council UI/UX Design Review
+# Quinthesis UI/UX Design Review
 
 **Date:** 2025-12-27
 **Reviewer:** Claude (Frontend Design Skill)
@@ -164,6 +164,8 @@ Key changes:
 
 ## 4. Opinion on App Name: "AI Council"
 
+> **Note (2026-01-03):** This section is historical. The app has been rebranded to **Quinthesis** (quintessence + synthesis). See `docs/design/quinthesis-rebrand-summary-claude.md` for the decision rationale.
+
 ### Assessment: Serviceable but Forgettable
 
 **Pros:**
@@ -318,7 +320,7 @@ You could test both framings:
 1. Keep current terminology, observe how users describe the app
 2. If they say "that legal AI thing" - the framing has drifted too far
 
-**Decision Status:** Under consideration. Name and logo to be finalized after further thought.
+**Decision Status:** ~~Under consideration.~~ **Resolved (2026-01-03):** Rebranded to **Quinthesis**.
 
 ---
 

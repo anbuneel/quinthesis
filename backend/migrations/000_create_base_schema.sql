@@ -1,4 +1,4 @@
--- Base schema for AI Council conversations
+-- Base schema for Quinthesis conversations
 -- This migration creates the core tables that were previously created manually in Supabase
 --
 -- ORDERING NOTE: The "000" prefix ensures this runs FIRST (alphabetically) for new deployments.

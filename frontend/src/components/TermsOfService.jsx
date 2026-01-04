@@ -16,7 +16,7 @@ function TermsOfService() {
           <section className="legal-section">
             <h2>1. Acceptance of Terms</h2>
             <p>
-              By accessing or using AI Council ("the Service"), you agree to be bound by these Terms of Service.
+              By accessing or using Quinthesis ("the Service"), you agree to be bound by these Terms of Service.
               If you do not agree to these terms, do not use the Service.
             </p>
           </section>
@@ -24,7 +24,7 @@ function TermsOfService() {
           <section className="legal-section">
             <h2>2. Description of Service</h2>
             <p>
-              AI Council is a multi-model AI deliberation platform that:
+              Quinthesis is a multi-model AI deliberation platform that:
             </p>
             <ul>
               <li>Sends your questions to multiple AI models for independent analysis</li>
@@ -148,7 +148,7 @@ function TermsOfService() {
           <section className="legal-section">
             <h2>10. Indemnification</h2>
             <p>
-              You agree to indemnify and hold harmless AI Council and its operators from any claims,
+              You agree to indemnify and hold harmless Quinthesis and its operators from any claims,
               damages, or expenses arising from your use of the Service or violation of these terms.
             </p>
           </section>
@@ -196,7 +196,7 @@ function TermsOfService() {
             <h2>15. Contact</h2>
             <p>
               For questions about these terms, please open an issue on our{' '}
-              <a href="https://github.com/anbuneel/ai-council" target="_blank" rel="noopener noreferrer">
+              <a href={LEGAL_CONFIG.repositoryUrl} target="_blank" rel="noopener noreferrer">
                 GitHub repository
               </a>.
             </p>
@@ -206,7 +206,7 @@ function TermsOfService() {
         <footer className="legal-footer">
           <a href="/privacy" className="footer-link">Privacy Policy</a>
           <span className="footer-divider">|</span>
-          <a href="/" className="footer-link">Return to AI Council</a>
+          <a href="/" className="footer-link">Return to Quinthesis</a>
         </footer>
       </div>
     </div>
