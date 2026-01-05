@@ -2,6 +2,26 @@ import { useState, useMemo } from 'react';
 import './Sidebar.css';
 
 /**
+ * Format a date for display in the sidebar.
+ * Shows time for recent items, date for older ones.
+ */
+function formatTimestamp(dateStr) {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const convDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  // For today/yesterday, show time
+  if (convDay.getTime() >= yesterday.getTime()) {
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  }
+  // For older, show short date
+  return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+/**
  * Group conversations by date: Today, Yesterday, This Week, This Month, Older
  */
 function groupByDate(conversations) {
@@ -177,7 +197,7 @@ export default function Sidebar({
                             {conv.title || 'Untitled Inquiry'}
                           </div>
                           <div className="case-meta">
-                            {conv.message_count} {conv.message_count === 1 ? 'entry' : 'entries'}
+                            {formatTimestamp(conv.created_at)}
                           </div>
                         </div>
                         <button
