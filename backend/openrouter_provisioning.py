@@ -88,12 +88,23 @@ async def create_user_key(
     response.raise_for_status()
 
     data = response.json()
-    logger.info(f"Created OpenRouter key for user {user_id}, hash: {data.get('data', {}).get('hash', 'unknown')}")
+    logger.info(f"OpenRouter provisioning response for user {user_id}: hash={data.get('data', {}).get('hash', 'unknown')}")
 
-    # Response structure: {"data": {"key": "sk-or-...", "hash": "abc123", "limit": 200, ...}}
+    # Response structure: {"data": {"hash": "...", "limit": ..., ...}, "key": "sk-or-..."}
+    # Note: "key" is at the ROOT level, not inside "data"
     key_data = data.get("data", {})
+    api_key = data.get("key")  # Key is at root level!
+
+    # Validate required fields are present
+    if not api_key:
+        raise ValueError(f"OpenRouter API did not return a key. Response: {data}")
+    if not key_data.get("hash"):
+        raise ValueError(f"OpenRouter API did not return a hash. Response: {data}")
+
+    logger.info(f"Created OpenRouter key for user {user_id}, hash: {key_data.get('hash')}")
+
     return {
-        "key": key_data.get("key"),
+        "key": api_key,
         "hash": key_data.get("hash"),
         "limit": key_data.get("limit"),
     }
