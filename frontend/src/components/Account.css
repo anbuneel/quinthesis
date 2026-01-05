@@ -13,6 +13,61 @@
 }
 
 /* ==========================================================================
+   Tab Navigation - Editorial Section Headers
+   ========================================================================== */
+
+.account-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 2.5rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--paper-border);
+  background: var(--paper-cream);
+}
+
+.account-tab {
+  position: relative;
+  padding: 0.5rem 0;
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--ink-light);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.account-tab:hover {
+  color: var(--ink-medium);
+}
+
+.account-tab[aria-selected="true"] {
+  color: var(--ink-black);
+}
+
+/* Double-rule underline for active tab */
+.account-tab[aria-selected="true"]::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background:
+    linear-gradient(var(--accent-vermillion), var(--accent-vermillion)) top/100% 1px no-repeat,
+    linear-gradient(var(--accent-vermillion), var(--accent-vermillion)) bottom/100% 1px no-repeat;
+}
+
+.account-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ==========================================================================
    Content Area - Scrollable, centered
    ========================================================================== */
 
@@ -551,9 +606,38 @@
   margin: 0;
 }
 
+/* History Summary Stats */
+.history-summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1rem;
+  background: var(--paper-aged);
+  border: 1px solid var(--paper-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink-medium);
+}
+
+.summary-stat strong {
+  color: var(--ink-dark);
+  font-weight: 600;
+}
+
+.summary-divider {
+  color: var(--ink-faint);
+}
+
 .history-ledger {
   max-height: 320px;
   overflow-y: auto;
+}
+
+/* Full-height variant for History tab */
+.history-ledger-full {
+  max-height: none;
 }
 
 .ledger-row {

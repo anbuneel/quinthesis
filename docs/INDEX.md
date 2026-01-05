@@ -31,6 +31,7 @@ UI/UX design proposals and reviews.
 | [quinthesis-brand-exploration-claude.md](design/quinthesis-brand-exploration-claude.md) | Visual branding: logo, typography, colors, masthead | 2026-01-03 |
 | [quinthesis-taglines-claude.md](design/quinthesis-taglines-claude.md) | Tagline options (5 categories, top 5 recommendations) | 2026-01-03 |
 | [quinthesis-rebrand-audit-claude.md](design/quinthesis-rebrand-audit-claude.md) | Codebase audit: 93 references to update | 2026-01-03 |
+| [account-page-tabs-proposal-claude.md](design/account-page-tabs-proposal-claude.md) | Account page tab separation (editorial underline tabs) | 2026-01-05 |
 
 ---
 

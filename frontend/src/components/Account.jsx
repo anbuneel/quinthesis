@@ -16,6 +16,7 @@ function Account({ userEmail, userBalance, isByokMode, onLogout, onRefreshBalanc
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [error, setError] = useState('');
   const [expandedTx, setExpandedTx] = useState(null);
+  const [activeTab, setActiveTab] = useState('account');
 
   // BYOK state
   const [apiMode, setApiMode] = useState(null);
@@ -233,6 +234,42 @@ function Account({ userEmail, userBalance, isByokMode, onLogout, onRefreshBalanc
         <HomeButton />
       </Masthead>
 
+      {/* Tab Navigation */}
+      <nav className="account-tabs" role="tablist" aria-label="Account sections">
+        <button
+          role="tab"
+          id="tab-account"
+          aria-selected={activeTab === 'account'}
+          aria-controls="panel-account"
+          className="account-tab"
+          onClick={() => setActiveTab('account')}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowRight') {
+              setActiveTab('history');
+              document.getElementById('tab-history')?.focus();
+            }
+          }}
+        >
+          Account
+        </button>
+        <button
+          role="tab"
+          id="tab-history"
+          aria-selected={activeTab === 'history'}
+          aria-controls="panel-history"
+          className="account-tab"
+          onClick={() => setActiveTab('history')}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft') {
+              setActiveTab('account');
+              document.getElementById('tab-account')?.focus();
+            }
+          }}
+        >
+          History
+        </button>
+      </nav>
+
       <div className="account-content">
         <div className="account-inner">
           {error && (
@@ -241,6 +278,14 @@ function Account({ userEmail, userBalance, isByokMode, onLogout, onRefreshBalanc
             </div>
           )}
 
+          {/* Account Tab Panel */}
+          {activeTab === 'account' && (
+            <div
+              role="tabpanel"
+              id="panel-account"
+              aria-labelledby="tab-account"
+              className="account-panel"
+            >
           {/* Balance + Add Funds Row */}
           <div className="account-row">
             {/* Balance Section */}
@@ -395,55 +440,6 @@ function Account({ userEmail, userBalance, isByokMode, onLogout, onRefreshBalanc
             </div>
           </section>
 
-          {/* Usage History Section */}
-          <section className="account-card">
-            <div className="card-header">
-              <h2 className="card-title">Usage History</h2>
-              <span className="card-subtitle">{usageHistory.length} transactions</span>
-            </div>
-            <div className="card-content card-content-flush">
-              {usageHistory.length === 0 ? (
-                <div className="history-empty">
-                  {apiMode?.mode === 'byok' ? (
-                    <p>Usage tracking is only available in credits mode. BYOK users pay OpenRouter directly.</p>
-                  ) : (
-                    <p>No usage yet. Submit an inquiry to see your cost breakdown here.</p>
-                  )}
-                </div>
-              ) : (
-                <div className="history-ledger">
-                  {usageHistory.map((tx) => (
-                    <div key={tx.id} className="ledger-row">
-                      <button
-                        type="button"
-                        className="ledger-main"
-                        onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)}
-                        aria-expanded={expandedTx === tx.id}
-                      >
-                        <span className="ledger-date">{formatDate(tx.created_at)}</span>
-                        <span className="ledger-type">Query</span>
-                        <span className="ledger-amount">−{formatCost(tx.total_cost)}</span>
-                        <span className="ledger-chevron">{expandedTx === tx.id ? '▾' : '▸'}</span>
-                      </button>
-                      {expandedTx === tx.id && (
-                        <div className="ledger-details">
-                          <div className="detail-row">
-                            <span>API Cost</span>
-                            <span>{formatCost(tx.openrouter_cost)}</span>
-                          </div>
-                          <div className="detail-row">
-                            <span>Service Fee (5%)</span>
-                            <span>{formatCost(tx.margin_cost)}</span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </section>
-
           {/* Data & Privacy Section */}
           <section className="account-card">
             <div className="card-header">
@@ -525,6 +521,79 @@ function Account({ userEmail, userBalance, isByokMode, onLogout, onRefreshBalanc
                 <span className="member-provider">via {userInfo.oauth_provider}</span>
               </div>
             </footer>
+          )}
+            </div>
+          )}
+
+          {/* History Tab Panel */}
+          {activeTab === 'history' && (
+            <div
+              role="tabpanel"
+              id="panel-history"
+              aria-labelledby="tab-history"
+              className="account-panel"
+            >
+              {/* Usage Summary Stats */}
+              {usageHistory.length > 0 && (
+                <div className="history-summary">
+                  <span className="summary-stat">
+                    <strong>{usageHistory.length}</strong> queries
+                  </span>
+                  <span className="summary-divider">·</span>
+                  <span className="summary-stat">
+                    <strong>{formatBalance(balance?.total_spent)}</strong> total spent
+                  </span>
+                </div>
+              )}
+
+              {/* Usage History Section */}
+              <section className="account-card">
+                <div className="card-header">
+                  <h2 className="card-title">Usage History</h2>
+                </div>
+                <div className="card-content card-content-flush">
+                  {usageHistory.length === 0 ? (
+                    <div className="history-empty">
+                      {apiMode?.mode === 'byok' ? (
+                        <p>Usage tracking is only available in credits mode. BYOK users pay OpenRouter directly.</p>
+                      ) : (
+                        <p>No usage yet. Submit an inquiry to see your cost breakdown here.</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="history-ledger history-ledger-full">
+                      {usageHistory.map((tx) => (
+                        <div key={tx.id} className="ledger-row">
+                          <button
+                            type="button"
+                            className="ledger-main"
+                            onClick={() => setExpandedTx(expandedTx === tx.id ? null : tx.id)}
+                            aria-expanded={expandedTx === tx.id}
+                          >
+                            <span className="ledger-date">{formatDate(tx.created_at)}</span>
+                            <span className="ledger-type">Query</span>
+                            <span className="ledger-amount">−{formatCost(tx.total_cost)}</span>
+                            <span className="ledger-chevron">{expandedTx === tx.id ? '▾' : '▸'}</span>
+                          </button>
+                          {expandedTx === tx.id && (
+                            <div className="ledger-details">
+                              <div className="detail-row">
+                                <span>API Cost</span>
+                                <span>{formatCost(tx.openrouter_cost)}</span>
+                              </div>
+                              <div className="detail-row">
+                                <span>Service Fee (5%)</span>
+                                <span>{formatCost(tx.margin_cost)}</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
           )}
         </div>
       </div>

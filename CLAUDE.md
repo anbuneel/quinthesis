@@ -154,7 +154,7 @@ Note: If `DATABASE_URL` is not set, backend falls back to local JSON storage in 
 - `components/Sidebar.jsx` - Inquiry list, mobile drawer
 - `components/OAuthCallback.jsx` - Handles OAuth provider redirects
 - `components/Login.jsx` - OAuth login UI (Google and GitHub buttons)
-- `components/Account.jsx` - Account page: balance, deposits, usage history, member info
+- `components/Account.jsx` - Account page with tabs: Account (balance, deposits, API settings) and History (usage ledger)
 - `components/BalanceCard.jsx` - Balance card with stats (used in Account page)
 - `components/TransactionLedger.jsx` - Transaction history with expandable details
 - `components/CreditBalance.jsx` - Header dollar balance indicator (links to Account page)
@@ -636,6 +636,14 @@ An editorial/newspaper-inspired light theme that treats Quinthesis as a prestigi
 ### Deposit Options
 - $1, $2, $5, $10 tiers (lower barrier to entry)
 - Stored in `deposit_options` database table
+
+### Account Page Tabs
+- Two-tab layout: "Account" and "History"
+- Editorial underline tabs with double-rule vermillion accent
+- Account tab: Balance, Add Funds, Pricing, API Settings, Data & Privacy
+- History tab: Summary stats + full-height usage ledger (no scroll limit)
+- Keyboard navigation: Arrow keys between tabs
+- ARIA roles for accessibility (`tablist`, `tab`, `tabpanel`)
 
 ---
 
