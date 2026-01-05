@@ -38,6 +38,22 @@ npm run dev                      # Run on http://localhost:5173
 ./start.sh                       # Runs both backend and frontend in parallel
 ```
 
+### Testing
+```bash
+# Backend tests (pytest)
+uv sync --extra test             # Install test dependencies
+uv run pytest                    # Run all backend tests
+uv run pytest -v                 # Verbose output
+uv run pytest --cov              # With coverage
+
+# Frontend tests (vitest)
+cd frontend
+npm install                      # Install dependencies (includes test deps)
+npm test                         # Watch mode
+npm run test:run                 # Single run
+npm run test:coverage            # With coverage
+```
+
 ---
 
 ## Environment Setup

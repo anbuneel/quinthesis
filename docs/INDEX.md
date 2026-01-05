@@ -47,9 +47,9 @@ Feature implementation plans and roadmaps.
 | [cleanup.md](implementation/cleanup.md) | Code cleanup plan | 2025-12-28 |
 | [usage-based-billing.md](implementation/usage-based-billing.md) | Usage-based billing (implemented) | 2026-01-01 |
 | [byok-recommendations.md](implementation/byok-recommendations.md) | BYOK friction reduction recommendations | 2026-01-01 |
+| [pr-27-review-codex.md](implementation/pr-27-review-codex.md) | PR #27 launch readiness review (all items fixed) | 2026-01-02 |
 | [privacy-compliance.md](implementation/privacy-compliance.md) | Privacy compliance (Privacy Policy, ToS, account deletion) | 2026-01-03 |
 | [key-rotation.md](implementation/key-rotation.md) | API key encryption rotation procedure | 2026-01-03 |
-| [pr-27-review-codex.md](implementation/pr-27-review-codex.md) | PR #27 launch readiness review (all items fixed) | 2026-01-02 |
 
 ---
 
@@ -63,6 +63,27 @@ Hosting, deployment, and infrastructure analysis.
 | [sentry-integration.md](infrastructure/sentry-integration.md) | Sentry error monitoring setup and configuration | 2026-01-03 |
 | [quinthesis-deployment-guide.md](infrastructure/quinthesis-deployment-guide.md) | Infrastructure setup for Quinthesis rebrand | 2026-01-03 |
 | [openrouter-provisioning.md](infrastructure/openrouter-provisioning.md) | OpenRouter provisioning keys and usage tracking | 2026-01-04 |
+
+---
+
+## Testing
+
+Testing strategy and automation plans.
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [automated-testing-plan-claude.md](testing/automated-testing-plan-claude.md) | Automated testing plan and tool recommendations (Claude) | 2026-01-05 |
+| [testing-plan-codex.md](testing/testing-plan-codex.md) | Testing strategy, tooling, and phased rollout (Codex) | 2026-01-05 |
+
+---
+
+## Analysis
+
+Codebase analysis and snapshots.
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [codebase-snapshot-claude.md](analysis/codebase-snapshot-claude.md) | Codebase snapshot timeline (architecture, tech stack, metrics) | 2026-01-05 |
 
 ---
 

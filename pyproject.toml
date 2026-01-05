@@ -16,3 +16,20 @@ dependencies = [
     "stripe>=8.0.0",
     "sentry-sdk[fastapi]>=2.0.0",
 ]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "pytest-cov>=4.0",
+    "pytest-mock>=3.10",
+    "respx>=0.20",
+    "freezegun>=1.2",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["backend/tests"]
+markers = [
+    "postgres: mark test as requiring PostgreSQL database",
+]
