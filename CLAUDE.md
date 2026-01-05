@@ -807,6 +807,14 @@ Repeat findings (already accepted/deferred):
 Completed:
 - [x] Rate limiting on checkout/provisioning endpoints (10 req/min via `checkout_rate_limiter`)
 
+**Cost Tracking Fix (2026-01-05):**
+
+Fixed issue where OpenRouter generation API returned `total_cost: null` for provisioned sub-keys:
+- [x] Use provisioning key (not user's sub-key) for cost retrieval
+- [x] Add retry logic when `total_cost` is null (timing issue)
+- [x] Parse `model_breakdown` JSON string in usage history endpoint
+- [x] Cost tracking now accurately reflects OpenRouter charges + 5% margin
+
 ---
 
 ## Encryption Key Rotation
