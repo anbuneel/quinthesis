@@ -1,0 +1,8 @@
+# Quinthesis - Multi-AI Deliberation Platform
+# https://quinthesis.vercel.app
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://quinthesis.vercel.app/sitemap.xml
