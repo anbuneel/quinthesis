@@ -246,7 +246,11 @@ class TestQueryModelsParallel:
 
 
 class TestGetGenerationCost:
-    """Tests for get_generation_cost function."""
+    """Tests for get_generation_cost function.
+
+    Note: get_generation_cost uses OPENROUTER_PROVISIONING_KEY or OPENROUTER_API_KEY
+    from environment for cost retrieval (not the passed api_key parameter).
+    """
 
     @respx.mock
     @pytest.mark.asyncio
@@ -264,7 +268,8 @@ class TestGetGenerationCost:
             })
         )
 
-        result = await get_generation_cost("gen-123", api_key="test-key")
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            result = await get_generation_cost("gen-123", api_key="test-key")
 
         assert result is not None
         assert result["total_cost"] == 0.0025
@@ -284,7 +289,8 @@ class TestGetGenerationCost:
             })
         ]
 
-        result = await get_generation_cost("gen-456", api_key="test-key")
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            result = await get_generation_cost("gen-456", api_key="test-key")
 
         assert result is not None
         assert result["total_cost"] == 0.001
@@ -300,7 +306,8 @@ class TestGetGenerationCost:
             Response(200, json={"data": {"total_cost": 0.005}})
         ]
 
-        result = await get_generation_cost("gen-null", api_key="test-key")
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            result = await get_generation_cost("gen-null", api_key="test-key")
 
         assert result is not None
         assert result["total_cost"] == 0.005
@@ -321,7 +328,8 @@ class TestGetGenerationCost:
             })
         )
 
-        result = await get_generation_cost("gen-nulls", api_key="test-key")
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            result = await get_generation_cost("gen-nulls", api_key="test-key")
 
         assert result["total_cost"] == 0.01
         assert result["native_tokens_prompt"] == 0  # null -> 0
@@ -336,11 +344,12 @@ class TestGetGenerationCost:
             return_value=Response(404, json={"error": "not found"})
         )
 
-        result = await get_generation_cost(
-            "gen-fail",
-            api_key="test-key",
-            max_retries=2
-        )
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            result = await get_generation_cost(
+                "gen-fail",
+                api_key="test-key",
+                max_retries=2
+            )
 
         assert result is None
 
@@ -359,10 +368,11 @@ class TestGetGenerationCostsBatch:
             return_value=Response(200, json={"data": {"total_cost": 0.02}})
         )
 
-        results = await get_generation_costs_batch(
-            ["gen-1", "gen-2"],
-            api_key="test-key"
-        )
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            results = await get_generation_costs_batch(
+                ["gen-1", "gen-2"],
+                api_key="test-key"
+            )
 
         assert len(results) == 2
         assert results["gen-1"]["total_cost"] == 0.01
@@ -379,10 +389,11 @@ class TestGetGenerationCostsBatch:
             return_value=Response(500, json={"error": "server error"})
         )
 
-        results = await get_generation_costs_batch(
-            ["gen-ok", "gen-fail"],
-            api_key="test-key"
-        )
+        with patch("backend.openrouter.OPENROUTER_PROVISIONING_KEY", "sk-or-prov-test"):
+            results = await get_generation_costs_batch(
+                ["gen-ok", "gen-fail"],
+                api_key="test-key"
+            )
 
         assert "gen-ok" in results
         assert "gen-fail" not in results  # Failed, not included
