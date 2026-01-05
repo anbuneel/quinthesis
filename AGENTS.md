@@ -45,7 +45,9 @@ npm run dev                      # Run on http://localhost:5173
 Create `.env` in project root:
 ```
 # Database (required for production)
-DATABASE_URL=postgresql://user:pass@host/dbname
+# Use Supabase pooler (port 6543) for better connection resilience
+# Format: postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+DATABASE_URL=postgresql://user:pass@host:6543/dbname
 
 # JWT Authentication (required)
 JWT_SECRET=your-secure-random-secret-here
@@ -680,7 +682,10 @@ Run `test_openrouter.py` to verify API connectivity and test model identifiers.
 
 ### Supabase
 - [ ] Create PostgreSQL database
-- [ ] Generate connection string and set as `DATABASE_URL`
+- [ ] Generate connection string using **Transaction pooler (port 6543)** for better resilience
+  - Go to Project Settings → Database → Connection string → Mode: Transaction
+  - Format: `postgresql://postgres.[ref]:[pass]@aws-0-[region].pooler.supabase.com:6543/postgres`
+- [ ] Set connection string as `DATABASE_URL` in Fly.io secrets
 - [ ] Enable `gen_random_uuid()` extension (usually enabled by default)
 - [ ] Run migrations (includes 006_usage_based_billing.sql for usage-based billing)
 

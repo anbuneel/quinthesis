@@ -14,11 +14,18 @@ async def get_pool() -> asyncpg.Pool:
     if _pool is None:
         if not DATABASE_URL:
             raise RuntimeError("DATABASE_URL environment variable is not set")
+
+        # Detect if using Supabase pooler (port 6543) and disable prepared statements
+        # PgBouncer in transaction mode doesn't support prepared statements
+        use_pooler = ":6543" in DATABASE_URL or "pooler.supabase.com" in DATABASE_URL
+
         _pool = await asyncpg.create_pool(
             DATABASE_URL,
             min_size=2,
             max_size=10,
-            command_timeout=60
+            command_timeout=60,
+            # Disable statement cache for PgBouncer compatibility
+            statement_cache_size=0 if use_pooler else 100,
         )
     return _pool
 
