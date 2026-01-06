@@ -130,7 +130,6 @@ export default function DemoView() {
 
                 <div className="demo-content">
                     <div className="demo-intro">
-                        <p className="demo-tagline">The second opinion your AI answer deserves</p>
                         <h2>From the Archives</h2>
                         <p>
                             Each inquiry receives independent responses from multiple AI models, blind peer review, then a synthesized verdict.
