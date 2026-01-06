@@ -102,7 +102,8 @@ async def query_model(
     model: str,
     messages: List[Dict[str, str]],
     timeout: float = 120.0,
-    api_key: Optional[str] = None
+    api_key: Optional[str] = None,
+    max_tokens: int = 8192
 ) -> Optional[Dict[str, Any]]:
     """
     Query a single model via OpenRouter API.
@@ -115,6 +116,7 @@ async def query_model(
         messages: List of message dicts with 'role' and 'content'
         timeout: Request timeout in seconds
         api_key: Optional user-provided API key (uses default if not provided)
+        max_tokens: Maximum tokens for response (default 8192, prevents 402 on low balance)
 
     Returns:
         Response dict with 'content', 'generation_id', and optional 'reasoning_details', or None if failed
@@ -135,6 +137,7 @@ async def query_model(
     payload = {
         "model": model,
         "messages": messages,
+        "max_tokens": max_tokens,
     }
 
     client = await get_client()
