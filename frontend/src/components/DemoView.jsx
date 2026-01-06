@@ -168,6 +168,15 @@ export default function DemoView() {
                         >
                             Get Started
                         </button>
+                        <div className="demo-legal-links">
+                            <a href="/privacy" className="legal-link">Privacy Policy</a>
+                            <span className="legal-divider">|</span>
+                            <a href="/terms" className="legal-link">Terms of Service</a>
+                            <span className="legal-divider">|</span>
+                            <a href="mailto:anbs.dev@gmail.com" className="legal-link">Feedback</a>
+                            <span className="legal-divider">·</span>
+                            <a href="https://github.com/anbuneel/quinthesis/issues" target="_blank" rel="noopener noreferrer" className="legal-link">Report Issue</a>
+                        </div>
                     </div>
                 </div>
             </div>
