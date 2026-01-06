@@ -131,10 +131,9 @@ export default function DemoView() {
                 <div className="demo-content">
                     <div className="demo-intro">
                         <p className="demo-tagline">The second opinion your AI answer deserves</p>
-                        <h2>See It In Action</h2>
+                        <h2>From the Archives</h2>
                         <p>
-                            Why trust one AI when three can deliberate? Each example shows GPT, Claude, and Gemini
-                            responding independently, reviewing each other anonymously, then synthesizing the best answer.
+                            Each inquiry receives independent responses from multiple AI models, blind peer review, then a synthesized verdict.
                         </p>
                     </div>
 
