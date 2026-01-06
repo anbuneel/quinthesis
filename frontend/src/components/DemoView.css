@@ -280,6 +280,29 @@
     margin: 0 0 1rem;
 }
 
+.demo-legal-links {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--paper-border);
+    font-family: var(--font-ui);
+    font-size: var(--text-xs);
+}
+
+.demo-legal-links .legal-link {
+    color: var(--ink-light);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.demo-legal-links .legal-link:hover {
+    color: var(--ink-dark);
+}
+
+.demo-legal-links .legal-divider {
+    margin: 0 0.5rem;
+    color: var(--ink-faint);
+}
+
 /* ==========================================================================
    Response Tabs - Match ChatInterface pill/button style
    ========================================================================== */

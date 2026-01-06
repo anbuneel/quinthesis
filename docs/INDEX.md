@@ -4,6 +4,14 @@ Project documentation organized by category.
 
 ---
 
+## Overview
+
+| Document | Description | Date |
+|----------|-------------|------|
+| [about.md](about.md) | Product overview and key features | 2026-01-05 |
+
+---
+
 ## Security
 
 Security reviews and implementation plans.
